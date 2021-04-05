@@ -1,0 +1,374 @@
+import numpy as np
+from math import cos,sin,exp,sqrt,pi,tan,log
+import scipy.optimize as opt
+
+class MatModel:
+    '''
+    A material model class that allows adding different models together
+    For example:
+    >>> from MatModel import *
+    >>> mat1 = NH() #A neo-Hookean model
+    >>> mat2 = GOH([np.array([1,0,0]),np.array([0.5,0.5,0])]) #A GOH model with two fiber families
+    >>> model = MatModel(mat1,mat2) #can provide as many models as needed as long as their parameters are uniquely named
+    >>> model = MatModel(mat1) + MatModel(mat2) #can also add them after creating the MatModel object
+    >>> model.models #provides a list of the models included
+    >>> model.parameters #provides a dictionary of parameters and their default values
+    >>> model = MatModel('goh','nh') #can also provide a list of model names, however one has to assign fiber directions afterwards
+    >>> mm = model.models
+    >>> mm[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
+
+    To get an overview of all the classes in this file, try the following:
+    >>> import importlib, inspect
+    >>> for name, cls in inspect.getmembers(importlib.import_module("MatModel"), inspect.isclass):
+    >>>    print(name,cls.__doc__)
+    '''
+    stressnames = [['cauchy'],['1pk','1stpk','firstpk'],['2pk','2ndpk','secondpk']]
+
+    def __init__(self,*modelsList):
+        self._models = modelsList
+        #check if any of the components is a string
+        if any([isinstance(m,str) for m in modelsList]):
+            self._models = list(self._models) #convert to list so that it can be modified
+            for i,m in enumerate(modelsList):
+                if isinstance(m,str):
+                    try:
+                        model_ = globals()[m.upper()]
+                        self._models[i] = model_()
+                    except KeyError:
+                        print ('Unknown model: ', m)
+            self._models = tuple(self._models)
+        self.theta = dict([])
+        for m in self._models:
+            if len(self.theta.keys() & m.param_default.keys())>0:
+                raise ValueError("Common parameter names in the models used. Must modify the code to avoid conflicts")
+            self.theta.update(m.param_default)
+
+    @property
+    def parameters(self):
+        return self.theta
+
+    @property
+    def models(self):
+        return self._models
+
+    @parameters.setter
+    def parameters(self,theta):
+        raise ValueError("The dictionary of parameters should not be changed this way")
+
+    @models.setter
+    def models(self,modelsList):
+        raise ValueError("The dictionary of parameters should not be changed this way")
+
+    def stress(self,F=np.identity(3),theta={},stresstype='cauchy'):
+        stresstype = stresstype.replace(" ", "").lower()
+        stype = None
+        for i in range(len(self.stressnames)):
+            if any(stresstype==x for x in self.stressnames[i]):
+                stype = i
+
+        if stype is None:
+            raise ValueError('Unknown stress type, only the following allowed:', self.stressnames)
+
+        #Calculate the second PK stress
+        S = np.zeros([3,3])
+        detF = 1.
+        for m in self._models:
+            S += m.secondPK(F,theta)
+            detF = m.J
+        if stype==0: #return Cauchy stress
+            return 1./detF*np.dot(F,np.dot(S,F.transpose())) #convert to Cauchy stress
+        if stype==1: #return 1st PK stress
+            return np.dot(F,S)
+        if stype==2: #return 2nd PK stress
+            return S
+
+    def __add__(self,other):
+        return MatModel(*(self.models+other.models))
+
+class InvariantHyperelastic:
+    '''
+    An abstract class from which all the invariant-based hyperelastic models should be derived.
+    Currently, it allows for models that depend on I1, I2, J, and I4 with multiple fiber families
+    '''
+    def __init__(self):
+        self.I1 = 3.
+        self.I2 = 3.
+        self.J = 1.
+        self.I4 = None
+        self.M = None
+
+    def energy(self,**theta): #the energy density, required from the derived class
+        raise NotImplementedError()
+
+    def partial_deriv(self,**theta): #derivatives of energy w.r.t. the invariants, required from the derived class
+        raise NotImplementedError()
+
+    def invariants(self,F):
+        C=np.dot(F.transpose(),F)
+        self.I1 = np.trace(C)
+        self.I2 = 1./2.*(self.I1**2 - np.trace(np.dot(C,C)))
+        self.J = np.linalg.det(F)
+        if self.M is not None:
+            self.I4 = np.array([np.dot(m,np.dot(C,m)) for m in self.M])
+        return
+
+    def update(self,F):
+        self.invariants(F)
+        return 
+
+    def energy_stress(self,F,theta): #returns both energy and second PK stress
+        self.update(F)
+        e = self.energy(**theta)
+        I=np.eye(3)
+        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(**theta)
+        #J23 = self.J**(-2./3.)
+        S = np.zeros([3,3])
+        if dPsidI1 is not None:
+            S += 2.*dPsidI1*I #contribution from I1
+        if dPsidI2 is not None:
+            S += 2.*dPsidI2*(self.I1*I-np.dot(F.transpose(),F)) #contribution from I2
+        if dPsidJ is not None:
+            S += dPsidJ*self.J*np.linalg.inv(np.dot(F.transpose(),F)) #contribution from J
+        if dPsidI4 is not None:
+            for i,m in enumerate(self.M):
+                S += 2.*dPsidI4[i]*np.outer(m,m) #contribution from I4
+        return e,S
+
+    def secondPK(self,F,theta):
+        self.update(F)
+        I=np.eye(3)
+        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(**theta)
+        #J23 = self.J**(-2./3.)
+        S = np.zeros([3,3])
+        if dPsidI1 is not None:
+            S += 2.*dPsidI1*I #contribution from I1
+        if dPsidI2 is not None:
+            S += 2.*dPsidI2*(self.I1*I-np.dot(F.transpose(),F)) #contribution from I2
+        if dPsidJ is not None:
+            S += dPsidJ*self.J*np.linalg.inv(np.dot(F.transpose(),F)) #contribution from J
+        if dPsidI4 is not None:
+            for i,m in enumerate(self.M):
+                S += 2.*dPsidI4[i]*np.outer(m,m) #contribution from I4
+        return S
+
+    def normalize(self): #normalize the fiber directions to identity magnitudes
+        if self.M is not None:
+            for i in range(len(self.M)):
+                self.M[i] = self.M[i]/np.linalg.norm(self.M[i])
+        return
+
+    @property
+    def fiber_dirs(self):
+        print("Getting fiber directions")
+        return self.M
+
+    @fiber_dirs.setter
+    def fiber_dirs(self,M): #need this setter in order to ensure that fiber directions are unit vectors
+        if len(M)>0:
+            if isinstance(M,list):
+                self.M = M
+            else:
+                self.M = [M]
+        self.normalize()
+        
+
+class NH(InvariantHyperelastic):
+    '''
+    Neo-Hookean model
+    Psi = mu/2.*(I1-3)
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(mu=1.)
+        self.param_low_bd   = dict(mu=0.0001)
+        self.param_up_bd    = dict(mu=1000.)
+
+    def energy(self,mu,**extra_args):
+        return mu/2.*(self.I1-3)
+
+    def partial_deriv(self,mu,**extra_args):
+        return mu, None, None, None
+
+class LS(InvariantHyperelastic):
+    '''
+    Lee--Sacks model
+    The partial derivative expressions are obtained using the following code
+    from sympy import *
+    k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
+    Psi = k1/2*(k4*exp(k2*(I1bar-3)**2) + (1-k4)*exp(k3*(I4bar-1)**2)-1)
+    diff(Psi,I1bar)
+    diff(Psi,I4bar)
+    '''
+    def __init__(self,M=[]):
+        super().__init__()
+        self.param_default  = dict(k1=1., k2=1., k3=1, k4=0.5)
+        self.param_low_bd   = dict(k1=1., k2=1., k3=1, k4=0.5)
+        self.param_up_bd    = dict(k1=1., k2=1., k3=1, k4=0.5)
+        if len(M)>0:
+            if isinstance(M,list):
+                self.M = M
+                if len(M)!=1:
+                    print('Warning: LS model should be used with only one fiber.', \
+                        'Other situations can give unexpected behavior and', \
+                        'non-zero energy at identity deformation gradient')
+            else:
+                self.M = [M]
+        self.normalize()
+
+    def energy(self,k1,k2,k3,k4,**extra_args):
+        esum = k1/2*(k4*exp(k2*(self.I1-3)**2)-1)
+        if self.I4 is not None:
+            for i4 in self.I4:
+                esum += k1/2*((1-k4)*exp(k3*(i4-1)**2))
+        return esum
+
+    def partial_deriv(self,k1,k2,k3,k4,**extra_args):
+        dPsidI1 = k1*k2*k4*(2*self.I1 - 6)*exp(k2*(self.I1 - 3)**2)/2.
+        if self.I4 is not None:
+            dPsidI4 = k1*k3*(2*self.I4 - 2)*(-k4 + 1)*np.exp(k3*(self.I4 - 1)**2)/2.
+        return dPsidI1, None, None, dPsidI4
+
+class MN(InvariantHyperelastic):
+    '''
+    MayNewman model
+    The partial derivative expressions are obtained using the following code
+    from sympy import *
+    k1,k2,I1bar,I4bar = symbols('k1 k2 I1bar I4bar')
+    Psi = k1*(exp(k2*(I1bar-3)**2+(sqrt(I4bar)-1)**4)-1)
+    diff(Psi,I1bar)
+    diff(Psi,I4bar)
+    '''
+    def __init__(self,M=[]):
+        super().__init__()
+        self.param_default  = dict(k1=1.,k2=1.)
+        self.param_low_bd   = dict(k1=1.,k2=1.)
+        self.param_up_bd    = dict(k1=1.,k2=1.)
+        if len(M)>0:
+            if isinstance(M,list):
+                self.M = M
+                if len(M)!=1:
+                    print('Warning: LS model should be used with only one fiber.', \
+                        'Other situations can give unexpected behavior and', \
+                        'non-zero energy at identity deformation gradient')
+            else:
+                self.M = [M]
+        self.normalize()
+
+    def energy(self,k1,k2,**extra_args):
+        esum = 0.
+        for i4 in self.I4:
+            esum += k1*(exp(k2*(self.I1-3)**2+(sqrt(i4)-1)**4)-1)
+        return esum
+
+    def partial_deriv(self,k1,k2,**extra_args):
+        dPsidI1 = sum(k1*k2*(2.*self.I1 - 6.)*np.exp(k2*(self.I1 - 3.)**2 + (np.sqrt(self.I4) - 1.)**4))
+        dPsidI4 = 2*k1*(np.sqrt(self.I4) - 1.)**3*np.exp(k2*(self.I1 - 3)**2 + (np.sqrt(self.I4) - 1.)**4)/np.sqrt(self.I4)
+        return dPsidI1, None, None, dPsidI4
+
+class GOH(InvariantHyperelastic):
+    '''
+    Gasser-Ogden-Holzapfel model
+    The partial derivative expressions are obtained using the following code
+    from sympy import *
+    k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
+    Psi = k1/2/k2*(exp(k2*(k3*I1bar+(1-3*k3)*I4bar-1)**2)-1)
+    diff(Psi,I1bar)
+    diff(Psi,I4bar)
+    '''
+    def __init__(self,M=[]):
+        super().__init__()
+        self.param_default  = dict(k1=1., k2=1., k3=0.1)
+        self.param_low_bd   = dict(k1=1., k2=1., k3=0.)
+        self.param_up_bd    = dict(k1=1., k2=1., k3=1./3.)
+        if len(M)>0:
+            if isinstance(M,list):
+                self.M = M
+            else:
+                self.M = [M]
+        self.normalize()
+    
+    def energy(self,k1,k2,k3,**extra_args):
+        esum = 0.
+        for i4 in self.I4:
+            esum += k1/2./k2*(exp(k2*(k3*self.I1+(1-3*k3)*i4-1)**2)-1)
+        return esum
+
+    def partial_deriv(self,k1,k2,k3,**extra_args):
+        Q = (self.I1*k3 + self.I4*(-3*k3 + 1) - 1)
+        expt = np.exp(k2*Q**2)
+        dPsidI1 = sum(k1*k3*Q*expt)
+        dPsidI4 = k1*(1-3*k3)*Q*expt
+        return dPsidI1, None, None, dPsidI4
+
+class expI1(InvariantHyperelastic):
+    '''
+    Model with exponential of I1
+    The partial derivative expressions are obtained using the following code
+    from sympy import *
+    k1,k2,I1bar = symbols('k1 k2 I1bar')
+    Psi = k1/k2*(exp(k2*(I1bar-3))-1) 
+    diff(Psi,I1bar)
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(k1=1., k2=1.)
+        self.param_low_bd   = dict(k1=1., k2=1.)
+        self.param_up_bd    = dict(k1=1., k2=1.)
+
+    def energy(self,k1,k2,**extra_args):
+        return k1/k2*(exp(k2*(self.I1-3))-1) 
+
+    def partial_deriv(self,k1,k2,**extra_args):
+        dPsidI1 = k1*exp(k2*(self.I1 - 3)) 
+        return dPsidI1, None, None, None
+
+class HY(InvariantHyperelastic):
+    '''
+    Humphrey-Yin model's fiber part
+    The partial derivative expressions are obtained using the following code
+    from sympy import *
+    k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
+    Psi = k3/k4*(exp(k4*(sqrt(I4bar)-1)**2)-1)
+    diff(Psi,I1bar)
+    diff(Psi,I4bar)
+    '''
+    def __init__(self,M=[]):
+        super().__init__()
+        self.param_default  = dict(k3=1, k4=0.5)
+        self.param_low_bd   = dict(k3=1, k4=0.5)
+        self.param_up_bd    = dict(k3=1, k4=0.5)
+        if len(M)>0:
+            if isinstance(M,list):
+                self.M = M
+            else:
+                self.M = [M]
+        self.normalize()
+
+    def energy(self,k3,k4,**extra_args):
+        return sum(k3/k4*(np.exp(k4*(np.sqrt(self.I4)-1)**2)-1))
+
+    def partial_deriv(self,k3,k4,**extra_args):
+        dPsidI4 = k3*(np.sqrt(self.I4) - 1)*np.exp(k4*(np.sqrt(self.I4) - 1)**2)/np.sqrt(self.I4)
+        return None, None, None, dPsidI4
+
+class volPenalty(InvariantHyperelastic):
+    '''
+    Volumetric penality
+    Psi = kappa/2.*(J-1)**2
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(kappa=1)
+        self.param_low_bd   = dict(kappa=1)
+        self.param_up_bd    = dict(kappa=1)
+       
+    def energy(self,kappa,**extra_args):
+        return kappa/2.*(self.J-1)**2
+
+    def partial_deriv(self,kappa,**extra_args):
+        return None, None, kappa*(self.J-1), None
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
