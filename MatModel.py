@@ -22,7 +22,7 @@ class MatModel:
     >>> for name, cls in inspect.getmembers(importlib.import_module("MatModel"), inspect.isclass):
     >>>    print(name,cls.__doc__)
     '''
-    stressnames = [['cauchy'],['1pk','1stpk','firstpk'],['2pk','2ndpk','secondpk']]
+    __stressnames = [['cauchy'],['1pk','1stpk','firstpk'],['2pk','2ndpk','secondpk']]
 
     def __init__(self,*modelsList):
         self._models = modelsList
@@ -45,7 +45,7 @@ class MatModel:
 
     @property
     def parameters(self):
-        return self.theta
+        return self.theta.copy()
 
     @property
     def models(self):
@@ -53,21 +53,20 @@ class MatModel:
 
     @parameters.setter
     def parameters(self,theta):
-        raise ValueError("The dictionary of parameters should not be changed this way")
+        raise ValueError("The dictionary of parameters should not be changed in this way")
 
     @models.setter
     def models(self,modelsList):
-        raise ValueError("The dictionary of parameters should not be changed this way")
+        raise ValueError("The component models should not be changed in this way")
 
-    def stress(self,F=np.identity(3),theta={},stresstype='cauchy'):
+    def stress(self,F=np.identity(3),theta={},stresstype='cauchy',incomp=False,Fdiag=False):
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
-        for i in range(len(self.stressnames)):
-            if any(stresstype==x for x in self.stressnames[i]):
+        for i in range(len(self.__stressnames)):
+            if any(stresstype==x for x in self.__stressnames[i]):
                 stype = i
-
         if stype is None:
-            raise ValueError('Unknown stress type, only the following allowed:', self.stressnames)
+            raise ValueError('Unknown stress type, only the following allowed:', self.__stressnames)
 
         #Calculate the second PK stress
         S = np.zeros([3,3])
@@ -75,10 +74,22 @@ class MatModel:
         for m in self._models:
             S += m.secondPK(F,theta)
             detF = m.J
+
+        #If incompressible, then impose 2,2 component of stress=0 to find the Lagrange multiplier
+        #TODO find a better way to implement this?
+        if incomp:
+            C = F.T@F
+            if Fdiag: #if F is diagonal, then inverse of C can be computed more easily
+                invC = np.diag(1./np.diag(C))
+            else:
+                invC = np.linalg.inv(C)
+            p = S[2,2]/invC[2,2]
+            S -= p*invC
+
         if stype==0: #return Cauchy stress
-            return 1./detF*np.dot(F,np.dot(S,F.transpose())) #convert to Cauchy stress
+            return 1./detF*F@S@F.T #convert to Cauchy stress
         if stype==1: #return 1st PK stress
-            return np.dot(F,S)
+            return F@S
         if stype==2: #return 2nd PK stress
             return S
 
@@ -159,13 +170,13 @@ class InvariantHyperelastic:
 
     @property
     def fiber_dirs(self):
-        print("Getting fiber directions")
+        #print("Getting fiber directions")
         return self.M
 
     @fiber_dirs.setter
     def fiber_dirs(self,M): #need this setter in order to ensure that fiber directions are unit vectors
         if len(M)>0:
-            if isinstance(M,list):
+            if isinstance(M,list) and type(M[0]) is np.ndarray:
                 self.M = M
             else:
                 self.M = [M]
@@ -187,7 +198,7 @@ class NH(InvariantHyperelastic):
         return mu/2.*(self.I1-3)
 
     def partial_deriv(self,mu,**extra_args):
-        return mu, None, None, None
+        return mu/2., None, None, None
 
 class LS(InvariantHyperelastic):
     '''
