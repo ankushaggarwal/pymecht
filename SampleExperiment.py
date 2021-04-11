@@ -3,6 +3,7 @@ from math import sqrt, pi
 from functools import partial
 import scipy.optimize as opt
 import warnings
+from scipy.integrate import quad
 
 class SampleExperiment:
     '''
@@ -178,6 +179,70 @@ class PlanarBiaxialExtension(SampleExperiment):
         return np.array([s1,s2])
 
 class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
-    def __init__(self,mat_model,disp_measure='radius',force_meaure='force'):
-        super().__init__(mat_model)
-        self.param_default  = dict(R0=1., thick=1., omega=2*pi, L0=1.)
+    def __init__(self,mat_model,disp_measure='radius',force_measure='force'):
+        super().__init__(mat_model,disp_measure,force_measure)
+        self.param_default  = dict(Ri=1., thick=1., omega=0., L0=1.,lambdaZ=1.)
+        self.param_low_bd   = dict(Ri=1., thick=1., omega=0., L0=1.,lambdaZ=1.)
+        self.param_up_bd    = dict(Ri=1., thick=1., omega=0., L0=1.,lambdaZ=1.)
+        self.update(**self.param_default)
+        #check the fibers in mat_model
+        for mm in mat_model.models:
+            F = mm.fiber_dirs
+            if F is None:
+                continue
+            if len(F)%2 !=0:
+                warnings.warn("Even number of fiber families are expected. The results may be spurious")
+            for f in F:
+                if f[0]!=0:
+                    warnings.warn("The UniformAxisymmetricTubeInflationExtension assumes that fibers are aligned in a helical direction. This is not satisfied and the results may be spurious.")
+            for f1, f2 in zip(*[iter(F)]*2):
+                if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
+                    warnings.warn("The UniformAxisymmetricTubeInflationExtension assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
+                    print(f1,f2)
+        self.compute = partial(self.mat_model.stress,stresstype='cauchy',incomp=True,Fdiag=True)
+        if self.inp == 'stretch':
+            self.x0 = 1.
+        elif self.inp == 'deltalr':
+            self.x0 = 0.
+        elif self.inp == 'radius':
+            self.x0 = self.Ri
+        elif self.inp == 'area':
+            self.x0 = self.Ri**2*pi
+        else:
+            raise ValueError("Unknown disp_measure", disp_measure)
+        self.ndim=1
+
+    def update(self,Ri,thick,omega,L0,lambdaZ,**extra_args):
+        self.Ri,self.thick,self.k,self.L0,self.lambdaZ = Ri,thick,2*pi/(2*pi-omega),L0,lambdaZ
+
+    def F(self,r,R):
+        return np.diag([R/r/self.k/self.lambdaZ,self.k*r/R,self.lambdaZ])
+
+    def disp_controlled(self,input_,params):
+        self.update(**params)
+
+        def integrand(xi,ri,params):
+            R = self.Ri+xi*self.thick
+            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            F = self.F(r,R)
+            sigma = self.compute(F,params) 
+            return R/self.lambdaZ/r**2*self.thick*(sigma[0,0]-sigma[1,1])
+        
+        if self.output=='pressure':
+            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self.stretch(input_)]
+        elif self.output =='force':
+            output = [quad(integrand,0,1,args=(ri,params))[0]*self.L0*self.lambdaZ*pi*ri**2 for ri in self.stretch(input_)]
+        return np.array(output).reshape(np.shape(input_))
+
+    def stretch(self,l): #this returns internal radius instead
+        if self.inp == 'stretch':
+            return l*self.Ri
+        if self.inp == 'strain':
+            return np.sqrt(l)+1
+        if self.inp == 'deltar':
+            return l+self.Ri
+        if self.inp == 'radius':
+            return l
+        if self.inp == 'area':
+            return np.sqrt(l/pi)
+
