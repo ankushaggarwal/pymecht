@@ -199,7 +199,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
                 if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
                     warnings.warn("The UniformAxisymmetricTubeInflationExtension assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
                     print(f1,f2)
-        self.compute = partial(self.mat_model.stress,stresstype='cauchy',incomp=True,Fdiag=True)
+        self.compute = partial(self.mat_model.stress,stresstype='cauchy',incomp=False,Fdiag=True)
         if self.inp == 'stretch':
             self.x0 = 1.
         elif self.inp == 'deltalr':
@@ -226,7 +226,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
             F = self.F(r,R)
             sigma = self.compute(F,params) 
-            return R/self.lambdaZ/r**2*self.thick*(sigma[0,0]-sigma[1,1])
+            return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
         
         if self.output=='pressure':
             output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self.stretch(input_)]
@@ -246,3 +246,32 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         if self.inp == 'area':
             return np.sqrt(l/pi)
 
+    def cauchy_stress(self,input_,params,n=10):
+        self.update(**params)
+        ri = self.stretch(input_)
+
+        if type(ri) is np.ndarray or isinstance(ri,list):
+            if len(ri)>1:
+                raise Warning("cauchy_stress uses only single input. Only the first value will be used")
+            ri = ri[0]
+
+        def integrand(xi,ri,params):
+            R = self.Ri+xi*self.thick
+            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            F = self.F(r,R)
+            sigma = self.compute(F,params) 
+            return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
+
+        Stresses = []
+        pressure = quad(integrand,0,1,args=(ri,params))[0]
+        xi = np.linspace(0,1,n)
+        for xii in xi:
+            R = self.Ri+xii*self.thick
+            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            F = self.F(r,R)
+            sigmabar = self.compute(F,params)
+            I = quad(integrand,0,xii,args=(ri,params))[0] #=sigmarr-sigmarr0=sigmarr+pressure=sigmabar-pi
+            pi = sigmabar[0,0] + pressure - I
+            Stresses += [sigmabar-pi*np.eye(3)]
+
+        return xi,Stresses
