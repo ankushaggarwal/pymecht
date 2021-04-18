@@ -55,6 +55,17 @@ class MatModel:
     def parameters(self,theta):
         raise ValueError("The dictionary of parameters should not be changed in this way")
 
+    def parameters_wbounds(self):
+        theta_low = dict([])
+        theta_up = dict([])
+        for m in self._models:
+            theta_low.update(m.param_low_bd)
+            theta_up.update(m.param_up_bd)
+        if set(theta_low.keys()) != set(self.theta.keys()) or set(theta_up.keys()) != set(self.theta.keys()):
+            raise ValueError("The dictionaries of parameter default, upper, and lower values have different set of keys",theta_low,theta_up,self.theta)
+
+        return self.theta.copy(), theta_low, theta_up
+
     @models.setter
     def models(self,modelsList):
         raise ValueError("The component models should not be changed in this way")
@@ -212,9 +223,9 @@ class LS(InvariantHyperelastic):
     '''
     def __init__(self,M=[]):
         super().__init__()
-        self.param_default  = dict(k1=1., k2=1., k3=1, k4=0.5)
-        self.param_low_bd   = dict(k1=1., k2=1., k3=1, k4=0.5)
-        self.param_up_bd    = dict(k1=1., k2=1., k3=1, k4=0.5)
+        self.param_default  = dict(k1=10., k2=10., k3=1, k4=0.5)
+        self.param_low_bd   = dict(k1=0.1, k2=0.1, k3=1, k4=0.5)
+        self.param_up_bd    = dict(k1=100., k2=100., k3=1, k4=0.5)
         if len(M)>0:
             if isinstance(M,list):
                 self.M = M
@@ -251,9 +262,9 @@ class MN(InvariantHyperelastic):
     '''
     def __init__(self,M=[]):
         super().__init__()
-        self.param_default  = dict(k1=1.,k2=1.)
-        self.param_low_bd   = dict(k1=1.,k2=1.)
-        self.param_up_bd    = dict(k1=1.,k2=1.)
+        self.param_default  = dict(k1=10.,k2=10.)
+        self.param_low_bd   = dict(k1=0.1,k2=0.1)
+        self.param_up_bd    = dict(k1=100.,k2=100.)
         if len(M)>0:
             if isinstance(M,list):
                 self.M = M
@@ -288,9 +299,9 @@ class GOH(InvariantHyperelastic):
     '''
     def __init__(self,M=[]):
         super().__init__()
-        self.param_default  = dict(k1=1., k2=1., k3=0.1)
-        self.param_low_bd   = dict(k1=1., k2=1., k3=0.)
-        self.param_up_bd    = dict(k1=1., k2=1., k3=1./3.)
+        self.param_default  = dict(k1=10., k2=10., k3=0.1)
+        self.param_low_bd   = dict(k1=0.1, k2=0.1, k3=0.)
+        self.param_up_bd    = dict(k1=100., k2=100., k3=1./3.)
         if len(M)>0:
             if isinstance(M,list):
                 self.M = M
@@ -322,9 +333,9 @@ class expI1(InvariantHyperelastic):
     '''
     def __init__(self):
         super().__init__()
-        self.param_default  = dict(k1=1., k2=1.)
-        self.param_low_bd   = dict(k1=1., k2=1.)
-        self.param_up_bd    = dict(k1=1., k2=1.)
+        self.param_default  = dict(k1=10., k2=10.)
+        self.param_low_bd   = dict(k1=0.1, k2=0.1)
+        self.param_up_bd    = dict(k1=100., k2=100.)
 
     def energy(self,k1,k2,**extra_args):
         return k1/k2*(exp(k2*(self.I1-3))-1) 
@@ -345,9 +356,9 @@ class HY(InvariantHyperelastic):
     '''
     def __init__(self,M=[]):
         super().__init__()
-        self.param_default  = dict(k3=1, k4=0.5)
-        self.param_low_bd   = dict(k3=1, k4=0.5)
-        self.param_up_bd    = dict(k3=1, k4=0.5)
+        self.param_default  = dict(k3=10., k4=10.)
+        self.param_low_bd   = dict(k3=0.1, k4=0.1)
+        self.param_up_bd    = dict(k3=100., k4=100.)
         if len(M)>0:
             if isinstance(M,list):
                 self.M = M
