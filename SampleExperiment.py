@@ -234,6 +234,13 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             output = [quad(integrand,0,1,args=(ri,params))[0]*self.L0*self.lambdaZ*pi*ri**2 for ri in self.stretch(input_)]
         return np.array(output).reshape(np.shape(input_))
 
+    def outer_radius(self,input_,params):
+        self.update(**params)
+
+        Ro = self.Ri+self.thick
+        ro = np.array([sqrt((Ro**2-self.Ri**2)/self.k/self.lambdaZ+ri**2) for ri in self.stretch(input_)])
+        return ro.reshape(np.shape(input_))
+
     def stretch(self,l): #this returns internal radius instead
         if self.inp == 'stretch':
             return l*self.Ri
@@ -246,7 +253,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         if self.inp == 'area':
             return np.sqrt(l/pi)
 
-    def cauchy_stress(self,input_,params,n=10):
+    def cauchy_stress(self,input_,params,n=10,pressure=None):
         self.update(**params)
         ri = self.stretch(input_)
 
@@ -263,7 +270,8 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
 
         Stresses = []
-        pressure = quad(integrand,0,1,args=(ri,params))[0]
+        if pressure is None:
+            pressure = quad(integrand,0,1,args=(ri,params))[0]
         xi = np.linspace(0,1,n)
         for xii in xi:
             R = self.Ri+xii*self.thick
@@ -275,3 +283,105 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             Stresses += [sigmabar-pi*np.eye(3)]
 
         return xi,Stresses
+
+class LayeredSamples:
+    '''
+    A class which can contain layers of samples
+    '''
+    def __init__(self,*samplesList):
+        self._samples = samplesList
+        self.nsamples = len(samplesList)
+        #check that all the members are instance of SampleExperiment
+        if not all([isinstance(s,SampleExperiment) for s in self._samples]):
+            raise ValueError("The class only accepts objects of type SampleExperiment")
+        outputs = [s.output for s in self._samples]
+        inputs = [s.inp for s in self._samples]
+        self.ndim = samplesList[0].ndim
+        #check if all outputs and inputs are the same
+        if len(set(outputs)) > 1:
+            raise ValueError("The outputs for all the layers must be the same")
+        if len(set(inputs)) > 1:
+            raise ValueError("The inputs for all the layers must be the same")
+
+    @property
+    def parameters(self):
+        return [s.parameters for s in self._samples]
+
+    def disp_controlled(self,input_,params):
+        if len(params) != self.nsamples:
+            raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
+        total_force = 0.
+        for i,s in enumerate(self._samples):
+            total_force += s.disp_controlled(input_,params[i])
+
+        return total_force
+
+    def force_controlled(self,forces,params):
+        
+        def compare(displ,ybar,params):
+            return self.disp_controlled([displ],params)[0]-ybar
+
+        #solve for the input_ by solving the disp_controlled minus desired output
+        forces_temp = forces.reshape(-1,self.ndim)
+        ndata = len(forces_temp)
+        y=[]
+        x0=self._samples[0].x0 + 1e-5
+        for i in range(ndata):
+            sol = opt.root(compare,x0,args=(forces_temp[i],params)).x
+            x0 = sol.copy()
+            y.append(sol)
+        return np.array(y).reshape(np.shape(forces))
+
+class LayeredUniaxial(LayeredSamples):
+    def __init__(self,*samplesList):
+        super().__init__(*samplesList)
+        if not all([isinstance(s,UniaxialExtension) for s in self._samples]):
+            raise ValueError("The class only accepts objects of type SampleExperiment")
+
+class LayeredTube(LayeredSamples):
+    def __init__(self,*samplesList):
+        super().__init__(*samplesList)
+        if not all([isinstance(s,UniformAxisymmetricTubeInflationExtension) for s in self._samples]):
+            raise ValueError("The class only accepts objects of type SampleExperiment")
+        for i,s in enumerate(samplesList):
+            if i==0:
+                continue
+            s.inp = 'radius' #except the first layer make other layers' input in terms of radius
+
+    def disp_controlled(self,input_,params):
+        if len(params) != self.nsamples:
+            raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
+        total_force = 0.
+        i_input = input_
+        for i,s in enumerate(self._samples):
+            total_force += s.disp_controlled(i_input,params[i])
+            i_input = s.outer_radius(i_input,params[i])
+
+        return total_force
+
+    def cauchy_stress(self,input_,params,n=10):
+        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculation
+        temp = self._samples[0].output
+        for s in self._samples:
+            s.output = 'pressure'
+        pressure = self.disp_controlled(input_,params)[0]
+
+        total_thick = 0.
+        for s in params: total_thick+=s['thick']
+
+        XI, Stress = [],[]
+        i_input = input_
+        for i,s in enumerate(self._samples):
+            xi,stress = s.cauchy_stress(i_input,params[i],n,pressure=pressure)
+            pressure -= s.disp_controlled(i_input,params[i])[0]
+            if i>0:
+                xi = [max(XI)+x*s.thick/total_thick for x in xi]
+            else:
+                xi = [x*s.thick/total_thick for x in xi]
+            i_input = s.outer_radius(i_input,params[i])
+            print(i_input)
+            XI.extend(xi)
+            Stress.extend(stress)
+        for s in self._samples:
+            s.output = temp
+        return XI,Stress
