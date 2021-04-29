@@ -21,7 +21,7 @@ class SampleExperiment:
         output = [self.observe(self.compute(F,params)) for F in self.F(input_)]
         return np.array(output).reshape(np.shape(input_))
 
-    def force_controlled(self,forces,params):
+    def force_controlled(self,forces,params,x0=None):
         self.update(**params)
         
         def compare(displ,ybar,params):
@@ -31,7 +31,8 @@ class SampleExperiment:
         forces_temp = forces.reshape(-1,self.ndim)
         ndata = len(forces_temp)
         y=[]
-        x0=self.x0 + 1e-5
+        if x0 is None:
+            x0=self.x0 + 1e-5
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params)).x
             x0 = sol.copy()
@@ -50,6 +51,20 @@ class SampleExperiment:
     @parameters.setter
     def parameters(self,theta):
         raise ValueError("The dictionary of parameters should not be changed in this way")
+
+    def parameters_wbounds(self):
+        theta = self.param_default.copy()
+        theta_low = self.param_low_bd.copy()
+        theta_up = self.param_up_bd.copy()
+        mat_theta,mat_theta_low,mat_theta_up = self.mat_model.parameters_wbounds()
+        if len(theta.keys() & mat_theta.keys())>0:
+                raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
+
+        theta.update(mat_theta)
+        theta_low.update(mat_theta_low)
+        theta_up.update(mat_theta_up)
+
+        return theta, theta_low, theta_up
 
 class UniaxialExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
@@ -181,9 +196,9 @@ class PlanarBiaxialExtension(SampleExperiment):
 class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='radius',force_measure='force'):
         super().__init__(mat_model,disp_measure,force_measure)
-        self.param_default  = dict(Ri=1., thick=1., omega=0., L0=1.,lambdaZ=1.)
-        self.param_low_bd   = dict(Ri=1., thick=1., omega=0., L0=1.,lambdaZ=1.)
-        self.param_up_bd    = dict(Ri=1., thick=1., omega=0., L0=1.,lambdaZ=1.)
+        self.param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
+        self.param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
+        self.param_up_bd    = dict(Ri=1.5, thick=1., omega=0., L0=1.,lambdaZ=1.)
         self.update(**self.param_default)
         #check the fibers in mat_model
         for mm in mat_model.models:

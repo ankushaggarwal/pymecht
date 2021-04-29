@@ -203,7 +203,7 @@ class NH(InvariantHyperelastic):
         super().__init__()
         self.param_default  = dict(mu=1.)
         self.param_low_bd   = dict(mu=0.0001)
-        self.param_up_bd    = dict(mu=1000.)
+        self.param_up_bd    = dict(mu=100.)
 
     def energy(self,mu,**extra_args):
         return mu/2.*(self.I1-3)
@@ -301,7 +301,7 @@ class GOH(InvariantHyperelastic):
         super().__init__()
         self.param_default  = dict(k1=10., k2=10., k3=0.1)
         self.param_low_bd   = dict(k1=0.1, k2=0.1, k3=0.)
-        self.param_up_bd    = dict(k1=100., k2=100., k3=1./3.)
+        self.param_up_bd    = dict(k1=30., k2=30., k3=1./3.)
         if len(M)>0:
             if isinstance(M,list):
                 self.M = M
