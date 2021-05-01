@@ -223,9 +223,9 @@ class LS(InvariantHyperelastic):
     '''
     def __init__(self,M=[]):
         super().__init__()
-        self.param_default  = dict(k1=10., k2=10., k3=1, k4=0.5)
-        self.param_low_bd   = dict(k1=0.1, k2=0.1, k3=1, k4=0.5)
-        self.param_up_bd    = dict(k1=100., k2=100., k3=1, k4=0.5)
+        self.param_default  = dict(k1=10., k2=10., k3=10, k4=0.5)
+        self.param_low_bd   = dict(k1=0.1, k2=0.1, k3=0.1, k4=0.)
+        self.param_up_bd    = dict(k1=100., k2=30., k3=30, k4=1.)
         if len(M)>0:
             if isinstance(M,list):
                 self.M = M
