@@ -36,7 +36,7 @@ class SampleExperiment:
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params))
             if not sol.success:
-                print('force_controlled: Solution not converged',forces_temp[i],params)
+                raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
             x0 = sol.x.copy()
             y.append(sol.x)
         return np.array(y).reshape(np.shape(forces))
