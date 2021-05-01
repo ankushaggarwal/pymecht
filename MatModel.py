@@ -245,7 +245,7 @@ class LS(InvariantHyperelastic):
         return esum
 
     def partial_deriv(self,k1,k2,k3,k4,**extra_args):
-        dPsidI1 = k1*k2*k4*(2*self.I1 - 6)*exp(k2*(self.I1 - 3)**2)/2.
+        dPsidI1 = k1*k2*k4*(2*self.I1 - 6)*np.exp(k2*(self.I1 - 3)**2)/2.
         if self.I4 is not None:
             dPsidI4 = k1*k3*(2*self.I4 - 2)*(-k4 + 1)*np.exp(k3*(self.I4 - 1)**2)/2.
         return dPsidI1, None, None, dPsidI4
