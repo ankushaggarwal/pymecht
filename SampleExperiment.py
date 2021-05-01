@@ -34,9 +34,11 @@ class SampleExperiment:
         if x0 is None:
             x0=self.x0 + 1e-5
         for i in range(ndata):
-            sol = opt.root(compare,x0,args=(forces_temp[i],params)).x
-            x0 = sol.copy()
-            y.append(sol)
+            sol = opt.root(compare,x0,args=(forces_temp[i],params))
+            if not sol.success:
+                print('force_controlled: Solution not converged',forces_temp[i],params)
+            x0 = sol.x.copy()
+            y.append(sol.x)
         return np.array(y).reshape(np.shape(forces))
 
     @property
