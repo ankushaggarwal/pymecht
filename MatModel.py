@@ -35,7 +35,11 @@ class MatModel:
                         model_ = globals()[m.upper()]
                         self._models[i] = model_()
                     except KeyError:
-                        print ('Unknown model: ', m)
+                        try:
+                            model_ = globals()[m]
+                            self._models[i] = model_()
+                        except KeyError:
+                            print ('Unknown model: ', m)
             self._models = tuple(self._models)
         self.theta = dict([])
         for m in self._models:
