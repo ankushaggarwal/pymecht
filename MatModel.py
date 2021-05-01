@@ -215,6 +215,23 @@ class NH(InvariantHyperelastic):
     def partial_deriv(self,mu,**extra_args):
         return mu/2., None, None, None
 
+class YEOH(InvariantHyperelastic):
+    '''
+    Yeoh model
+    Psi = c1*(I1-3)+c2*(I1-3)**2+c3*(I1-3)**3
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(c1=1.,c2=1.,c3=1.)
+        self.param_low_bd   = dict(c1=0.0001,c2=0.,c3=0.)
+        self.param_up_bd    = dict(c1=100.,c2=100.,c3=100.)
+
+    def energy(self,c1,c2,c3,**extra_args):
+        return c1*(self.I1-3)+c2*(self.I1-3)**2+c3*(self.I1-3)**3
+
+    def partial_deriv(self,c1,c2,c3,**extra_args):
+        return c1+2*c2*(self.I1-3)+3*c3*(self.I1-3)**2, None, None, None
+
 class LS(InvariantHyperelastic):
     '''
     Lee--Sacks model
@@ -345,7 +362,7 @@ class expI1(InvariantHyperelastic):
         return k1/k2*(exp(k2*(self.I1-3))-1) 
 
     def partial_deriv(self,k1,k2,**extra_args):
-        dPsidI1 = k1*exp(k2*(self.I1 - 3)) 
+        dPsidI1 = k1*np.exp(k2*(self.I1 - 3)) 
         return dPsidI1, None, None, None
 
 class HY(InvariantHyperelastic):
