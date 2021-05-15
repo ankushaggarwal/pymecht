@@ -74,6 +74,13 @@ class MatModel:
     def models(self,modelsList):
         raise ValueError("The component models should not be changed in this way")
 
+    def energy(self,F=np.identity(3),theta={}):
+        en = 0.
+        for m in self._models:
+            en += m.energy(F,theta)
+
+        return en
+
     def stress(self,F=np.identity(3),theta={},stresstype='cauchy',incomp=False,Fdiag=False):
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
@@ -108,6 +115,43 @@ class MatModel:
         if stype==2: #return 2nd PK stress
             return S
 
+    def energy_stress(self,F=np.identity(3),theta={},stresstype='cauchy',incomp=False,Fdiag=False):
+        stresstype = stresstype.replace(" ", "").lower()
+        stype = None
+        for i in range(len(self.__stressnames)):
+            if any(stresstype==x for x in self.__stressnames[i]):
+                stype = i
+        if stype is None:
+            raise ValueError('Unknown stress type, only the following allowed:', self.__stressnames)
+
+        en = 0.
+        #Calculate the second PK stress
+        S = np.zeros([3,3])
+        detF = 1.
+        for m in self._models:
+            e,s = m.energy_stress(F,theta)
+            en += e
+            S += s
+            detF = m.J
+
+        #If incompressible, then impose 2,2 component of stress=0 to find the Lagrange multiplier
+        #TODO find a better way to implement this?
+        if incomp:
+            C = F.T@F
+            if Fdiag: #if F is diagonal, then inverse of C can be computed more easily
+                invC = np.diag(1./np.diag(C))
+            else:
+                invC = np.linalg.inv(C)
+            p = S[2,2]/invC[2,2]
+            S -= p*invC
+
+        if stype==0: #return Cauchy stress
+            return en, 1./detF*F@S@F.T #convert to Cauchy stress
+        if stype==1: #return 1st PK stress
+            return en, F@S
+        if stype==2: #return 2nd PK stress
+            return en, S
+
     def __add__(self,other):
         return MatModel(*(self.models+other.models))
 
@@ -123,7 +167,11 @@ class InvariantHyperelastic:
         self.I4 = None
         self.M = None
 
-    def energy(self,**theta): #the energy density, required from the derived class
+    def energy(self,F,theta): #the energy density
+        self.invariants(F)
+        return self._energy(**theta)
+
+    def _energy(self,**theta): #the energy density, required from the derived class
         raise NotImplementedError()
 
     def partial_deriv(self,**theta): #derivatives of energy w.r.t. the invariants, required from the derived class
@@ -144,9 +192,9 @@ class InvariantHyperelastic:
 
     def energy_stress(self,F,theta): #returns both energy and second PK stress
         self.update(F)
-        e = self.energy(**theta)
+        e = self._energy(**theta)
         I=np.eye(3)
-        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(**theta)
+        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(**theta) #TODO make sure that there is no problem here when parallel computing
         #J23 = self.J**(-2./3.)
         S = np.zeros([3,3])
         if dPsidI1 is not None:
@@ -209,7 +257,7 @@ class NH(InvariantHyperelastic):
         self.param_low_bd   = dict(mu=0.0001)
         self.param_up_bd    = dict(mu=100.)
 
-    def energy(self,mu,**extra_args):
+    def _energy(self,mu,**extra_args):
         return mu/2.*(self.I1-3)
 
     def partial_deriv(self,mu,**extra_args):
@@ -226,7 +274,7 @@ class YEOH(InvariantHyperelastic):
         self.param_low_bd   = dict(c1=0.0001,c2=0.,c3=0.)
         self.param_up_bd    = dict(c1=100.,c2=100.,c3=100.)
 
-    def energy(self,c1,c2,c3,**extra_args):
+    def _energy(self,c1,c2,c3,**extra_args):
         return c1*(self.I1-3)+c2*(self.I1-3)**2+c3*(self.I1-3)**3
 
     def partial_deriv(self,c1,c2,c3,**extra_args):
@@ -258,7 +306,7 @@ class LS(InvariantHyperelastic):
                 self.M = [M]
         self.normalize()
 
-    def energy(self,k1,k2,k3,k4,**extra_args):
+    def _energy(self,k1,k2,k3,k4,**extra_args):
         esum = k1/2*(k4*exp(k2*(self.I1-3)**2)-1)
         if self.I4 is not None:
             for i4 in self.I4:
@@ -297,7 +345,7 @@ class MN(InvariantHyperelastic):
                 self.M = [M]
         self.normalize()
 
-    def energy(self,k1,k2,**extra_args):
+    def _energy(self,k1,k2,**extra_args):
         esum = 0.
         for i4 in self.I4:
             esum += k1*(exp(k2*(self.I1-3)**2+(sqrt(i4)-1)**4)-1)
@@ -330,7 +378,7 @@ class GOH(InvariantHyperelastic):
                 self.M = [M]
         self.normalize()
     
-    def energy(self,k1,k2,k3,**extra_args):
+    def _energy(self,k1,k2,k3,**extra_args):
         esum = 0.
         for i4 in self.I4:
             esum += k1/2./k2*(exp(k2*(k3*self.I1+(1-3*k3)*i4-1)**2)-1)
@@ -358,7 +406,7 @@ class expI1(InvariantHyperelastic):
         self.param_low_bd   = dict(k1=0.1, k2=0.1)
         self.param_up_bd    = dict(k1=100., k2=100.)
 
-    def energy(self,k1,k2,**extra_args):
+    def _energy(self,k1,k2,**extra_args):
         return k1/k2*(exp(k2*(self.I1-3))-1) 
 
     def partial_deriv(self,k1,k2,**extra_args):
@@ -387,7 +435,7 @@ class HY(InvariantHyperelastic):
                 self.M = [M]
         self.normalize()
 
-    def energy(self,k3,k4,**extra_args):
+    def _energy(self,k3,k4,**extra_args):
         return sum(k3/k4*(np.exp(k4*(np.sqrt(self.I4)-1)**2)-1))
 
     def partial_deriv(self,k3,k4,**extra_args):
@@ -405,7 +453,7 @@ class volPenalty(InvariantHyperelastic):
         self.param_low_bd   = dict(kappa=1)
         self.param_up_bd    = dict(kappa=1)
        
-    def energy(self,kappa,**extra_args):
+    def _energy(self,kappa,**extra_args):
         return kappa/2.*(self.J-1)**2
 
     def partial_deriv(self,kappa,**extra_args):
