@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.linalg import solveh_banded
 from scipy.optimize import minimize
+import warnings
+from collections import OrderedDict
 
 class LinearFEM1D:
     def __init__(self,node_locations,DOF='zeros',compute=None,stiffness='banded'):
@@ -20,16 +22,13 @@ class LinearFEM1D:
         elif DOF=='zeros':
             self.DOF = np.zeros_like(self.node_locations)
         elif type(DOF) is np.ndarray:
-            assert(len(DOF)==self.nNodes)
             self.DOF = DOF
         elif callable(DOF):
             self.DOF = DOF(self.node_locations)
-            assert(len(self.DOF)==self.nNodes)
         elif type(DOF) is int or type(DOF) is float:
             self.DOF = np.ones(self.nNodes)*DOF
         else:
             raise ValueError(DOF," not allowed for DOF argument")
-        self.dof=self.DOF
         self.elem_lengths = np.array([self.node_locations[i+1]-self.node_locations[i] for i in range(0,self.nElems)]) 
         self.elem_locations = np.array([(self.node_locations[i+1]+self.node_locations[i])/2. for i in range(0,self.nElems)])
 
@@ -45,21 +44,41 @@ class LinearFEM1D:
 
     @property
     def DOF(self):
-        return self._DOF.copy()
+        return self._DOF
 
     @DOF.setter
     def DOF(self,x):
         assert(len(x)==self.nNodes)
-        self._DOF = x.copy()
+        # Ensure variable is defined
+        try:
+            #make it writeable
+            self._DOF.flags.writeable = True
+            #fill the values with that of x
+            self._DOF[:] = x
+        except AttributeError:
+           self._DOF = x.copy()
+        #make it non-writeable
+        self._DOF.flags.writeable = False
 
-    @property
-    def dof(self):
-        return self._dof.copy()
+    def addDOF(self,x,i=None):
+        self._DOF.flags.writeable = True
+        if i is None:
+            assert(len(x)==self.nNodes)
+            self._DOF += x
+        else:
+            assert(type(x) is float or type(x) is int)
+            self._DOF[i] += x
+        self._DOF.flags.writeable = False
 
-    @dof.setter
-    def dof(self,x):
-        assert(len(x)==self.nNodes)
-        self._dof = x.copy()
+    def derivs(self):
+        #calculate the derivatives
+        y = self.DOF
+        dy = np.empty(self.nElems)
+        for i in range(0,self.nElems):
+            edof = y[i:i+2]
+            dy[i] = np.sum(edof*self.dN)/self.elem_lengths[i]
+
+        return dy
 
     @property
     def compute(self):
@@ -78,29 +97,38 @@ class LinearFEM1D:
             self.Kglobal.fill(0.)
 
     def consistency_check_compute(self):
-       Y = self.dof[np.random.randint(0,self.nNodes)]
-       y = np.random.random()*Y
-       dY = 0.
-       X = 0.
-       dy = np.random.random()
-       eps = 1e-6
-       Psi,dPsidy,dPsiddy = self._compute(y=y,dy=dy,Y=Y,dY=dY,X=X)
-       Psi2,dPsidy2,dPsiddy2 = self._compute(y=y,dy=dy,Y=Y,dY=dY,X=X)
-       Psi3,dPsidy3,dPsiddy3 = self._compute(y=y,dy=dy,Y=Y,dY=dY,X=X)
-       if np.abs((Psi2-Psi)/eps-dPsidy)>1e-3:
-           warnings.warn("Consistency of compute function failed",Psi,Psi2)
-       if np.abs((Psi3-Psi)/eps-dPsiddy)>1e-3:
-           warnings.warn("Consistency of compute function failed",Psi,Psi3)
+        #TODO need to make sure this is OK
+        Y = self.DOF[0]
+        y = np.random.random()*Y
+        X = 0.
+        dy = np.random.random()
+        eps = 1e-6
+        self._compute(dof=y,deriv=dy,location=X,eid=0)
+        Psi,dPsidy,dPsiddy = self._compute.energy(), self._compute.variation_dof(), self._compute.variation_deriv()
+        if Psi is None:
+            warnings.warn("The compute function does not provide energy. Cannot check consistency")
+            return
+        self._compute(dof=y+eps,deriv=dy,location=X,eid=0)
+        Psi2 = self._compute.energy()
+        self._compute(dof=y,deriv=dy+eps,location=X,eid=0)
+        Psi3 = self._compute.energy()
+        if np.abs((Psi2-Psi)/eps-dPsidy)>1e-3:
+           message = f"Consistency of compute function failed {Psi}, {Psi2}, {dPsidy}"
+           warnings.warn(message)
+        if np.abs((Psi3-Psi)/eps-dPsiddy)>1e-3:
+           message = f"Consistency of compute function failed {Psi}, {Psi3}, {dPsiddy}"
+           warnings.warn(message)
 
-    def elem_cal(self,dof,DOF,le,X,energy,force,stiffness):
-        #assert callable(self._compute),"Compute function must be set before any computation"
+    def elem_cal(self,edof,le,X,eid,energy,force,stiffness):
+        assert callable(self._compute),"Compute function must be set before any computation"
         #TODO need to improve this, this is the point where it is connected to the model
         
-        y,Y,X = np.sum(dof*self.N), np.sum(DOF*self.N), np.sum(X*self.N)
-        dy,dY = np.sum(dof*self.dN)/le, np.sum(DOF*self.dN)/le
+        y,X = np.sum(edof*self.N), np.sum(X*self.N)
+        dy = np.sum(edof*self.dN)/le 
         
         #call the compute function
-        Psi,dPsidy,dPsiddy = self._compute(y=y,dy=dy,Y=Y,dY=dY,X=X)
+        self._compute(dof=y,deriv=dy,location=X,eid=eid)
+        Psi,dPsidy,dPsiddy = self._compute.energy(), self._compute.variation_dof(), self._compute.variation_deriv()
 
         if energy:
             en = Psi*le
@@ -113,8 +141,10 @@ class LinearFEM1D:
         
         if stiffness:#TODO better symbols below
             eps = 1e-6
-            _,dPsidy1,dPsiddy1 = self._compute(y=y+eps,dy=dy,Y=Y,dY=dY,X=X)
-            _,dPsidy2,dPsiddy2 = self._compute(y=y,dy=dy+eps,Y=Y,dY=dY,X=X)
+            self._compute(dof=y+eps,deriv=dy,location=X,eid=eid)
+            dPsidy1,dPsiddy1 = self._compute.variation_dof(), self._compute.variation_deriv()
+            self._compute(dof=y,deriv=dy+eps,location=X,eid=eid)
+            dPsidy2,dPsiddy2 = self._compute.variation_dof(), self._compute.variation_deriv()
 
             dy2,ddydy,dyddy,ddy2 = (dPsidy1-dPsidy)/eps, (dPsiddy1-dPsiddy)/eps, (dPsidy2-dPsidy)/eps, (dPsiddy2-dPsiddy)/eps
             K = le*dy2*self.outerNN + ddydy*self.outerNdN + dyddy*self.outerdNN + ddy2*self.outerdNdN/le
@@ -123,11 +153,36 @@ class LinearFEM1D:
 
         return en,f,K
 
+    def node_cal(self,ndof,X,nodeid,energy,force,stiffness):
+        #assume that nodal contributions do not depend on derivatives
+        self._compute(dof=ndof,deriv=None,location=X,nodeid=nodeid)
+        Psi,dPsidy = self._compute.energy(), self._compute.variation_dof()
+
+        if energy:
+            en = Psi
+        else:
+            en = None
+        if force:
+            f = dPsidy
+        else:
+            f = None
+
+        if stiffness:
+            eps = 1.e-6
+            self._compute(dof=ndof+eps,deriv=None,location=X,nodeid=nodeid)
+            dPsidy1 = self._compute.variation_dof()
+            K = (dPsidy1-dPsidy)/eps
+        else:
+            K = None
+
+        return en,f,K
+
     def assemble(self,energy=True,force=True,stiffness=True):
         self.zero_out()
+        #Sum over all elements
         for i in range(0,self.nElems):
             try:
-                e,f,K = self.elem_cal(self.dof[i:i+2],self.DOF[i:i+2],self.elem_lengths[i],self.node_locations[i:i+2], energy, force, stiffness)
+                e,f,K = self.elem_cal(self.DOF[i:i+2],self.elem_lengths[i],self.node_locations[i:i+2], i, energy, force, stiffness)
             except:
                 raise ValueError("Element calculation failed")
             if np.isnan(f).any() or np.isnan(K).any():
@@ -146,6 +201,17 @@ class LinearFEM1D:
                     self.Kglobal[1,i:i+2] += np.diag(K)
                     self.Kglobal[0,i+1] += (K[0,1]+K[1,0])/2.
 
+        for i in [0,self.nNodes-1]:
+            e,f,K = self.node_cal(self.DOF[i],self.node_locations[i],i,energy,force,stiffness)
+            if energy:
+                self.energy += e
+            if force:
+                self.fglobal[i] += f
+            if stiffness:
+                if self.stiffness=='full':
+                    self.Kglobal[i,i] += K
+                elif self.stiffness=='banded':
+                    self.Kglobal[1,i] += K
         return
 
     def force_energy(self,BClogic=None):
@@ -192,14 +258,124 @@ class LinearFEM1D:
                 dx = -solveh_banded(K,f)
             except:
                 print('Singular matrix\n',K)
-        print(dx)
+        print('Newton step:', dx)
         if BClogic is not None:
             dx_all = np.zeros(self.nNodes)
             dx_all[np.logical_not(BClogic)] = dx
 
-        self.dof = self.dof + dx_all
+        self.addDOF(dx_all)
+
+    def global_consistency_check(self):
+        dx = np.zeros(self.nNodes)
+        eps = 1e-6
+        self.assemble(False,True,False)
+        ftrue = self.fglobal.copy()
+        fnum = np.zeros_like(ftrue)
+        for i in range(0,nNodes):
+            dx[i]=eps
+            self.DOF = self.DOF + dx
+            self.assemble(True,False,False)
+            en1=self.energy
+            dx[i]=-eps
+            self.DOF = self.DOF + dx
+            self.assemble(True,False,False)
+            en2=self.energy
+            fnum[i]=(en1-en2)/(2.*eps)
+            dx[i]=0.
+        print("Force consistency: ",np.norm(ftrue-fnum),ftrue,fnum)
 
     #TODO's 
-    #1. add non-zero essential BC
-    #2. add consistency checks at the element and global levels
-    #3. ability to set the _compute function 
+    #1. add non-zero essential BC - done at the global level, but with this the quadratic convergence only starts later in the iterations
+    #2. add consistency checks at the element and global levels - DONE, need to check it for tube
+    #3. add higher GQ orders
+    #4. write theory used here to explain the symbols
+
+class InternalVariables:
+    def __init__(self,params,nNodes):
+        if type(params) is dict:
+            self.param_dict = OrderedDict(params)
+            self.list = False
+            self.nvar = 0
+            self.varkeys = []
+        elif type(params) is list:
+            self.param_dict = [OrderedDict(p) for p in params]
+            self.list = True
+            self.nvar = 0
+            self.varkeys = [[] for p in params]
+        self.nNodes = nNodes
+        self.variables = np.zeros([0,self.nNodes])
+
+    def vary(self,keys=[]): #TODO make it work for layered models
+        if self.list: 
+            self.nvar = sum(len(el) for el in keys)
+        else:
+            self.nvar = len(keys)
+        self.variables = np.zeros([self.nvar,self.nNodes])
+        self.varkeys = keys
+        if self.list:
+            assert len(keys)==len(self.param_dict),"For list of parameters, they keys should also be given as a list of list"
+            i=0
+            for j,keys in enumerate(self.varkeys):
+                for key in keys:
+                    self.variables[i,:] = self.param_dict[j][key]
+                    i += 1
+        else:
+            for i,key in enumerate(keys):
+                self.variables[i,:] = self.param_dict[key]
+        
+    def __call__(self,e=None):
+        if len(self.varkeys)==0:
+            return self.param_dict
+        if e is None:
+            raise ValueError("Element ID is required for interpolating internal variables")
+        indices = [e,e+1]
+        N = np.array([0.5,0.5])
+        #assert(len(indices)==len(N))
+        var = self.variables[:,indices]@N
+        if not self.list:
+            for i,key in enumerate(self.varkeys):
+                self.param_dict[key] = var[i]
+            return self.param_dict
+        else:
+            i = 0
+            for listi,keysi in enumerate(self.varkeys):
+                for key in keysi:
+                    self.param_dict[listi][key] = var[i]
+                    i += 1
+            return self.param_dict
+
+    def get(self,key,i=None):
+        if self.list:
+            assert(i is not None)
+            assert(i>=0 and i<len(self.varkeys))
+            if not(key in self.varkeys[i]):
+                return np.ones(self.nNodes)*self.param_dict[i][key]
+            #find the location of key
+            j=sum(len(k) for k in self.varkeys[:i])+self.varkeys[i].index(key)
+            return self.variables[j,:]
+        if not(key in self.varkeys):
+            return np.ones(self.nNodes)*self.param_dict[key]
+        #find the location of key
+        j=self.varkeys.index(key)
+        return self.variables[j,:]
+'''
+#Example of how to use the InternalVariable class
+from SampleExperiment import *
+from MatModel import *
+from LinearFEM import *
+material = MatModel('goh','nh')
+mm = material.models
+mm[0].fiber_dirs = [np.array([0,cos(0.1),sin(0.1)]),np.array([0,cos(-0.1),sin(-0.1)])]
+intima = UniformAxisymmetricTubeInflationExtension(material)
+media = UniformAxisymmetricTubeInflationExtension(material)
+artery = LayeredTube(intima,media)
+combined_parameters = artery.parameters
+theta=InternalVariables(combined_parameters,10)
+theta.vary([['Ri'],['mu','Ri']])
+theta.variables[0]=np.linspace(1,2,10)
+theta.variables[1]=np.linspace(2,3,10)
+theta.variables[2]=np.linspace(3,4,10)
+theta.get('Ri',1)[:]=np.linspace(1,10,10)
+theta.get('Ri',1)
+theta(1)
+'''
