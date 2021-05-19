@@ -5,17 +5,21 @@ import warnings
 from collections import OrderedDict
 
 class LinearFEM1D:
-    def __init__(self,node_locations,DOF='zeros',compute=None,stiffness='banded'):
+    def __init__(self,node_locations,DOF='zeros',compute=None,stiffness='banded',GQ=1):
         self.nNodes = len(node_locations)
         self.nElems = self.nNodes-1
         self.node_locations = node_locations.copy()
         self._compute = compute
+        x,self.weights = np.polynomial.legendre.leggauss(GQ)
+        self.weights = self.weights/2. #because later we simply use the length of the element
         #for 1 point GQ (TODO add the option of having higher GQ)
-        self.N,self.dN = np.array([0.5,0.5]),np.array([-1.,1.])
-        self.outerNN = np.outer(self.N,self.N)
-        self.outerNdN = np.outer(self.N,self.dN)
-        self.outerdNN = np.outer(self.dN,self.N)
-        self.outerdNdN = np.outer(self.dN,self.dN)
+        #self.N,self.dN = np.array([0.5,0.5]),np.array([-1.,1.])
+        self.N = np.array([(1-x)/2.,(1+x)/2.]).T
+        self.dN = np.array([[-1.,1.]*GQ]).reshape(self.N.shape)
+        self.outerNN = [np.outer(n,n) for n in self.N]
+        self.outerNdN = [np.outer(n,dn) for n,dn in zip(self.N,self.dN)]
+        self.outerdNN = [np.outer(dn,n) for n,dn in zip(self.N,self.dN)]
+        self.outerdNdN = [np.outer(dn,dn) for dn in self.dN]
 
         if DOF=='equal':
             self.DOF = self.node_locations.copy()
@@ -76,7 +80,7 @@ class LinearFEM1D:
         dy = np.empty(self.nElems)
         for i in range(0,self.nElems):
             edof = y[i:i+2]
-            dy[i] = np.sum(edof*self.dN)/self.elem_lengths[i]
+            dy[i] = np.sum(edof*self.dN[0])/self.elem_lengths[i]
 
         return dy
 
@@ -122,34 +126,29 @@ class LinearFEM1D:
     def elem_cal(self,edof,le,X,eid,energy,force,stiffness):
         assert callable(self._compute),"Compute function must be set before any computation"
         #TODO need to improve this, this is the point where it is connected to the model
-        
-        y,X = np.sum(edof*self.N), np.sum(X*self.N)
-        dy = np.sum(edof*self.dN)/le 
-        
-        #call the compute function
-        self._compute(dof=y,deriv=dy,location=X,eid=eid)
-        Psi,dPsidy,dPsiddy = self._compute.energy(), self._compute.variation_dof(), self._compute.variation_deriv()
+        en,f,K = 0.,0.,0.
+        for gq in range(0,len(self.weights)):
+            y,X = np.sum(edof*self.N[gq]), np.sum(X*self.N[gq])
+            dy = np.sum(edof*self.dN[gq])/le
+            
+            #call the compute function
+            self._compute(dof=y,deriv=dy,location=X,eid=eid)
+            Psi,dPsidy,dPsiddy = self._compute.energy(), self._compute.variation_dof(), self._compute.variation_deriv()
 
-        if energy:
-            en = Psi*le
-        else:
-            en = None
-        if force:
-            f = dPsidy*self.N*le + dPsiddy*self.dN
-        else:
-            f = None
-        
-        if stiffness:#TODO better symbols below
-            eps = 1e-6
-            self._compute(dof=y+eps,deriv=dy,location=X,eid=eid)
-            dPsidy1,dPsiddy1 = self._compute.variation_dof(), self._compute.variation_deriv()
-            self._compute(dof=y,deriv=dy+eps,location=X,eid=eid)
-            dPsidy2,dPsiddy2 = self._compute.variation_dof(), self._compute.variation_deriv()
+            if energy:
+                en += Psi*le*self.weights[gq]
+            if force:
+                f += (dPsidy*self.N[gq]*le + dPsiddy*self.dN[gq])*self.weights[gq]
+            
+            if stiffness:#TODO better symbols below
+                eps = 1e-6
+                self._compute(dof=y+eps,deriv=dy,location=X,eid=eid)
+                dPsidy1,dPsiddy1 = self._compute.variation_dof(), self._compute.variation_deriv()
+                self._compute(dof=y,deriv=dy+eps,location=X,eid=eid)
+                dPsidy2,dPsiddy2 = self._compute.variation_dof(), self._compute.variation_deriv()
 
-            dy2,ddydy,dyddy,ddy2 = (dPsidy1-dPsidy)/eps, (dPsiddy1-dPsiddy)/eps, (dPsidy2-dPsidy)/eps, (dPsiddy2-dPsiddy)/eps
-            K = le*dy2*self.outerNN + ddydy*self.outerNdN + dyddy*self.outerdNN + ddy2*self.outerdNdN/le
-        else:
-            K = None
+                dy2,ddydy,dyddy,ddy2 = (dPsidy1-dPsidy)/eps, (dPsiddy1-dPsiddy)/eps, (dPsidy2-dPsidy)/eps, (dPsiddy2-dPsiddy)/eps
+                K += (le*dy2*self.outerNN[gq] + ddydy*self.outerNdN[gq] + dyddy*self.outerdNN[gq] + ddy2*self.outerdNdN[gq]/le)*self.weights[gq]
 
         return en,f,K
 
