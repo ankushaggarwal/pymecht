@@ -113,10 +113,10 @@ class LinearFEM1D:
         self._compute(dof=y,deriv=dy+eps,location=X,eid=0)
         Psi3 = self._compute.energy()
         if np.abs((Psi2-Psi)/eps-dPsidy)>1e-3:
-           message = f"Consistency of compute function failed {Psi}, {Psi2}, {dPsidy}"
+           message = f"Consistency of compute function failed {Psi}, {Psi2}, {np.abs((Psi2-Psi)/eps-dPsidy)}, {dPsidy}"
            warnings.warn(message)
         if np.abs((Psi3-Psi)/eps-dPsiddy)>1e-3:
-           message = f"Consistency of compute function failed {Psi}, {Psi3}, {dPsiddy}"
+           message = f"Consistency of compute function failed {Psi}, {Psi3}, {np.abs((Psi3-Psi)/eps-dPsiddy)}, {dPsiddy}"
            warnings.warn(message)
 
     def elem_cal(self,edof,le,X,eid,energy,force,stiffness):
@@ -291,7 +291,7 @@ class LinearFEM1D:
     #4. write theory used here to explain the symbols
 
 class InternalVariables:
-    def __init__(self,params,nNodes):
+    def __init__(self,params,nElems):
         if type(params) is dict:
             self.param_dict = OrderedDict(params)
             self.list = False
@@ -302,15 +302,15 @@ class InternalVariables:
             self.list = True
             self.nvar = 0
             self.varkeys = [[] for p in params]
-        self.nNodes = nNodes
-        self.variables = np.zeros([0,self.nNodes])
+        self.nElems = nElems
+        self.variables = np.zeros([0,self.nElems])
 
     def vary(self,keys=[]): #TODO make it work for layered models
         if self.list: 
             self.nvar = sum(len(el) for el in keys)
         else:
             self.nvar = len(keys)
-        self.variables = np.zeros([self.nvar,self.nNodes])
+        self.variables = np.zeros([self.nvar,self.nElems])
         self.varkeys = keys
         if self.list:
             assert len(keys)==len(self.param_dict),"For list of parameters, they keys should also be given as a list of list"
@@ -328,10 +328,10 @@ class InternalVariables:
             return self.param_dict
         if e is None:
             raise ValueError("Element ID is required for interpolating internal variables")
-        indices = [e,e+1]
-        N = np.array([0.5,0.5])
+        #indices = [e,e+1]
+        #N = np.array([0.5,0.5])
         #assert(len(indices)==len(N))
-        var = self.variables[:,indices]@N
+        var = self.variables[:,e]#@N
         if not self.list:
             for i,key in enumerate(self.varkeys):
                 self.param_dict[key] = var[i]
@@ -349,12 +349,12 @@ class InternalVariables:
             assert(i is not None)
             assert(i>=0 and i<len(self.varkeys))
             if not(key in self.varkeys[i]):
-                return np.ones(self.nNodes)*self.param_dict[i][key]
+                return np.ones(self.nElems)*self.param_dict[i][key]
             #find the location of key
             j=sum(len(k) for k in self.varkeys[:i])+self.varkeys[i].index(key)
             return self.variables[j,:]
         if not(key in self.varkeys):
-            return np.ones(self.nNodes)*self.param_dict[key]
+            return np.ones(self.nElems)*self.param_dict[key]
         #find the location of key
         j=self.varkeys.index(key)
         return self.variables[j,:]
