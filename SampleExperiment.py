@@ -301,6 +301,154 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
 
         return xi,Stresses
 
+class NonUniformTube(SampleExperiment):
+    #This need not be derived from SampleExperiment, but I am keeping that for now. Will decide later.
+    def __init__(self,mat_model,disp_measure='radius',force_measure='pressure'):
+        super().__init__(mat_model,disp_measure,force_measure)
+        self.param_default  = dict(Ri=1., Rip = 0., thick=0.1, thickp = 0., omega=0., L0=1.,lambdaZ=1.)
+        self.param_low_bd   = dict(Ri=0.5, Rip = 0., thick=0., thickp = 0., omega=0., L0=1.,lambdaZ=1.)
+        self.param_up_bd    = dict(Ri=1.5, Rip = 0., thick=1., thickp = 0., omega=0., L0=1.,lambdaZ=1.)
+        self.update(**self.param_default)
+        #check the fibers in mat_model
+        for mm in mat_model.models:
+            F = mm.fiber_dirs
+            if F is None:
+                continue
+            if len(F)%2 !=0:
+                warnings.warn("Even number of fiber families are expected. The results may be spurious")
+            for f in F:
+                if f[0]!=0:
+                    warnings.warn("The NonUniformTube assumes that fibers are aligned in a helical direction. This is not satisfied and the results may be spurious.")
+            for f1, f2 in zip(*[iter(F)]*2):
+                if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
+                    warnings.warn("The NonUniformTube assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
+                    print(f1,f2)
+        self.compute = partial(self.mat_model.stress,stresstype='1stPK',incomp=False,Fdiag=False)
+        if self.inp == 'radius':
+            self.x0 = [self.Ri,self.Rip]
+        #elif self.inp == 'area':
+        #    self.x0 = [self.Ri**2*pi,self.Ri*2*pi*self.Rip]
+        else:
+            raise ValueError("Unknown disp_measure", disp_measure)
+        self.ndim=2
+
+    def update(self,Ri,Rip,thick,thickp,omega,L0,lambdaZ,**extra_args):
+        self.Ri,self.Rip,self.thick,self.thickp,self.k,self.L0,self.lambdaZ = Ri,Rip,thick,thickp,2*pi/(2*pi-omega),L0,lambdaZ
+
+    #def F(self,r,R,rp,Rp):
+    #    return 
+
+    def calculate_terms(self,ri,rip,params,terms):
+        self.update(**params)
+        Ri = self.Ri
+        Rip = self.Rip
+        v2 = self.lambdaZ
+        if type(terms) is str:
+            terms = [terms]
+
+        def integrand(xi,term):
+            R = Ri+xi*self.thick
+            r = sqrt((R**2-Ri**2)/self.k/v2+ri**2)
+            Rp = Rip+xi*self.thickp
+            rp = ri*rip/r + (R*Rp-Ri*Rip)/r/v2
+            fac = 1.
+            F = np.array([[R/r/self.k/v2,0, rp-Rp],[0, self.k*r/R,0],[fac*(Rp-rp),0,v2]])
+            #NOTE: All terms exclude the 2*pi factor
+            if term=='energy':
+                return self.mat_model.energy(F,params)*R*self.thick
+            P = self.compute(F,params)
+            drdu1,drdv2 = ri/r, -(R*R-Ri*Ri)/(2*r*v2**2)
+            if term=='du1':
+                term02 = -(2*ri*rip+2*(R*Rp-Ri*Rip)/v2)/(2*r*r)*drdu1+rip/r
+                dFdu1 = np.array([[-R*drdu1/(v2*r*r), 0, term02],[0,drdu1/R,0],[-term02,0,0]])
+                return (P[0,0]*dFdu1[0,0]+P[1,1]*dFdu1[1,1]+P[0,2]*dFdu1[0,2]+fac*P[2,0]*dFdu1[2,0])*R*self.thick
+            if term=='dv1':
+                #dFdv1 = np.array([[0,0,ri/r],[0,0,0],[0,0,0]])
+                return P[0,2]*ri/r*R*self.thick
+            if term=='du2':
+                return 0
+            if term=='dv2':
+                term02 = -(2*ri*rip + 2*(R*Rp-Ri*Rip)/v2)*drdv2/(2*r*r)+(-2*(R*Rp-Ri*Rip)/v2**2)/(2*r)
+                dFdv2 = np.array([[-R/(v2*r*r)*drdv2-R/(v2**2*r), 0, term02], [0,drdv2/R,0],[-term02,0,1]])
+                return (P[0,0]*dFdv2[0,0]+P[1,1]*dFdv2[1,1]+P[0,2]*dFdv2[0,2]+P[2,2] + fac*P[2,0]*dFdv2[2,0])*R*self.thick
+            raise AttributeError("Not an acceptable value for terms")
+        
+        #return quad(integrand,0,1,args=(terms[0]))[0] 
+        return [quad(integrand,0,1,args=(term))[0] for term in terms]
+
+    def consistency_check(self,params):
+        ri=params['Ri']*1.1
+        rip=params['Rip']+0.1
+        lambdaZ = params['lambdaZ']*1.1
+        eps=1e-6
+        params['lambdaZ']=lambdaZ
+        du1 = self.calculate_terms(ri,rip,params,'du1')[0]
+        du1n = (self.calculate_terms(ri+eps,rip,params,'energy')[0]-self.calculate_terms(ri-eps,rip,params,'energy')[0])/eps/2.
+        #print(du1,du1n,abs(du1-du1n))
+        #return
+        dv1 = self.calculate_terms(ri,rip,params,'dv1')[0]
+        dv1n = (self.calculate_terms(ri,rip+eps,params,'energy')[0]-self.calculate_terms(ri,rip-eps,params,'energy')[0])/eps/2.
+        dv2 = self.calculate_terms(ri,rip,params,'dv2')[0]
+        params['lambdaZ']=lambdaZ+eps
+        a = self.calculate_terms(ri,rip,params,'energy')[0] 
+        params['lambdaZ']=lambdaZ-eps
+        b = self.calculate_terms(ri,rip,params,'energy')[0] 
+        dv2n = (a-b)/2./eps
+        print(abs(du1-du1n),abs(dv1-dv1n),abs(dv2-dv2n))
+
+    def outer_radius(self,ri,rip,params):
+        self.update(**params)
+        Ro = self.Ri+self.thick
+        ro = sqrt((Ro**2-self.Ri**2)/self.k/self.lambdaZ+ri**2) 
+        Rp = self.Rip+self.thickp
+        rp = ri*rip/ro + (Ro*Rp-self.Ri*self.Rip)/ro/self.lambdaZ
+        return ro,rp
+
+    #this is not used
+    def stretch(self,l): #this returns internal radius instead
+        if self.inp == 'stretch':
+            return l*self.Ri
+        if self.inp == 'strain':
+            return np.sqrt(l)+1
+        if self.inp == 'deltar':
+            return l+self.Ri
+        if self.inp == 'radius':
+            return l
+        if self.inp == 'area':
+            return np.sqrt(l/pi)
+
+    #TODO fix this, it was simply copied from uniformtube
+    def cauchy_stress(self,input_,params,n=10,pressure=None):
+        self.update(**params)
+        ri = self.stretch(input_)
+
+        if type(ri) is np.ndarray or isinstance(ri,list):
+            if len(ri)>1:
+                raise Warning("cauchy_stress uses only single input. Only the first value will be used")
+            ri = ri[0]
+
+        def integrand(xi,ri,params):
+            R = self.Ri+xi*self.thick
+            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            F = self.F(r,R)
+            sigma = self.compute(F,params) 
+            return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
+
+        Stresses = []
+        if pressure is None:
+            pressure = quad(integrand,0,1,args=(ri,params))[0]
+        xi = np.linspace(0,1,n)
+        for xii in xi:
+            R = self.Ri+xii*self.thick
+            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            F = self.F(r,R)
+            sigmabar = self.compute(F,params)
+            I = quad(integrand,0,xii,args=(ri,params))[0] #=sigmarr-sigmarr0=sigmarr+pressure=sigmabar-pi
+            pi = sigmabar[0,0] + pressure - I
+            Stresses += [sigmabar-pi*np.eye(3)]
+
+        return xi,Stresses
+
 class LayeredSamples:
     '''
     A class which can contain layers of samples
@@ -333,7 +481,7 @@ class LayeredSamples:
 
         return total_force
 
-    def force_controlled(self,forces,params):
+    def force_controlled(self,forces,params,x0=None):
         
         def compare(displ,ybar,params):
             return self.disp_controlled([displ],params)[0]-ybar
@@ -342,11 +490,14 @@ class LayeredSamples:
         forces_temp = forces.reshape(-1,self.ndim)
         ndata = len(forces_temp)
         y=[]
-        x0=self._samples[0].x0 + 1e-5
+        if x0 is None:
+            x0=self._samples[0].x0 + 1e-5
         for i in range(ndata):
-            sol = opt.root(compare,x0,args=(forces_temp[i],params)).x
-            x0 = sol.copy()
-            y.append(sol)
+            sol = opt.root(compare,x0,args=(forces_temp[i],params))
+            if not sol.success:
+                raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
+            x0 = sol.x.copy()
+            y.append(sol.x)
         return np.array(y).reshape(np.shape(forces))
 
 class LayeredUniaxial(LayeredSamples):
@@ -376,6 +527,57 @@ class LayeredTube(LayeredSamples):
 
         return total_force
 
+    def cauchy_stress(self,input_,params,n=10):
+        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculation
+        temp = self._samples[0].output
+        for s in self._samples:
+            s.output = 'pressure'
+        pressure = self.disp_controlled(input_,params)[0]
+
+        total_thick = 0.
+        for s in params: total_thick+=s['thick']
+
+        XI, Stress = [],[]
+        i_input = input_
+        for i,s in enumerate(self._samples):
+            xi,stress = s.cauchy_stress(i_input,params[i],n,pressure=pressure)
+            pressure -= s.disp_controlled(i_input,params[i])[0]
+            if i>0:
+                xi = [max(XI)+x*s.thick/total_thick for x in xi]
+            else:
+                xi = [x*s.thick/total_thick for x in xi]
+            i_input = s.outer_radius(i_input,params[i])
+            print(i_input)
+            XI.extend(xi)
+            Stress.extend(stress)
+        for s in self._samples:
+            s.output = temp
+        return XI,Stress
+
+class LayeredNonUniformTube(LayeredSamples):
+    def __init__(self,*samplesList):
+        super().__init__(*samplesList)
+        if not all([isinstance(s,NonUniformTube) for s in self._samples]):
+            raise ValueError("The class only accepts objects of type SampleExperiment")
+        for i,s in enumerate(samplesList):
+            if i==0:
+                continue
+            s.inp = 'radius' #except the first layer make other layers' input in terms of radius
+
+    def calculate_terms(self,ri,rip,params,terms):
+        if len(params) != self.nsamples:
+            raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
+        if type(terms) is str:
+            terms = [terms]
+        results = np.zeros(len(terms))
+        rii,ripi = ri,rip
+        for i,s in enumerate(self._samples):
+            results += s.calculate_terms(rii,ripi,params[i],terms)
+            rii,ripi = s.outer_radius(rii,ripi,params[i])
+
+        return results
+
+    #TODO fix this, it was simply copied from uniformtube
     def cauchy_stress(self,input_,params,n=10):
         #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculation
         temp = self._samples[0].output
