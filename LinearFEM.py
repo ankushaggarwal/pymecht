@@ -21,9 +21,9 @@ class LinearFEM1D:
         self.outerdNN = [np.outer(dn,n) for n,dn in zip(self.N,self.dN)]
         self.outerdNdN = [np.outer(dn,dn) for dn in self.dN]
 
-        if DOF=='equal':
+        if type(DOF) is str and DOF=='equal':
             self.DOF = self.node_locations.copy()
-        elif DOF=='zeros':
+        elif type(DOF) is str and DOF=='zeros':
             self.DOF = np.zeros_like(self.node_locations)
         elif type(DOF) is np.ndarray:
             self.DOF = DOF
@@ -213,7 +213,9 @@ class LinearFEM1D:
                     self.Kglobal[1,i] += K
         return
 
-    def force_energy(self,BClogic=None):
+    def force_energy(self,ri=None,BClogic=None):
+        if ri is not None:
+            self.DOF = ri
         self.assemble(True,True,False)
         if BClogic is None:
             return self.energy, self.fglobal
@@ -263,6 +265,17 @@ class LinearFEM1D:
             dx_all[np.logical_not(BClogic)] = dx
 
         self.addDOF(dx_all)
+        return dx_all
+
+    def bfgs(self,ri_initial=None,bounds=None):
+        if ri_initial is None:
+            ri_initial = self.DOF
+        from scipy.optimize import minimize
+        result = minimize(self.force_energy,ri_initial,method='L-BFGS-B',jac=True,bounds=bounds)
+        if not result.success:
+            warnings.warn("BFGS not successful in minimizing, be careful while interpreting the results")
+        ri = result['x']
+        self.DOF = ri
 
     def global_consistency_check(self):
         dx = np.zeros(self.nNodes)
@@ -286,7 +299,7 @@ class LinearFEM1D:
     #TODO's 
     #1. add non-zero essential BC - done at the global level, but with this the quadratic convergence only starts later in the iterations
     #2. add consistency checks at the element and global levels - DONE, need to check it for tube
-    #3. add higher GQ orders
+    #3. add higher GQ orders - DONE
     #4. write theory used here to explain the symbols
 
 class InternalVariables:
