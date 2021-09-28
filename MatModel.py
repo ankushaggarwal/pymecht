@@ -286,7 +286,7 @@ class LS(InvariantHyperelastic):
     The partial derivative expressions are obtained using the following code
     from sympy import *
     k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
-    Psi = k1/2*(k4*exp(k2*(I1bar-3)**2) + (1-k4)*exp(k3*(I4bar-1)**2)-1)
+    Psi = k1/2/(k4*k2+(1-k4)*k3)*(k4*exp(k2*(I1bar-3)**2) + (1-k4)*exp(k3*(I4bar-1)**2)-1)
     diff(Psi,I1bar)
     diff(Psi,I4bar)
     '''
@@ -307,16 +307,16 @@ class LS(InvariantHyperelastic):
         self.normalize()
 
     def _energy(self,k1,k2,k3,k4,**extra_args):
-        esum = k1/2*(k4*exp(k2*(self.I1-3)**2)-1)
+        esum = k1/2/(k4*k2+(1-k4)*k3)*(k4*exp(k2*(self.I1-3)**2)-1)
         if self.I4 is not None:
             for i4 in self.I4:
-                esum += k1/2*((1-k4)*exp(k3*(i4-1)**2))
+                esum += k1/2/(k4*k2+(1-k4)*k3)*((1-k4)*exp(k3*(i4-1)**2))
         return esum
 
     def partial_deriv(self,k1,k2,k3,k4,**extra_args):
-        dPsidI1 = k1*k2*k4*(2*self.I1 - 6)*np.exp(k2*(self.I1 - 3)**2)/2.
+        dPsidI1 = k1/(k4*k2+(1-k4)*k3)*k2*k4*(2*self.I1 - 6)*np.exp(k2*(self.I1 - 3)**2)/2.
         if self.I4 is not None:
-            dPsidI4 = k1*k3*(2*self.I4 - 2)*(-k4 + 1)*np.exp(k3*(self.I4 - 1)**2)/2.
+            dPsidI4 = k1/(k4*k2+(1-k4)*k3)*k3*(2*self.I4 - 2)*(-k4 + 1)*np.exp(k3*(self.I4 - 1)**2)/2.
         return dPsidI1, None, None, dPsidI4
 
 class MN(InvariantHyperelastic):
@@ -324,16 +324,16 @@ class MN(InvariantHyperelastic):
     MayNewman model
     The partial derivative expressions are obtained using the following code
     from sympy import *
-    k1,k2,I1bar,I4bar = symbols('k1 k2 I1bar I4bar')
-    Psi = k1*(exp(k2*(I1bar-3)**2+(sqrt(I4bar)-1)**4)-1)
+    k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
+    Psi = k1/(k2+k3)*(exp(k2*(I1bar-3)**2+k3*(sqrt(I4bar)-1)**4)-1)
     diff(Psi,I1bar)
     diff(Psi,I4bar)
     '''
     def __init__(self,M=[]):
         super().__init__()
-        self.param_default  = dict(k1=10.,k2=10.)
-        self.param_low_bd   = dict(k1=0.1,k2=0.1)
-        self.param_up_bd    = dict(k1=100.,k2=100.)
+        self.param_default  = dict(k1=10.,k2=10.,k3=10.)
+        self.param_low_bd   = dict(k1=0.1,k2=0.1,k3=0.1)
+        self.param_up_bd    = dict(k1=100.,k2=100.,k3=100.)
         if len(M)>0:
             if isinstance(M,list):
                 self.M = M
@@ -345,15 +345,15 @@ class MN(InvariantHyperelastic):
                 self.M = [M]
         self.normalize()
 
-    def _energy(self,k1,k2,**extra_args):
+    def _energy(self,k1,k2,k3,**extra_args):
         esum = 0.
         for i4 in self.I4:
-            esum += k1*(exp(k2*(self.I1-3)**2+(sqrt(i4)-1)**4)-1)
+            esum += k1/(k2+k3)*(exp(k2*(self.I1-3)**2+k3*(sqrt(i4)-1)**4)-1)
         return esum
 
-    def partial_deriv(self,k1,k2,**extra_args):
-        dPsidI1 = sum(k1*k2*(2.*self.I1 - 6.)*np.exp(k2*(self.I1 - 3.)**2 + (np.sqrt(self.I4) - 1.)**4))
-        dPsidI4 = 2*k1*(np.sqrt(self.I4) - 1.)**3*np.exp(k2*(self.I1 - 3)**2 + (np.sqrt(self.I4) - 1.)**4)/np.sqrt(self.I4)
+    def partial_deriv(self,k1,k2,k3,**extra_args):
+        dPsidI1 = sum(k1*k2/(k2+k3)*(2.*self.I1 - 6.)*np.exp(k2*(self.I1 - 3.)**2 + (np.sqrt(self.I4) - 1.)**4))
+        dPsidI4 = 2*k1*k3/(k2+k3)*(np.sqrt(self.I4) - 1.)**3*np.exp(k2*(self.I1 - 3)**2 + k3*(np.sqrt(self.I4) - 1.)**4)/np.sqrt(self.I4)
         return dPsidI1, None, None, dPsidI4
 
 class GOH(InvariantHyperelastic):
