@@ -386,7 +386,8 @@ class GOH(InvariantHyperelastic):
 
     def partial_deriv(self,k1,k2,k3,**extra_args):
         Q = (self.I1*k3 + self.I4*(-3*k3 + 1) - 1)
-        Q = max(Q,np.zeros_like(Q))
+        #Q = max(Q,np.zeros_like(Q))
+        Q[Q<0]=0.
         #print(type(Q),Q)
         expt = np.exp(k2*Q**2)
         dPsidI1 = sum(k1*k3*Q*expt)
@@ -417,13 +418,15 @@ class Holzapfel(InvariantHyperelastic):
     
     def _energy(self,k1,k2,k3,**extra_args):
         esum = 0.
-        I41 = max(self.I4-1,np.zeros_like(self.I4))
+        I41 = self.I4 -1
+        I41[I41<0]=0.
         for i4 in I41:
             esum += k1/2./k2*(exp(k2*(k3*(self.I1-3)**2+(1-k3)*i4**2))-1)
         return esum
 
     def partial_deriv(self,k1,k2,k3,**extra_args):
-        I41 = max(self.I4-1,np.zeros_like(self.I4))
+        I41 = self.I4 -1
+        I41[I41<0]=0.
         Q = ((self.I1-3)**2*k3 + I41**2*(1-k3))
         expt = np.exp(k2*Q)
         dPsidI1 = sum(k1*k3*(self.I1-3)*expt)
