@@ -266,19 +266,19 @@ class NH(InvariantHyperelastic):
 class YEOH(InvariantHyperelastic):
     '''
     Yeoh model
-    Psi = c1*(I1-3)+c2*(I1-3)**2+c3*(I1-3)**3
+    Psi = c1*(I1-3)+c2*(I1-3)**2+c3*(I1-3)**3+c4*(I1-3)**4
     '''
     def __init__(self):
         super().__init__()
-        self.param_default  = dict(c1=1.,c2=1.,c3=1.)
-        self.param_low_bd   = dict(c1=0.0001,c2=0.,c3=0.)
-        self.param_up_bd    = dict(c1=100.,c2=100.,c3=100.)
+        self.param_default  = dict(c1=1.,c2=1.,c3=1.,c4=1.)
+        self.param_low_bd   = dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
+        self.param_up_bd    = dict(c1=100.,c2=100.,c3=100.,c4=100.)
 
     def _energy(self,c1,c2,c3,**extra_args):
-        return c1*(self.I1-3)+c2*(self.I1-3)**2+c3*(self.I1-3)**3
+        return c1*(self.I1-3)+c2*(self.I1-3)**2+c3*(self.I1-3)**3+c4*(self.I1-3)**4
 
     def partial_deriv(self,c1,c2,c3,**extra_args):
-        return c1+2*c2*(self.I1-3)+3*c3*(self.I1-3)**2, None, None, None
+        return c1+2*c2*(self.I1-3)+3*c3*(self.I1-3)**2+4*c4*(self.I1-3)**3, None, None, None
 
 class LS(InvariantHyperelastic):
     '''
@@ -386,9 +386,48 @@ class GOH(InvariantHyperelastic):
 
     def partial_deriv(self,k1,k2,k3,**extra_args):
         Q = (self.I1*k3 + self.I4*(-3*k3 + 1) - 1)
+        Q = max(Q,np.zeros_like(Q))
+        #print(type(Q),Q)
         expt = np.exp(k2*Q**2)
         dPsidI1 = sum(k1*k3*Q*expt)
         dPsidI4 = k1*(1-3*k3)*Q*expt
+        return dPsidI1, None, None, dPsidI4
+
+class Holzapfel(InvariantHyperelastic):
+    '''
+    Holzapfel (2005) model
+    The partial derivative expressions are obtained using the following code
+    from sympy import *
+    k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
+    Psi = k1/2/k2*(exp(k2*(k3*(I1bar-3)**2+(1-k3)*(I4bar-1)**2))-1)
+    diff(Psi,I1bar)
+    diff(Psi,I4bar)
+    '''
+    def __init__(self,M=[]):
+        super().__init__()
+        self.param_default  = dict(k1=10., k2=10., k3=0.5)
+        self.param_low_bd   = dict(k1=0.1, k2=0.1, k3=0.)
+        self.param_up_bd    = dict(k1=30., k2=30., k3=1.)
+        if len(M)>0:
+            if isinstance(M,list):
+                self.M = M
+            else:
+                self.M = [M]
+        self.normalize()
+    
+    def _energy(self,k1,k2,k3,**extra_args):
+        esum = 0.
+        I41 = max(self.I4-1,np.zeros_like(self.I4))
+        for i4 in I41:
+            esum += k1/2./k2*(exp(k2*(k3*(self.I1-3)**2+(1-k3)*i4**2))-1)
+        return esum
+
+    def partial_deriv(self,k1,k2,k3,**extra_args):
+        I41 = max(self.I4-1,np.zeros_like(self.I4))
+        Q = ((self.I1-3)**2*k3 + I41**2*(1-k3))
+        expt = np.exp(k2*Q)
+        dPsidI1 = sum(k1*k3*(self.I1-3)*expt)
+        dPsidI4 = k1*(1-3*k3)*I41*expt
         return dPsidI1, None, None, dPsidI4
 
 class expI1(InvariantHyperelastic):
@@ -412,6 +451,35 @@ class expI1(InvariantHyperelastic):
     def partial_deriv(self,k1,k2,**extra_args):
         dPsidI1 = k1*np.exp(k2*(self.I1 - 3)) 
         return dPsidI1, None, None, None
+
+class HGO(InvariantHyperelastic):
+    '''
+    HGO 2000 model's fiber part
+    The partial derivative expressions are obtained using the following code
+    from sympy import *
+    k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
+    Psi = k3/2./k4*(exp(k4*(I4bar-1)**2)-1)
+    diff(Psi,I1bar)
+    diff(Psi,I4bar)
+    '''
+    def __init__(self,M=[]):
+        super().__init__()
+        self.param_default  = dict(k3=10., k4=10.)
+        self.param_low_bd   = dict(k3=0.1, k4=0.1)
+        self.param_up_bd    = dict(k3=100., k4=100.)
+        if len(M)>0:
+            if isinstance(M,list):
+                self.M = M
+            else:
+                self.M = [M]
+        self.normalize()
+
+    def _energy(self,k3,k4,**extra_args):
+        return sum(k3/2./k4*(np.exp(k4*(self.I4-1)**2)-1))
+
+    def partial_deriv(self,k3,k4,**extra_args):
+        dPsidI4 = k3*(self.I4 - 1)*np.exp(k4*(self.I4 - 1)**2)
+        return None, None, None, dPsidI4
 
 class HY(InvariantHyperelastic):
     '''
