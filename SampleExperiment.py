@@ -68,6 +68,49 @@ class SampleExperiment:
 
         return theta, theta_low, theta_up
 
+class LinearSpring(SampleExperiment):
+    def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
+        super().__init__(mat_model,disp_measure,force_measure)
+        self.param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
+        self.param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
+        self.param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.,thick=0.)
+        self.update(**self.param_default)
+        if self.inp == 'stretch':
+            self.x0 = 1.
+            self.compute1 = lambda x: self.k0*(x-1)*self.L0-self.f0
+        elif self.inp == 'deltal':
+            self.x0 = 0.
+            self.compute1 = lambda x: self.k0*x-self.f0
+        elif self.inp == 'length' or self.inp == 'radius':
+            self.x0 = self.L0
+            self.compute1 = lambda x: self.k0*(x-self.L0)-self.f0
+        self.ndim = 1
+        self.F = lambda x: x
+
+    def update(self,L0,f0,k0,A0,**extra_args):
+        self.L0 = L0
+        self.f0 = f0
+        self.k0 = k0
+        self.A0 = A0
+    
+    def compute(self,x,params):
+        self.update(**params)
+        return self.compute1(x)
+
+    def observe(self,force):
+        if self.output=='pressure' or self.output=='stress':
+            return force/self.A0
+        return force
+
+    def outer_radius(self,x,params):
+        self.update(**params)
+        if self.inp == 'stretch':
+            return x*self.L0
+        elif self.inp == 'deltal':
+            return x+self.L0
+        elif self.inp == 'length' or self.inp == 'radius':
+            return x
+
 class UniaxialExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
         super().__init__(mat_model,disp_measure,force_measure)
@@ -91,7 +134,7 @@ class UniaxialExtension(SampleExperiment):
             self.x0 = 1.
         elif self.inp == 'strain':
             self.x0 = 0.
-        elif self.inp == 'deltall':
+        elif self.inp == 'deltal':
             self.x0 = 0.
         elif self.inp == 'length':
             self.x0 = self.L0
@@ -509,7 +552,7 @@ class LayeredUniaxial(LayeredSamples):
 class LayeredTube(LayeredSamples):
     def __init__(self,*samplesList):
         super().__init__(*samplesList)
-        if not all([isinstance(s,UniformAxisymmetricTubeInflationExtension) for s in self._samples]):
+        if not all([isinstance(s,UniformAxisymmetricTubeInflationExtension) or isinstance(s,LinearSpring) for s in self._samples]):
             raise ValueError("The class only accepts objects of type SampleExperiment")
         for i,s in enumerate(samplesList):
             if i==0:
@@ -539,11 +582,15 @@ class LayeredTube(LayeredSamples):
 
         XI, Stress = [],[]
         i_input = input_
+        first_layer=True
         for i,s in enumerate(self._samples):
+            if isinstance(s,LinearSpring):
+                continue
             xi,stress = s.cauchy_stress(i_input,params[i],n,pressure=pressure)
             pressure -= s.disp_controlled(i_input,params[i])[0]
-            if i>0:
+            if not first_layer:
                 xi = [max(XI)+x*s.thick/total_thick for x in xi]
+                first_layer=False
             else:
                 xi = [x*s.thick/total_thick for x in xi]
             i_input = s.outer_radius(i_input,params[i])
