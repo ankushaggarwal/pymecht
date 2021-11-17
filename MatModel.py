@@ -274,10 +274,10 @@ class YEOH(InvariantHyperelastic):
         self.param_low_bd   = dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
         self.param_up_bd    = dict(c1=100.,c2=100.,c3=100.,c4=100.)
 
-    def _energy(self,c1,c2,c3,**extra_args):
+    def _energy(self,c1,c2,c3,c4,**extra_args):
         return c1*(self.I1-3)+c2*(self.I1-3)**2+c3*(self.I1-3)**3+c4*(self.I1-3)**4
 
-    def partial_deriv(self,c1,c2,c3,**extra_args):
+    def partial_deriv(self,c1,c2,c3,c4,**extra_args):
         return c1+2*c2*(self.I1-3)+3*c3*(self.I1-3)**2+4*c4*(self.I1-3)**3, None, None, None
 
 class LS(InvariantHyperelastic):
