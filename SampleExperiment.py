@@ -35,6 +35,21 @@ class SampleExperiment:
             x0=self.x0 + 1e-5
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params))
+            if not sol.success or any(np.abs(sol.r)>1e5):
+                if ndata==1:
+                    raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
+                NIter=[5,10,20]
+                for niter in NIter:
+                    df = (forces_temp[i]-forces_temp[i-1])/niter
+                    x0j = x0.copy()
+                    for j in range(niter):
+                        sol = opt.root(compare,x0j,args=(forces_temp[i-1]+(j+1)*df,params))
+                        #print('subiter',j,'/',niter,forces_temp[i-1]+(j+1)*df,params,x0,sol)
+                        if not sol.success or any(np.abs(sol.r)>1e5):
+                            break
+                        x0j = sol.x.copy()
+                    if sol.success:
+                        break
             if not sol.success:
                 raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
             x0 = sol.x.copy()
