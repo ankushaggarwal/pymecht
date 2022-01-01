@@ -530,6 +530,24 @@ class volPenalty(InvariantHyperelastic):
     def partial_deriv(self,kappa,**extra_args):
         return None, None, kappa*(self.J-1), None
 
+class polyI4(InvariantHyperelastic):
+    '''
+    Polynomial in I4 model
+    Psi = d1*(I4-1)+d2*(I4-1)**2+d3*(I4-1)**3
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(d1=1.,d2=1.,d3=1.)
+        self.param_low_bd   = dict(d1=0.0001,d2=0.,d3=0.)
+        self.param_up_bd    = dict(d1=100.,d2=100.,d3=100.)
+
+    def _energy(self,d1,d2,d3,**extra_args):
+        return sum(d1*(self.I4-1)+d2*(self.I4-1)**2+d3*(self.I4-1)**3)
+
+    def partial_deriv(self,d1,d2,d3,**extra_args):
+        return None, None, None, d1+2*d2*(self.I4-1)+3*d3*(self.I4-1)**2
+
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
