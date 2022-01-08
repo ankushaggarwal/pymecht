@@ -188,7 +188,29 @@ class InvariantHyperelastic:
 
     def update(self,F):
         self.invariants(F)
-        return 
+        return
+
+    def test(self,theta): #to test the partial derivatives by comparing with finite difference
+        self.I1 = 3.1
+        self.I4 = np.array([1.2])
+        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(**theta)
+        delta = 1e-5
+        if dPsidI1 is not None:
+            self.I1 += delta
+            eplus = self._energy(**theta)
+            self.I1 -= 2*delta
+            eminus = self._energy(**theta)
+            dPsidI1FD = (eplus-eminus)/2/delta
+            print(dPsidI1,dPsidI1FD,abs(dPsidI1-dPsidI1FD))
+            self.I1 += delta
+        if dPsidI4 is not None:
+            self.I4 += delta
+            eplus = self._energy(**theta)
+            self.I4 -= 2*delta
+            eminus = self._energy(**theta)
+            dPsidI4FD = (eplus-eminus)/2/delta
+            print(dPsidI4,dPsidI4FD,abs(dPsidI4-dPsidI4FD))
+            self.I4 += delta
 
     def energy_stress(self,F,theta): #returns both energy and second PK stress
         self.update(F)
@@ -352,7 +374,7 @@ class MN(InvariantHyperelastic):
         return esum
 
     def partial_deriv(self,k1,k2,k3,**extra_args):
-        dPsidI1 = sum(k1*k2/(k2+k3)*(2.*self.I1 - 6.)*np.exp(k2*(self.I1 - 3.)**2 + (np.sqrt(self.I4) - 1.)**4))
+        dPsidI1 = sum(k1*k2/(k2+k3)*(2.*self.I1 - 6.)*np.exp(k2*(self.I1 - 3.)**2 + k3*(np.sqrt(self.I4) - 1.)**4))
         dPsidI4 = 2*k1*k3/(k2+k3)*(np.sqrt(self.I4) - 1.)**3*np.exp(k2*(self.I1 - 3)**2 + k3*(np.sqrt(self.I4) - 1.)**4)/np.sqrt(self.I4)
         return dPsidI1, None, None, dPsidI4
 
@@ -551,4 +573,10 @@ class polyI4(InvariantHyperelastic):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+    for mname in ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','polyI4']:
+        mat = MatModel(mname)
+        mm = mat.models
+        print(mname)
+        mm[0].fiber_dirs = [np.array([1,0,0])]
+        mm[0].test(mat.parameters)
 
