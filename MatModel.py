@@ -270,7 +270,7 @@ class YEOH(InvariantHyperelastic):
     '''
     def __init__(self):
         super().__init__()
-        self.param_default  = dict(c1=1.,c2=1.,c3=1.,c4=1.)
+        self.param_default  = dict(c1=1.,c2=1.,c3=1.,c4=0.)
         self.param_low_bd   = dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
         self.param_up_bd    = dict(c1=100.,c2=100.,c3=100.,c4=100.)
 
@@ -430,7 +430,7 @@ class Holzapfel(InvariantHyperelastic):
         Q = ((self.I1-3)**2*k3 + I41**2*(1-k3))
         expt = np.exp(k2*Q)
         dPsidI1 = sum(k1*k3*(self.I1-3)*expt)
-        dPsidI4 = k1*(1-3*k3)*I41*expt
+        dPsidI4 = k1*(1-k3)*I41*expt
         return dPsidI1, None, None, dPsidI4
 
 class expI1(InvariantHyperelastic):
