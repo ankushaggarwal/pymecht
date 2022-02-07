@@ -2,6 +2,7 @@ import numpy as np
 from math import cos,sin,exp,sqrt,pi,tan,log
 import scipy.optimize as opt
 import scipy
+import warnings
 
 class MatModel:
     '''
