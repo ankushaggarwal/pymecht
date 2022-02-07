@@ -581,7 +581,6 @@ class splineI1I4(InvariantHyperelastic):
         self.param_low_bd   = dict()
         self.param_up_bd    = dict()
         import scipy
-        return
 
     def set(self,W):
         if not isinstance(mean_sp,scipy.interpolate.fitpack2.RectBivariateSpline):
