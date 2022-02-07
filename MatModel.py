@@ -576,6 +576,10 @@ class splineI1I4(InvariantHyperelastic):
     Psi is loaded from a spline
     '''
     def __init__(self):
+        super().__init__()
+        self.param_default  = dict()
+        self.param_low_bd   = dict()
+        self.param_up_bd    = dict()
         import scipy
         return
 
