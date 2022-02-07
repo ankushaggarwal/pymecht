@@ -597,7 +597,7 @@ class splineI1I4(InvariantHyperelastic):
     def partial_deriv(self,**extra_args):
         if self.I1<self.minx or self.I1>self.maxx or np.any(self.I4<self.miny) or np.any(self.I4>self.maxy):
             warnings.warn("Outside the training range; be careful interpreting the results")
-        return self._W(self.I1,self.I4,dx=1),None,None,np.array([self._W(self.I1,i4,dy=1) for i4 in self.I4])
+        return np.array([self._W(self.I1,i4,dx=1) for i4 in self.I4]),None,None,np.array([self._W(self.I1,i4,dy=1) for i4 in self.I4])
 
 if __name__ == "__main__":
     import doctest
