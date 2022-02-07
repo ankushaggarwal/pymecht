@@ -583,7 +583,7 @@ class splineI1I4(InvariantHyperelastic):
         import scipy
 
     def set(self,W):
-        if not isinstance(mean_sp,scipy.interpolate.fitpack2.RectBivariateSpline):
+        if not isinstance(W,scipy.interpolate.fitpack2.RectBivariateSpline):
             raise ValueError("W must be a RectBivariateSpline")
         x,y = W.get_knots()
         self.minx,self.maxx,self.miny,self.maxy = np.min(x), np.max(x), np.min(y), np.max(y)
