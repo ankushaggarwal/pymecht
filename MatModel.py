@@ -592,12 +592,12 @@ class splineI1I4(InvariantHyperelastic):
 
     def _energy(self,**extra_args):
         if self.I1<self.minx or self.I1>self.maxx or np.any(self.I4<self.miny) or np.any(self.I4>self.maxy):
-            warnings.warn("Outside the training range; be careful interpreting the results")
+            warnings.warn("Outside the training range; be careful interpreting the results",self.I1,self.I4,self.minx,self.maxx,self.miny,self.maxy)
         return sum([self._W(self.I1,i4)[0,0] for i4 in self.I4])
 
     def partial_deriv(self,**extra_args):
         if self.I1<self.minx or self.I1>self.maxx or np.any(self.I4<self.miny) or np.any(self.I4>self.maxy):
-            warnings.warn("Outside the training range; be careful interpreting the results")
+            warnings.warn("Outside the training range; be careful interpreting the results",self.I1,self.I4,self.minx,self.maxx,self.miny,self.maxy)
         return sum([self._W(self.I1,i4,dx=1)[0,0] for i4 in self.I4]),None,None,np.array([self._W(self.I1,i4,dy=1)[0,0] for i4 in self.I4])
 
 if __name__ == "__main__":
