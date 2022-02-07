@@ -570,6 +570,32 @@ class polyI4(InvariantHyperelastic):
         return None, None, None, d1+2*d2*(self.I4-1)+3*d3*(self.I4-1)**2
 
 
+class splineI1I4(InvariantHyperelastic):
+    '''
+    Spline-based model in I1 and I4
+    Psi is loaded from a spline
+    '''
+    def __init__(self):
+        import scipy
+        return
+
+    def set(self,W):
+        if not isinstance(mean_sp,scipy.interpolate.fitpack2.RectBivariateSpline):
+            raise ValueError("W must be a RectBivariateSpline")
+        x,y = W.get_knots()
+        self.minx,self.maxx,self.miny,self.maxy = np.min(x), np.max(x), np.min(y), np.max(y)
+        self._W = W
+
+    def _energy(self,**extra_args):
+        if self.I1<self.minx or self.I1>self.maxx or self.I4<self.miny or self.I4>self.maxy:
+            warnings.warn("Outside the training range; be careful interpreting the results")
+        return self._W(self.I1,self.I4)
+
+    def partial_deriv(self,**extra_args):
+        if self.I1<self.minx or self.I1>self.maxx or self.I4<self.miny or self.I4>self.maxy:
+            warnings.warn("Outside the training range; be careful interpreting the results")
+        return self._W(self.I1,self.I4,dx=1),None,None,self._W(self.I1,self.I4,dy=1)
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
