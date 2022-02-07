@@ -1,6 +1,7 @@
 import numpy as np
 from math import cos,sin,exp,sqrt,pi,tan,log
 import scipy.optimize as opt
+import scipy
 
 class MatModel:
     '''
@@ -580,7 +581,6 @@ class splineI1I4(InvariantHyperelastic):
         self.param_default  = dict()
         self.param_low_bd   = dict()
         self.param_up_bd    = dict()
-        import scipy
 
     def set(self,W):
         if not isinstance(W,scipy.interpolate.fitpack2.RectBivariateSpline):
