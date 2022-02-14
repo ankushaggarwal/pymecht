@@ -583,25 +583,26 @@ class splineI1I4(InvariantHyperelastic):
         self.param_low_bd   = dict()
         self.param_up_bd    = dict()
 
-    def set(self,W):
+    def set(self,W,alpha=1):
         if not isinstance(W,scipy.interpolate.fitpack2.RectBivariateSpline):
             raise ValueError("W must be a RectBivariateSpline")
         x,y = W.get_knots()
         self.minx,self.maxx,self.miny,self.maxy = np.min(x), np.max(x), np.min(y), np.max(y)
         self._W = W
+        self._alpha = alpha
 
     def _energy(self,**extra_args):
         if self.I1<self.minx or self.I1>self.maxx or np.any(self.I4<self.miny) or np.any(self.I4>self.maxy):
             w = "Outside the training range; be careful interpreting the results "+str(self.I1)+" "+str(self.I4)+"\n"+str(self.minx)+" "+str(self.maxx)+" "+str(self.miny)+" "+str(self.maxy)
             warnings.warn(w)
-        return np.sum(self._W(self.I1,self.I4))
+        return self._alpha*np.sum(self._W(self.I1,self.I4))
 
     def partial_deriv(self,**extra_args):
         if self.I1<self.minx or self.I1>self.maxx or np.any(self.I4<self.miny) or np.any(self.I4>self.maxy):
             w = "Outside the training range; be careful interpreting the results "+str(self.I1)+" "+str(self.I4)+"\n"+str(self.minx)+" "+str(self.maxx)+" "+str(self.miny)+" "+str(self.maxy)
             warnings.warn(w)
         a,b = self._W(self.I1,self.I4,dx=1), self._W(self.I1,self.I4,dy=1)
-        return np.sum(a),None,None,b.flatten()
+        return self._alpha*np.sum(a),None,None,self._alpha*b.flatten()
 
 if __name__ == "__main__":
     import doctest
