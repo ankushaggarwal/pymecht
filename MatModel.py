@@ -59,7 +59,10 @@ class MatModel:
 
     @parameters.setter
     def parameters(self,theta):
-        raise ValueError("The dictionary of parameters should not be changed in this way")
+        if self.theta.keys() != theta.keys():
+            raise ValueError("Keys of the input parameters do not match the model parameter keys")
+        else:
+            self.theta.update(theta)
 
     def parameters_wbounds(self):
         theta_low = dict([])
@@ -76,14 +79,18 @@ class MatModel:
     def models(self,modelsList):
         raise ValueError("The component models should not be changed in this way")
 
-    def energy(self,F=np.identity(3),theta={}):
+    def energy(self,F=np.identity(3),theta=None):
+        if theta is None:
+            theta=self.theta
         en = 0.
         for m in self._models:
             en += m.energy(F,theta)
 
         return en
 
-    def stress(self,F=np.identity(3),theta={},stresstype='cauchy',incomp=False,Fdiag=False):
+    def stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
+        if theta is None:
+            theta=self.theta
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
         for i in range(len(self.__stressnames)):
@@ -117,7 +124,9 @@ class MatModel:
         if stype==2: #return 2nd PK stress
             return S
 
-    def energy_stress(self,F=np.identity(3),theta={},stresstype='cauchy',incomp=False,Fdiag=False):
+    def energy_stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
+        if theta is None:
+            theta=self.theta
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
         for i in range(len(self.__stressnames)):
