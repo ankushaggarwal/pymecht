@@ -3,6 +3,7 @@ from math import cos,sin,exp,sqrt,pi,tan,log
 import scipy.optimize as opt
 import scipy
 import warnings
+from collections import ChainMap
 
 class MatModel:
     '''
@@ -43,11 +44,16 @@ class MatModel:
                         except KeyError:
                             print ('Unknown model: ', m)
             self._models = tuple(self._models)
-        self.theta = dict([])
+        self.theta = ChainMap()
         for m in self._models:
-            if len(self.theta.keys() & m.param_default.keys())>0:
-                raise ValueError("Common parameter names in the models used. Must modify the code to avoid conflicts")
-            self.theta.update(m.param_default)
+            if self.theta.maps == [{}]:
+                self.theta = ChainMap(m.param_default)
+            else:
+                self.theta.maps.append(m.param_default)
+            #if len(self.theta.keys() & m.param_default.keys())>0:
+            #    #raise ValueError("Common parameter names in the models used. Must modify the code to avoid conflicts")
+            #
+            #self.theta.update(m.param_default)
 
     @property
     def parameters(self):
@@ -65,11 +71,16 @@ class MatModel:
             self.theta.update(theta)
 
     def parameters_wbounds(self):
-        theta_low = dict([])
-        theta_up = dict([])
+        theta_low = ChainMap()
+        theta_up = ChainMap()
         for m in self._models:
-            theta_low.update(m.param_low_bd)
-            theta_up.update(m.param_up_bd)
+            if theta_low.maps == [{}]:
+                theta_low= ChainMap(m.param_low_bd.copy())
+                theta_up = ChainMap(m.param_up_bd.copy())
+            else:
+                theta_low.maps.append(m.param_low_bd.copy())
+                theta_up.maps.append(m.param_up_bd.copy())
+
         if set(theta_low.keys()) != set(self.theta.keys()) or set(theta_up.keys()) != set(self.theta.keys()):
             raise ValueError("The dictionaries of parameter default, upper, and lower values have different set of keys",theta_low,theta_up,self.theta)
 
@@ -85,7 +96,7 @@ class MatModel:
         en = 0.
         for m in self._models:
             en += m.energy(F,theta)
-
+            theta = theta.parents
         return en
 
     def stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
@@ -104,6 +115,7 @@ class MatModel:
         detF = 1.
         for m in self._models:
             S += m.secondPK(F,theta)
+            theta = theta.parents
             detF = m.J
 
         #If incompressible, then impose 2,2 component of stress=0 to find the Lagrange multiplier
@@ -141,6 +153,7 @@ class MatModel:
         detF = 1.
         for m in self._models:
             e,s = m.energy_stress(F,theta)
+            theta = theta.parents
             en += e
             S += s
             detF = m.J
@@ -418,6 +431,7 @@ class GOH(InvariantHyperelastic):
         return esum
 
     def partial_deriv(self,k1,k2,k3,**extra_args):
+        print(k1,k2,k3)
         Q = (self.I1*k3 + self.I4*(-3*k3 + 1) - 1)
         #Q = max(Q,np.zeros_like(Q))
         Q[Q<0]=0.

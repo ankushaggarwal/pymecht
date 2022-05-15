@@ -16,12 +16,16 @@ class SampleExperiment:
         self.output = force_measure.replace(" ","").lower()
         params = {}
 
-    def disp_controlled(self,input_,params):
+    def disp_controlled(self,input_,params=None):
+        if params is None:
+            params = self.parameters
         self.update(**params)
         output = [self.observe(self.compute(F,params)) for F in self.F(input_)]
         return np.array(output).reshape(np.shape(input_))
 
-    def force_controlled(self,forces,params,x0=None):
+    def force_controlled(self,forces,params=None,x0=None):
+        if params is None:
+            params = self.parameters
         self.update(**params)
         
         def compare(displ,ybar,params):
@@ -62,8 +66,8 @@ class SampleExperiment:
         mat_theta = self.mat_model.parameters
         if len(theta.keys() & mat_theta.keys())>0:
                 raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
-        theta.update(mat_theta)
-        return theta
+        mat_theta.update(theta)
+        return mat_theta
 
     @parameters.setter
     def parameters(self,theta):
@@ -77,11 +81,11 @@ class SampleExperiment:
         if len(theta.keys() & mat_theta.keys())>0:
                 raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
 
-        theta.update(mat_theta)
-        theta_low.update(mat_theta_low)
-        theta_up.update(mat_theta_up)
+        mat_theta.update(theta)
+        mat_theta_low.update(theta_low)
+        mat_theta_up.update(theta_up)
 
-        return theta, theta_low, theta_up
+        return mat_theta, mat_theta_low, mat_theta_up
 
 class LinearSpring(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
@@ -293,7 +297,9 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     def F(self,r,R):
         return np.diag([R/r/self.k/self.lambdaZ,self.k*r/R,self.lambdaZ])
 
-    def disp_controlled(self,input_,params):
+    def disp_controlled(self,input_,params=None):
+        if params is None:
+            params = self.parameters
         self.update(**params)
 
         def integrand(xi,ri,params):
@@ -530,7 +536,9 @@ class LayeredSamples:
     def parameters(self):
         return [s.parameters for s in self._samples]
 
-    def disp_controlled(self,input_,params):
+    def disp_controlled(self,input_,params=None):
+        if params is None:
+            params = self.parameters
         if len(params) != self.nsamples:
             raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
         total_force = 0.
@@ -574,7 +582,9 @@ class LayeredTube(LayeredSamples):
                 continue
             s.inp = 'radius' #except the first layer make other layers' input in terms of radius
 
-    def disp_controlled(self,input_,params):
+    def disp_controlled(self,input_,params=None):
+        if params is None:
+            params = self.parameters
         if len(params) != self.nsamples:
             raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
         total_force = 0.
@@ -585,7 +595,9 @@ class LayeredTube(LayeredSamples):
 
         return total_force
 
-    def cauchy_stress(self,input_,params,n=10):
+    def cauchy_stress(self,input_,params=None,n=10):
+        if params is None:
+            params = self.parameters
         #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculation
         temp = self._samples[0].output
         for s in self._samples:
