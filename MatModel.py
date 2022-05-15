@@ -178,6 +178,7 @@ class InvariantHyperelastic:
         self.I2 = 3.
         self.J = 1.
         self.I4 = None
+        self.I4term = False
         self.M = None
 
     def energy(self,F,theta): #the energy density
@@ -197,6 +198,8 @@ class InvariantHyperelastic:
         self.J = np.linalg.det(F)
         if self.M is not None:
             self.I4 = np.array([np.dot(m,np.dot(C,m)) for m in self.M])
+        elif self.I4term:
+            raise ValueError(self.__class__.__name__+" model class uses I4 but no fiber directions have been defined. Did you forget to set the fiber directions?")
         return
 
     def update(self,F):
@@ -340,18 +343,17 @@ class LS(InvariantHyperelastic):
             else:
                 self.M = [M]
         self.normalize()
+        self.I4term = True
 
     def _energy(self,k1,k2,k3,k4,**extra_args):
         esum = k1/2/(k4*k2+(1-k4)*k3)*(k4*exp(k2*(self.I1-3)**2)-1)
-        if self.I4 is not None:
-            for i4 in self.I4:
-                esum += k1/2/(k4*k2+(1-k4)*k3)*((1-k4)*exp(k3*(i4-1)**2))
+        for i4 in self.I4:
+            esum += k1/2/(k4*k2+(1-k4)*k3)*((1-k4)*exp(k3*(i4-1)**2))
         return esum
 
     def partial_deriv(self,k1,k2,k3,k4,**extra_args):
         dPsidI1 = k1/(k4*k2+(1-k4)*k3)*k2*k4*(2*self.I1 - 6)*np.exp(k2*(self.I1 - 3)**2)/2.
-        if self.I4 is not None:
-            dPsidI4 = k1/(k4*k2+(1-k4)*k3)*k3*(2*self.I4 - 2)*(-k4 + 1)*np.exp(k3*(self.I4 - 1)**2)/2.
+        dPsidI4 = k1/(k4*k2+(1-k4)*k3)*k3*(2*self.I4 - 2)*(-k4 + 1)*np.exp(k3*(self.I4 - 1)**2)/2.
         return dPsidI1, None, None, dPsidI4
 
 class MN(InvariantHyperelastic):
@@ -379,6 +381,7 @@ class MN(InvariantHyperelastic):
             else:
                 self.M = [M]
         self.normalize()
+        self.I4term = True
 
     def _energy(self,k1,k2,k3,**extra_args):
         esum = 0.
@@ -412,6 +415,7 @@ class GOH(InvariantHyperelastic):
             else:
                 self.M = [M]
         self.normalize()
+        self.I4term = True
     
     def _energy(self,k1,k2,k3,**extra_args):
         esum = 0.
@@ -450,6 +454,7 @@ class Holzapfel(InvariantHyperelastic):
             else:
                 self.M = [M]
         self.normalize()
+        self.I4term = True
     
     def _energy(self,k1,k2,k3,**extra_args):
         esum = 0.
@@ -511,6 +516,7 @@ class HGO(InvariantHyperelastic):
             else:
                 self.M = [M]
         self.normalize()
+        self.I4term = True
 
     def _energy(self,k3,k4,**extra_args):
         return sum(k3/2./k4*(np.exp(k4*(self.I4-1)**2)-1))
@@ -540,6 +546,7 @@ class HY(InvariantHyperelastic):
             else:
                 self.M = [M]
         self.normalize()
+        self.I4term = True
 
     def _energy(self,k3,k4,**extra_args):
         return sum(k3/k4*(np.exp(k4*(np.sqrt(self.I4)-1)**2)-1))
@@ -575,6 +582,8 @@ class polyI4(InvariantHyperelastic):
         self.param_default  = dict(d1=1.,d2=1.,d3=1.)
         self.param_low_bd   = dict(d1=0.0001,d2=0.,d3=0.)
         self.param_up_bd    = dict(d1=100.,d2=100.,d3=100.)
+        self.normalize()
+        self.I4term = True
 
     def _energy(self,d1,d2,d3,**extra_args):
         return sum(d1*(self.I4-1)+d2*(self.I4-1)**2+d3*(self.I4-1)**3)
@@ -594,6 +603,8 @@ class splineI1I4(InvariantHyperelastic):
         self.param_low_bd   = dict()
         self.param_up_bd    = dict()
         self._warn = False
+        self.normalize()
+        self.I4term = True
 
     def set(self,W,alpha=1):
         if not isinstance(W,scipy.interpolate.fitpack2.RectBivariateSpline):
