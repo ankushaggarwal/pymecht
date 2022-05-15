@@ -43,11 +43,11 @@ class MatModel:
                         except KeyError:
                             print ('Unknown model: ', m)
             self._models = tuple(self._models)
-        self.theta = dict([])
-        for m in self._models:
-            if len(self.theta.keys() & m.param_default.keys())>0:
-                raise ValueError("Common parameter names in the models used. Must modify the code to avoid conflicts")
-            self.theta.update(m.param_default)
+        self.param_names,self.theta = [],{}
+        for i,m in enumerate(self._models):
+            t1 = m.param_default
+            self.param_names.append({k+'_'+str(i):k for k in t1})
+            self.theta.update({k+'_'+str(i):t1[k] for k in t1})
 
     @property
     def parameters(self):
@@ -65,14 +65,14 @@ class MatModel:
             self.theta.update(theta)
 
     def parameters_wbounds(self):
-        theta_low = dict([])
-        theta_up = dict([])
-        for m in self._models:
-            theta_low.update(m.param_low_bd)
-            theta_up.update(m.param_up_bd)
+        theta_low,theta_up = {},{}
+        for i,m in enumerate(self._models):
+            t1 = m.param_low_bd
+            theta_low.update({k+'_'+str(i):t1[k] for k in t1})
+            t2 = m.param_up_bd
+            theta_up.update({k+'_'+str(i):t2[k] for k in t2})
         if set(theta_low.keys()) != set(self.theta.keys()) or set(theta_up.keys()) != set(self.theta.keys()):
             raise ValueError("The dictionaries of parameter default, upper, and lower values have different set of keys",theta_low,theta_up,self.theta)
-
         return self.theta.copy(), theta_low, theta_up
 
     @models.setter
@@ -83,9 +83,9 @@ class MatModel:
         if theta is None:
             theta=self.theta
         en = 0.
-        for m in self._models:
-            en += m.energy(F,theta)
-
+        for i,m in enumerate(self._models):
+            thetai = {self.param_names[i][k]:theta[k] for k in self.param_names[i]}
+            en += m.energy(F,thetai)
         return en
 
     def stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
@@ -102,8 +102,9 @@ class MatModel:
         #Calculate the second PK stress
         S = np.zeros([3,3])
         detF = 1.
-        for m in self._models:
-            S += m.secondPK(F,theta)
+        for i,m in enumerate(self._models):
+            thetai = {self.param_names[i][k]:theta[k] for k in self.param_names[i]}
+            S += m.secondPK(F,thetai)
             detF = m.J
 
         #If incompressible, then impose 2,2 component of stress=0 to find the Lagrange multiplier
@@ -139,8 +140,9 @@ class MatModel:
         #Calculate the second PK stress
         S = np.zeros([3,3])
         detF = 1.
-        for m in self._models:
-            e,s = m.energy_stress(F,theta)
+        for i,m in enumerate(self._models):
+            thetai = {self.param_names[i][k]:theta[k] for k in self.param_names[i]}
+            e,s = m.energy_stress(F,thetai)
             en += e
             S += s
             detF = m.J
