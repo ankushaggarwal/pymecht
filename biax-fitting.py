@@ -33,33 +33,33 @@ sample = PlanarBiaxialExtension(material,disp_measure='stretch',force_measure='1
 sample_value_bounds = sample.parameters_wbounds()
 
 if mat=='yeoh':
-    sample_value_bounds[2]['c1']=40.
-    sample_value_bounds[2]['c2']=40.
-    sample_value_bounds[2]['c3']=40.
+    sample_value_bounds[2]['c1_0']=40.
+    sample_value_bounds[2]['c2_0']=40.
+    sample_value_bounds[2]['c3_0']=40.
 elif mat=='goh':
-    sample_value_bounds[2]['k1']=100.
-    sample_value_bounds[2]['k2']=40.
-    sample_value_bounds[2]['mu']=30.
+    sample_value_bounds[2]['k1_0']=100.
+    sample_value_bounds[2]['k2_0']=40.
+    sample_value_bounds[2]['mu_1']=30.
 elif mat == 'ls':
-    sample_value_bounds[2]['k2']=40.
-    sample_value_bounds[2]['k3']=40.
-    sample_value_bounds[2]['mu']=30.
+    sample_value_bounds[2]['k2_0']=40.
+    sample_value_bounds[2]['k3_0']=40.
+    sample_value_bounds[2]['mu_1']=30.
 elif mat == 'mn':
-    sample_value_bounds[2]['k2']=40.
-    sample_value_bounds[2]['k3']=40.
-    sample_value_bounds[2]['mu']=30.
+    sample_value_bounds[2]['k2_0']=40.
+    sample_value_bounds[2]['k3_0']=40.
+    sample_value_bounds[2]['mu_1']=30.
 elif mat == 'hy':
-    sample_value_bounds[2]['k2']=40.
-    sample_value_bounds[2]['k4']=40.
+    sample_value_bounds[2]['k2_1']=40.
+    sample_value_bounds[2]['k4_0']=40.
 elif mat == 'holzapfel':
-    sample_value_bounds[2]['k2']=40.
-    sample_value_bounds[2]['mu']=30.
+    sample_value_bounds[2]['k2_0']=40.
+    sample_value_bounds[2]['mu_1']=30.
 elif mat == 'hgo':
-    sample_value_bounds[2]['k3']=40.
-    sample_value_bounds[2]['mu']=30.
+    sample_value_bounds[2]['k3_0']=40.
+    sample_value_bounds[2]['mu_1']=30.
 elif mat == 'hgo2':
-    sample_value_bounds[2]['k2']=40.
-    sample_value_bounds[2]['k4']=40.
+    sample_value_bounds[2]['k2_1']=40.
+    sample_value_bounds[2]['k4_0']=40.
 
 c_all,c_low,c_high = sample_value_bounds
 

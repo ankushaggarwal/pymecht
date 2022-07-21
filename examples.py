@@ -58,10 +58,10 @@ def biaxex():
             stresses += [s11max*times[i],s22max*times[i]]
         return np.array(stresses)
 
-    params['k1']=5.
-    params['k2']=15.
-    params['k3']=0.1
-    params['mu']=1
+    params['k1_0']=5.
+    params['k2_0']=15.
+    params['k3_0']=0.1
+    params['mu_1']=1
     print("Force controlled test")
     forces = DOEobs(100,pi/4.).reshape(-1,2)
     print(forces,sample.force_controlled(forces,params))
@@ -78,17 +78,17 @@ def validate_tube():
     l=1.1
     result = lambda l: log(l)-1./2/l**2
     parameters = sample.parameters
-    parameters['k1']=5.
-    parameters['k2']=15.
-    parameters['k3']=0.
-    parameters['mu']=2.
+    parameters['k1_0']=5.
+    parameters['k2_0']=15.
+    parameters['k3_0']=0.
+    parameters['mu_1']=2.
     #compare with the analytical solution
     Hbar=parameters['thick']/parameters['Ri']
     l2 = sqrt(1+(l**2-1)/(1+Hbar)**2)
-    l1 = lambda l: sqrt(parameters['k2'])*(l**2-1)*cos(0.1)**2
-    l12 = lambda l: sqrt(parameters['k2'])*(l**2-1)*cos(0.1)**2/(1+Hbar)**2
-    print((erfi(l12(l))-erfi(l1(l)))*4*parameters['k1']*sqrt(pi)*cos(0.1)**2/4./sqrt(parameters['k2']) + (result(l2)-result(l))*parameters['mu']) #instead of a factor of 2 for 2 fibers, I had to use double (=4). Not sure why.
-    print((result(l2)-result(l))*parameters['mu'])
+    l1 = lambda l: sqrt(parameters['k2_0'])*(l**2-1)*cos(0.1)**2
+    l12 = lambda l: sqrt(parameters['k2_0'])*(l**2-1)*cos(0.1)**2/(1+Hbar)**2
+    print((erfi(l12(l))-erfi(l1(l)))*4*parameters['k1_0']*sqrt(pi)*cos(0.1)**2/4./sqrt(parameters['k2_0']) + (result(l2)-result(l))*parameters['mu_1']) #instead of a factor of 2 for 2 fibers, I had to use double (=4). Not sure why.
+    print((result(l2)-result(l))*parameters['mu_1'])
 
     #material = MatModel('nh')
     sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
@@ -105,10 +105,10 @@ def artery0Dmodel():
 
     sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
     params = sample.parameters
-    params['k1']=5.
-    params['k2']=15.
-    params['k3']=0.1
-    params['mu']=1.
+    params['k1_0']=5.
+    params['k2_0']=15.
+    params['k3_0']=0.1
+    params['mu_1']=1.
     print(sample.disp_controlled([1.1],params))
     print(sample.force_controlled(np.array([0.27494258]),params))
 
@@ -142,7 +142,7 @@ def randomex():
     mm = model.models
     t,t1,t2 = model.parameters_wbounds()
     Theta = RandomParameters(t,t1,t2)
-    Theta.make_normal('mu')
+    Theta.make_normal('mu_1')
     #Theta.fix('k2',10)
     #Theta.fix('k1',10)
     #Theta.parameters
