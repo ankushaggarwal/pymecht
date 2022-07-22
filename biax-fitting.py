@@ -9,7 +9,7 @@ inp = data['inp']
 out = data['out']
 protocols = data['protocols']
 
-mat = 'ls'
+mat = 'Ross'
 if mat=='yeoh':
     material = MatModel('yeoh')
 elif mat == 'goh':
@@ -26,6 +26,8 @@ elif mat == 'hgo':
     material = MatModel('hgo','nh')
 elif mat == 'hgo2':
     material = MatModel('hgo','expI1')
+elif mat == 'Ross':
+    material = MatModel('Ross')
 
 mm = material.models
 mm[0].fiber_dirs = [np.array([1,0,0])]

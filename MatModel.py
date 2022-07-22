@@ -635,9 +635,9 @@ class ROSS(InvariantHyperelastic):
     '''
     def __init__(self):
         super().__init__()
-        self.param_default  = dict(c1=1.,c2=1.,c3=1.,c4=0.)
-        self.param_low_bd   = dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
-        self.param_up_bd    = dict(c1=100.,c2=100.,c3=100.,c4=100.)
+        self.param_default  = exec('dict('+input("Please enter inital guess for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN")+')')
+        self.param_low_bd   = exec('dict('+input("Please enter lower bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN")+')')
+        self.param_up_bd    = exec('dict('+input("Please enter upper bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN")+')')
 
     def _energy(self,c1,c2,c3,c4,**extra_args):
         return c1*(self.I1-3)+c2*(self.I1-3)**2+c3*(self.I1-3)**3+c4*(self.I1-3)**4
@@ -648,7 +648,7 @@ class ROSS(InvariantHyperelastic):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-    for mname in ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','polyI4']:
+    for mname in ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','polyI4','Ross']:
         mat = MatModel(mname)
         mm = mat.models
         print(mname)
