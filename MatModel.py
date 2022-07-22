@@ -626,6 +626,24 @@ class splineI1I4(InvariantHyperelastic):
             warnings.warn(w)
         a,b = self._W(self.I1,self.I4,dx=1), self._W(self.I1,self.I4,dy=1)
         return self._alpha*np.sum(a),None,None,self._alpha*b.flatten()
+    
+class ROSS(InvariantHyperelastic):
+    '''
+    Model of arbitrary complexity for development purposes.
+    Will be developed based on symbolic differentiation.
+    Psi = <USER-INPUT FUNCTION AS STRING>
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(c1=1.,c2=1.,c3=1.,c4=0.)
+        self.param_low_bd   = dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
+        self.param_up_bd    = dict(c1=100.,c2=100.,c3=100.,c4=100.)
+
+    def _energy(self,c1,c2,c3,c4,**extra_args):
+        return c1*(self.I1-3)+c2*(self.I1-3)**2+c3*(self.I1-3)**3+c4*(self.I1-3)**4
+
+    def partial_deriv(self,c1,c2,c3,c4,**extra_args):
+        return c1+2*c2*(self.I1-3)+3*c3*(self.I1-3)**2+4*c4*(self.I1-3)**3, None, None, None
 
 if __name__ == "__main__":
     import doctest
