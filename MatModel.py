@@ -635,9 +635,9 @@ class ROSS(InvariantHyperelastic):
     '''
     def __init__(self):
         super().__init__()
-        self.param_default  = exec('dict('+input("Please enter inital guess for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN")+')')
-        self.param_low_bd   = exec('dict('+input("Please enter lower bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN")+')')
-        self.param_up_bd    = exec('dict('+input("Please enter upper bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN")+')')
+        self.param_default  = eval('dict('+input("Please enter inital guess for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')
+        self.param_low_bd   = eval('dict('+input("Please enter lower bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')
+        self.param_up_bd    = eval('dict('+input("Please enter upper bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')
 
     def _energy(self,c1,c2,c3,c4,**extra_args):
         return c1*(self.I1-3)+c2*(self.I1-3)**2+c3*(self.I1-3)**3+c4*(self.I1-3)**4
