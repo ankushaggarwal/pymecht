@@ -209,7 +209,7 @@ class InvariantHyperelastic:
     def test(self,theta): #to test the partial derivatives by comparing with finite difference
         self.I1 = 3.1
         self.I4 = np.array([1.2])
-        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(**theta)
+        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(*self.param_names,**theta)
         delta = 1e-5
         if dPsidI1 is not None:
             self.I1 += delta
@@ -232,7 +232,7 @@ class InvariantHyperelastic:
         self.update(F)
         e = self._energy(**theta)
         I=np.eye(3)
-        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(**theta) #TODO make sure that there is no problem here when parallel computing
+        dPsidI1, dPsidI2, dPsidJ, dPsidI4 = self.partial_deriv(*self.param_names,**theta) #TODO make sure that there is no problem here when parallel computing
         #J23 = self.J**(-2./3.)
         S = np.zeros([3,3])
         if dPsidI1 is not None:
@@ -635,9 +635,11 @@ class ROSS(InvariantHyperelastic):
     '''
     def __init__(self):
         super().__init__()
-        self.param_default  = eval('dict('+input("Please enter inital guess for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')
-        self.param_low_bd   = eval('dict('+input("Please enter lower bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')
-        self.param_up_bd    = eval('dict('+input("Please enter upper bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')
+        self.param_default  = eval('dict('+input("Please enter inital guess for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=1.,c2=1.,c3=1.,c4=0.)
+        self.param_low_bd   = eval('dict('+input("Please enter lower bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
+        self.param_up_bd    = eval('dict('+input("Please enter upper bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=100.,c2=100.,c3=100.,c4=100.)
+        self.energy_form = input("Please enter form of the SEDF: ")#"c1*(I1-3)+c2*(I1-3)**2+c3*(I1-3)**3+c4*(I1-3)**4"
+        self.param_names = [i for i in self.param_default]
 
     def _energy(self,c1,c2,c3,c4,**extra_args):
         SEDF = eval(input("Please enter form of the SEDF: "))
@@ -645,8 +647,29 @@ class ROSS(InvariantHyperelastic):
         SEDF.replace("I4","self.I4")
         return eval(SEDF)
 
-    def partial_deriv(self,c1,c2,c3,c4,**extra_args):
-        return c1+2*c2*(self.I1-3)+3*c3*(self.I1-3)**2+4*c4*(self.I1-3)**3, None, None, None
+    def partial_deriv(self,**extra_args):
+        import sympy as sp
+        for name in self.param_names:
+            exec(name + "=" + "%s" %(extra_args[name]))
+        
+        I1,I2,I3,I4 = sp.symbols('I1 I2 I3 I4')
+        
+        SEDF = eval(self.energy_form)
+        
+        dSEDFdI = sp.diff(SEDF,I1), sp.diff(SEDF,I2), sp.diff(SEDF,I3), sp.diff(SEDF,I4)
+        
+        dSEDFdI = [str(i) for i in dSEDFdI]
+        
+        dSEDFdI = [i.replace("I1","self.I1") for i in dSEDFdI]
+        dSEDFdI = [i.replace("I2","self.I2") for i in dSEDFdI]
+        dSEDFdI = [i.replace("I3","self.I3") for i in dSEDFdI]
+        dSEDFdI = [i.replace("I4","self.I4") for i in dSEDFdI]
+        
+        dSEDFdI = [float(eval(i, {"self": self})) for i in dSEDFdI]
+        
+        dSEDFdI = [None if i==0.0 else i for i in dSEDFdI]
+        
+        return dSEDFdI
 
 if __name__ == "__main__":
     import doctest
