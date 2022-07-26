@@ -654,7 +654,9 @@ class ROSS(InvariantHyperelastic):
         
         I1,I2,I3,I4 = sp.symbols('I1 I2 I3 I4')
         
-        SEDF = eval(self.energy_form)
+        SEDF = self.energy_form.replace("exp","sp.exp")
+        
+        SEDF = eval(SEDF)
         
         dSEDFdI = sp.diff(SEDF,I1), sp.diff(SEDF,I2), sp.diff(SEDF,I3), sp.diff(SEDF,I4)
         
@@ -664,10 +666,15 @@ class ROSS(InvariantHyperelastic):
         dSEDFdI = [i.replace("I2","self.I2") for i in dSEDFdI]
         dSEDFdI = [i.replace("I3","self.I3") for i in dSEDFdI]
         dSEDFdI = [i.replace("I4","self.I4") for i in dSEDFdI]
+        dSEDFdI = [i.replace("exp","np.exp") for i in dSEDFdI]
         
-        dSEDFdI = [float(eval(i, {"self": self})) for i in dSEDFdI]
+        dSEDFdI = [eval(i, {"self": self, "np": np}) for i in dSEDFdI]
         
-        dSEDFdI = [None if i==0.0 else i for i in dSEDFdI]
+        # dSEDFdI = [None if i==0.0 else i for i in dSEDFdI]
+        # dSEDFdI = [None if "I"+"%s"%(i) in self.energy_form for i in range(len(dSEDFdI))]
+        for i in range(len(dSEDFdI)):
+            if "I%s"%(i+1) not in self.energy_form:
+                dSEDFdI[i] = None
         
         return dSEDFdI
 
