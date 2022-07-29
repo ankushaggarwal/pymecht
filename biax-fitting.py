@@ -5,8 +5,8 @@ from matplotlib import cm
 from itertools import cycle
 
 data = np.load('biax-data.npz')
-inp = data['inp']
-out = data['out']
+inp = data['inp'] # stretches
+out = data['out'] # stresses
 protocols = data['protocols']
 
 mat = 'Ross'
@@ -96,7 +96,7 @@ high = np.array([value for key, value in c_high.items() if not c_fix[key]])
 bounds = (low,high)
 result = least_squares(residual,x0=c0,args=(c_all,c_fix,out),bounds=bounds)
 
-res = sample.disp_controlled(inp,c_all)
+res = sample.disp_controlled(inp,c_all) # For stretches in
 
 colors = cycle(cm.rainbow(np.linspace(0, 1,len(set(protocols)))))
 fig,(ax1,ax2) = plt.subplots(2,1)
