@@ -9,7 +9,7 @@ inp = data['inp'] # stretches
 out = data['out'] # stresses
 protocols = data['protocols']
 
-mat = 'Ross'
+mat = 'arb'
 if mat=='yeoh':
     material = MatModel('yeoh')
 elif mat == 'goh':
@@ -26,8 +26,8 @@ elif mat == 'hgo':
     material = MatModel('hgo','nh')
 elif mat == 'hgo2':
     material = MatModel('hgo','expI1')
-elif mat == 'Ross':
-    material = MatModel('Ross')
+elif mat == 'arb':
+    material = MatModel('arb')
 
 mm = material.models
 mm[0].fiber_dirs = [np.array([1,0,0])]

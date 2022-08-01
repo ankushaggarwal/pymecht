@@ -627,9 +627,9 @@ class splineI1I4(InvariantHyperelastic):
         a,b = self._W(self.I1,self.I4,dx=1), self._W(self.I1,self.I4,dy=1)
         return self._alpha*np.sum(a),None,None,self._alpha*b.flatten()
     
-class ROSS(InvariantHyperelastic):
+class ARB(InvariantHyperelastic):
     '''
-    Model of arbitrary complexity for development purposes.
+    Model of ARBitrary complexity for development purposes.
     Will be developed based on symbolic differentiation.
     Psi = <USER-INPUT FUNCTION AS STRING>
     '''
@@ -731,7 +731,7 @@ class ROSS(InvariantHyperelastic):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-    for mname in ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','polyI4','Ross']:
+    for mname in ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','polyI4','arb']:
         mat = MatModel(mname)
         mm = mat.models
         print(mname)
