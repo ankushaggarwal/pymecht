@@ -11,32 +11,13 @@ def initialiseVals(_var, _init_guess=1., _lower_bound=-1000., _upper_bound=1000.
     lower_bound_string += _var + " = %s, " %(_lower_bound)
     upper_bound_string += _var + " = %s, " %(_upper_bound)
 
+biax_data = True
+constI1 = True
+constI4 = True
+constI6 = False
+
 x = "(I1-3.)"
 y = "(sqrt(I4)-1.)"
-
-df = pd.read_excel(io='/mnt/WD_Black/Aggarwal_postdoc/ross-temp/ConstantInvariant_DrAggarwal_0517212.xlsx',sheet_name='TVAL1',header=[0,1])
-df = df.rename(columns=lambda x: x if not 'Unnamed' in str(x) else '')
-
-inp = np.empty((0,2))
-out = np.empty((0,2))
-protocols = np.array([])
-# GET CONSTANT I1 DATA
-for protocol in [16,17,18,19]:
-    subset = (df['Protocol']== protocol) & (df["L/U"] == 1)
-    inp = np.append(inp, np.transpose([df['Tine']['λ_1'][subset].to_numpy(),df['Tine']['λ_2'][subset].to_numpy()]), axis=0)
-    out = np.append(out, np.transpose([df['Applied']['P11'][subset].to_numpy(),df['Applied']['P22'][subset].to_numpy()]), axis=0)
-    protocols = np.append(protocols, np.transpose(df['Protocol'][subset].to_numpy()))
-    
-# GET CONSTANT I4 DATA
-for protocol in [8,9,10,11]:
-    subset = (df['Protocol']== protocol) & (df["L/U"] == 1)
-    inp = np.append(inp, np.transpose([df['Tine']['λ_1'][subset].to_numpy(),df['Tine']['λ_2'][subset].to_numpy()]), axis=0)
-    out = np.append(out, np.transpose([df['Applied']['P11'][subset].to_numpy(),df['Applied']['P22'][subset].to_numpy()]), axis=0)
-    protocols = np.append(protocols, np.transpose(df['Protocol'][subset].to_numpy()))
-
-# inp = data['inp'] # stretches
-# out = data['out'] # stresses
-# protocols = data['protocols']
 
 # SHOULD MAKE A LIBRARY THAT INCLUDES:
 # 1, x, y, x*y, x^2, y^2, x^3, y^3, etc.
@@ -101,6 +82,33 @@ elif mat == 'arb':
     material = MatModel('arb')
 elif mat == 'sparse_fit':
     material = MatModel('goh','hgo','expI1','Holzapfel','hy','ls','mn','arb')
+
+df = pd.read_excel(io='/mnt/WD_Black/Aggarwal_postdoc/ross-temp/ConstantInvariant_DrAggarwal_0517212.xlsx',sheet_name='TVAL1',header=[0,1])
+df = df.rename(columns=lambda x: x if not 'Unnamed' in str(x) else '')
+
+inp = np.empty((0,2))
+out = np.empty((0,2))
+protocols = np.array([])
+
+ranges = []
+if biax_data == True:
+    ranges+= [1,2,3,4,5,6,7]
+if constI4 == True:
+    ranges+= [8,9,10,11]
+if constI6 == True:
+    ranges+= [12,13,14,15]
+if constI1 == True:
+    ranges+= [16,17,18,19]
+
+for protocol in ranges:
+    subset = (df['Protocol']== protocol) & (df["L/U"] == 1)
+    inp = np.append(inp, np.transpose([df['Tine']['λ_1'][subset].to_numpy(),df['Tine']['λ_2'][subset].to_numpy()]), axis=0)
+    out = np.append(out, np.transpose([df['Applied']['P11'][subset].to_numpy(),df['Applied']['P22'][subset].to_numpy()]), axis=0)
+    protocols = np.append(protocols, np.transpose(df['Protocol'][subset].to_numpy()))
+
+# inp = data['inp'] # stretches
+# out = data['out'] # stresses
+# protocols = data['protocols']
 
 import time
 start = time.time()
