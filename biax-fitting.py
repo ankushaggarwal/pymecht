@@ -185,6 +185,11 @@ for i in set(protocols):
     ax2.plot(inp[subset][:,1],out[subset][:,1],'o',color=cl)
     ax2.plot(inp[subset][:,1],res[subset][:,1],'-',color=cl)
 
+ax1.set(xlabel='$\lambda_1$', ylabel='$P_{11}$')
+ax2.set(xlabel='$\lambda_2$', ylabel='$P_{22}$')
+
+fig.tight_layout()
+
 plt.show()
 
 end = time.time()
