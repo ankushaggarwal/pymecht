@@ -82,6 +82,9 @@ elif mat == 'arb':
 elif mat == 'sparse_fit':
     material = MatModel('goh','hgo','expI1','Holzapfel','hy','ls','mn','arb')
 
+import time
+start = time.time()
+
 mm = material.models
 for model in mm:
     model.fiber_dirs = [np.array([1,0,0])]
