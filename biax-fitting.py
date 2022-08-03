@@ -43,11 +43,15 @@ W_string = ""
 init_guess_string = ""
 lower_bound_string = ""
 upper_bound_string = ""
+L_params = []
 
 for i in range(0,4):
     for j in range(0,4):
         W_string += "ltheta_%s%s*x**%s*y**%s + " %(i,j,i,j)
         initialiseVals("ltheta_%s%s"%(i,j))
+        L_params += ["ltheta_%s%s"%(i,j)]
+
+L_params = L_params[1:]
 
 W_string = W_string.replace("*x**0","")
 W_string = W_string.replace("*y**0","")
@@ -147,12 +151,24 @@ elif mat == 'hgo':
 elif mat == 'hgo2':
     sample_value_bounds[2]['k2_1']=40.
     sample_value_bounds[2]['k4_0']=40.
+elif mat == 'sparse_fit':
+    #SORT BOUNDS
+    L_params += ['k1_0']
+    L_params += ['k3_1']
+    L_params += ['k1_2']
+    L_params += ['k1_3']
+    L_params += ['k3_4']
+    L_params += ['k1_5']
+    L_params += ['k1_6']
 
 c_all,c_low,c_high = sample_value_bounds
 
+fixed_params = ['L10','L20','thick'] # WILL NEED OTHER LINEAR PARAMS AFTER SPARSITY CHECK
 c_fix  = c_all.copy()
+
+# WILL START LOOP HERE
 for key, value in c_all.items():
-    if key not in ['L10','L20','thick']:
+    if key not in fixed_params:
         c_fix[key]=False
     else:
         c_fix[key]=True
@@ -199,6 +215,13 @@ ax2.set(xlabel='$\lambda_2$', ylabel='$P_{22}$')
 fig.tight_layout()
 
 plt.show()
+
+# for var in c_all:
+    # if abs(c_all[var]) < tol:
+        # fixed_params += var
+        # c_all[var] = 0.0
+        # update bounds?
+#REPEAT LOOP HERE
 
 end = time.time()
 print("Time spent evaluating: ",end - start)
