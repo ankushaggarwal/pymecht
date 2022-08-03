@@ -3,6 +3,7 @@ import numpy as np
 from pymecht import *
 from matplotlib import cm
 from itertools import cycle
+import pandas as pd
 
 def initialiseVals(_var, _init_guess=1., _lower_bound=-1000., _upper_bound=1000.):
     global init_guess_string, lower_bound_string, upper_bound_string
@@ -13,10 +14,29 @@ def initialiseVals(_var, _init_guess=1., _lower_bound=-1000., _upper_bound=1000.
 x = "(I1-3.)"
 y = "(sqrt(I4)-1.)"
 
-data = np.load('biax-data.npz')
-inp = data['inp'] # stretches
-out = data['out'] # stresses
-protocols = data['protocols']
+df = pd.read_excel(io='/mnt/WD_Black/Aggarwal_postdoc/ross-temp/ConstantInvariant_DrAggarwal_0517212.xlsx',sheet_name='TVAL1',header=[0,1])
+df = df.rename(columns=lambda x: x if not 'Unnamed' in str(x) else '')
+
+inp = np.empty((0,2))
+out = np.empty((0,2))
+protocols = np.array([])
+# GET CONSTANT I1 DATA
+for protocol in [16,17,18,19]:
+    subset = (df['Protocol']== protocol) & (df["L/U"] == 1)
+    inp = np.append(inp, np.transpose([df['Tine']['λ_1'][subset].to_numpy(),df['Tine']['λ_2'][subset].to_numpy()]), axis=0)
+    out = np.append(out, np.transpose([df['Applied']['P11'][subset].to_numpy(),df['Applied']['P22'][subset].to_numpy()]), axis=0)
+    protocols = np.append(protocols, np.transpose(df['Protocol'][subset].to_numpy()))
+    
+# GET CONSTANT I4 DATA
+for protocol in [8,9,10,11]:
+    subset = (df['Protocol']== protocol) & (df["L/U"] == 1)
+    inp = np.append(inp, np.transpose([df['Tine']['λ_1'][subset].to_numpy(),df['Tine']['λ_2'][subset].to_numpy()]), axis=0)
+    out = np.append(out, np.transpose([df['Applied']['P11'][subset].to_numpy(),df['Applied']['P22'][subset].to_numpy()]), axis=0)
+    protocols = np.append(protocols, np.transpose(df['Protocol'][subset].to_numpy()))
+
+# inp = data['inp'] # stretches
+# out = data['out'] # stresses
+# protocols = data['protocols']
 
 # SHOULD MAKE A LIBRARY THAT INCLUDES:
 # 1, x, y, x*y, x^2, y^2, x^3, y^3, etc.
