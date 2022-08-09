@@ -11,16 +11,16 @@ def initialiseVals(_var, _init_guess=1., _lower_bound=-1000., _upper_bound=1000.
     lower_bound_string += _var + " = %s, " %(_lower_bound)
     upper_bound_string += _var + " = %s, " %(_upper_bound)
 
-biax_data = True
+biax_data = False
 constI1 = True
 constI4 = True
 constI6 = False
 
-x = "(I1-3.)"
-y = "(sqrt(I4)-1.)"
+X = "(I1-3.)"
+Y = "(sqrt(I4)-1.)"
 
 # SHOULD MAKE A LIBRARY THAT INCLUDES:
-# 1, x, y, x*y, x^2, y^2, x^3, y^3, etc.
+# X, Y, X*Y, X^2, Y^2, X^3, Y^3, etc.
 # STANDARD MODELS (YEOH & NH ALREADY THERE)
 # GOH   = (k1GOH/(2.*k2GOH))*(exp(k2GOH*(k3GOH*I1+(1.-3.*k3GOH)*I4-1)**2.)-1.)
 # HGO   = (k1HGO/(2.*k2HGO))*(exp(k2HGO*(I4-1.)**2.)-1.)
@@ -30,12 +30,14 @@ y = "(sqrt(I4)-1.)"
 # LS    = k1LS/2./(k4LS*k2LS+(1.0-k4LS)*k3LS)*(k4LS*exp(k2LS*(I1-3.0)**2.)+(1.0-k4LS)*exp(k3LS*(I4-1.0)**2.0)-1.0)
 # MN    = k1MN/(k2MN+k3MN)*(exp(k2MN*(I1-3.)**2.+k3MN*(sqrt(I4)-1.)**4.)-1.)
 # AND SOME NEW FORMS
-new_forms = []
-# ["ltheta*x**nltheta", "ltheta*y**nltheta", "ltheta*(x*y)**nltheta", \
-#              "ltheta*x**nltheta*y", "ltheta*x*y**nltheta", \
-#              "ltheta*exp(nltheta*x**nltheta)", "ltheta*exp(nltheta*y**nltheta)", \
-#              "ltheta*exp(nltheta*x**nltheta)"]
-# 
+new_forms = ["ltheta*exp(nltheta*X)*Y**2.", "ltheta*exp(nltheta*X)*Y", "ltheta*exp(nltheta*X)",\
+             "ltheta*exp(nltheta*Y)*X**2.", "ltheta*exp(nltheta*Y)*X", "ltheta*exp(nltheta*Y)",\
+             "ltheta*X**nlthetap",\
+             "ltheta*X**nlthetap*Y**nlthetap",\
+             "ltheta*X**nlthetap*Y",\
+             "ltheta*X*Y**nlthetap",\
+             "ltheta*exp(nltheta*X**nlthetap)",\
+             "ltheta*exp(nltheta*Y**nlthetap)"]
 
 # ltheta_00=1., ltheta_01=1., ltheta_02=1., theta_03=1., theta_10=1., theta_11=1., theta_12=1., theta_13=1., theta_20=1., theta_21=1., theta_22=1., theta_23=1., theta_30=1., theta_31=1., theta_32=1., theta_33=1., k1GOH=1., k2GOH=1., k3GOH=1., k1HGO=1., k2HGO=1., k3HGO=1., k4HGO=1., k1Holz=1., k2Holz=1., k3Holz=1., k3HY=1., k4HY=1., k1LS=1., k2LS=1., k3LS=1., k4LS=1., k1MN=1., k2MN=1., k3MN=1.
 
@@ -53,17 +55,44 @@ for i in range(0,4):
 
 L_params = L_params[1:]
 
-W_string = W_string.replace("*x**0","")
-W_string = W_string.replace("*y**0","")
-W_string = W_string.replace("x**1","x")
-W_string = W_string.replace("y**1","y")
-W_string = W_string.replace("x",x)
-W_string = W_string.replace("y",y)
-
 print("Initial params = ", init_guess_string[17:-2] +"\n")
 print("Lower bound = ", lower_bound_string[21:-2] +"\n")
 print("Upper bound = ", upper_bound_string[20:-2] +"\n")
 print("Energy form = ", W_string[12:-3] +"\n")
+for counter, form in enumerate(new_forms):
+    if "nltheta*" in form:
+        initialiseVals("nltheta%s"%(counter))
+        form = form.replace("nltheta*","nltheta%s*" %(counter))
+    if "**nlthetap" in form:
+        initialiseVals("nlthetap%s"%(counter))#,2.0,1.0)
+        form = form.replace("**nlthetap","**nlthetap%s" %(counter))
+    # if "X**nlthetap" in form:
+    #     initialiseVals("nlthetap%s"%(counter),2.0,1.0)
+    #     form = form.replace("**nlthetap","**nlthetap%s" %(counter))
+    # if "Y**nlthetap" in form:
+    #     initialiseVals("nlthetap%s"%(counter),2.5,2.0)
+    #     form = form.replace("**nlthetap","**nlthetap%s" %(counter))
+    if "ltheta*" in form:
+        initialiseVals("ltheta%s"%(counter))
+        form = form.replace("ltheta*","ltheta%s*" %(counter))
+        L_params += ["ltheta%s" %(counter)]
+    W_string += form+" + "
+
+W_string = W_string.replace("*X**0","")
+W_string = W_string.replace("*Y**0","")
+W_string = W_string.replace("X**1","X")
+W_string = W_string.replace("Y**1","Y")
+W_string = W_string.replace("X",X)
+W_string = W_string.replace("Y",Y)
+
+# W_string += "(k1GOH/(2.*k2GOH))*(exp(k2GOH*(k3GOH*I1+(1.-3.*k3GOH)*I4-1)**2.)-1.)"
+# W_string += "(k1HGO/(2.*k2HGO))*(exp(k2HGO*(I4-1.)**2.)-1.)"
+# W_string += "(k3HGO/(2.*k4HGO))*(exp(k4HGO*(I1-3.))-1.)"
+# W_string += "(k1Holz/(2.*k2Holz))*(exp(k2Holz*(k3Holz*(I1-3.)**2.+(1.-k3Holz)*I4**2.))-1.)"
+# W_string += "k3HY/k4HY*(exp(k4HY*(sqrt(I4)-1.)**2.)-1.))"
+# W_string += "k1LS/2./(k4LS*k2LS+(1.0-k4LS)*k3LS)*(k4LS*exp(k2LS*(I1-3.0)**2.)+(1.0-k4LS)*exp(k3LS*(I4-1.0)**2.0)-1.0)"
+# W_string += "k1MN/(k2MN+k3MN)*(exp(k2MN*(I1-3.)**2.+k3MN*(sqrt(I4)-1.)**4.)-1.)"
+
 
 mat = 'sparse_fit'
 if mat=='yeoh':
@@ -198,6 +227,8 @@ bounds = (low,high)
 result = least_squares(residual,x0=c0,args=(c_all,c_fix,out),bounds=bounds)
 
 res = sample.disp_controlled(inp,c_all) # For stretches in
+
+#%%
 
 colors = cycle(cm.rainbow(np.linspace(0, 1,len(set(protocols)))))
 fig,(ax1,ax2) = plt.subplots(2,1)
