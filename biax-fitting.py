@@ -55,10 +55,6 @@ for i in range(0,4):
 
 L_params = L_params[1:]
 
-print("Initial params = ", init_guess_string[17:-2] +"\n")
-print("Lower bound = ", lower_bound_string[21:-2] +"\n")
-print("Upper bound = ", upper_bound_string[20:-2] +"\n")
-print("Energy form = ", W_string[12:-3] +"\n")
 for counter, form in enumerate(new_forms):
     if "nltheta*" in form:
         initialiseVals("nltheta%s"%(counter))
@@ -93,6 +89,10 @@ W_string = W_string.replace("Y",Y)
 # W_string += "k1LS/2./(k4LS*k2LS+(1.0-k4LS)*k3LS)*(k4LS*exp(k2LS*(I1-3.0)**2.)+(1.0-k4LS)*exp(k3LS*(I4-1.0)**2.0)-1.0)"
 # W_string += "k1MN/(k2MN+k3MN)*(exp(k2MN*(I1-3.)**2.+k3MN*(sqrt(I4)-1.)**4.)-1.)"
 
+print("Initial params = ", init_guess_string[19:-2] +"\n")
+print("Lower bound = ", lower_bound_string[23:-2] +"\n")
+print("Upper bound = ", upper_bound_string[22:-2] +"\n")
+print("Energy form = ", W_string[14:-3] +"\n")
 
 mat = 'sparse_fit'
 if mat=='yeoh':
@@ -147,8 +147,7 @@ import time
 start = time.time()
 
 mm = material.models
-for model in mm:
-    model.fiber_dirs = [np.array([1,0,0])]
+mm[0].fiber_dirs = [np.array([1,0,0])]
 sample = PlanarBiaxialExtension(material,disp_measure='stretch',force_measure='1pk')
 sample_value_bounds = sample.parameters_wbounds()
 
