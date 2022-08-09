@@ -685,14 +685,16 @@ class ARB(InvariantHyperelastic):
         
         other_symbols = sp.symbols(param_names_string)
         
+        SEDF = sp.expand(self.energy_form)
+        
         # Take symbolic derivatives
-        dSEDFdI =   sp.diff(self.energy_form,I1), \
-                    sp.diff(self.energy_form,I2), \
-                    sp.diff(self.energy_form,I3), \
-                    sp.diff(self.energy_form,I4)
+        dSEDFdI =   sp.diff(SEDF,I1), \
+                    sp.diff(SEDF,I2), \
+                    sp.diff(SEDF,I3), \
+                    sp.diff(SEDF,I4)
         
         # Store derivatives as strings
-        dSEDFdI = [str(i) for i in dSEDFdI]
+        dSEDFdI = [str(sp.powsimp(i)) for i in dSEDFdI]
         
         # Format derivatives for consistent syntax
         dSEDFdI = [i.replace("I1","self.I1") for i in dSEDFdI]
