@@ -16,6 +16,8 @@ constI1 = True
 constI4 = True
 constI6 = False
 
+tol = 0.1 # tolerance of biggest linear parameter to smallest. Removes lowest (tol)*100% of terms
+
 X = "(I1-3.)"
 Y = "(sqrt(I4)-1.)"
 
@@ -47,11 +49,14 @@ lower_bound_string = ""
 upper_bound_string = ""
 L_params = []
 
-for i in range(0,4):
+for i in range(0,2):
     for j in range(0,4):
-        W_string += "ltheta_%s%s*x**%s*y**%s + " %(i,j,i,j)
-        initialiseVals("ltheta_%s%s"%(i,j))
-        L_params += ["ltheta_%s%s"%(i,j)]
+        if (i==0) and (j==0):
+            pass
+        else:
+            W_string += "ltheta_%s_%s*X**%s*Y**%s + " %(i,j,i,j)
+            initialiseVals("ltheta_%s_%s"%(i,j))
+            L_params += ["ltheta_%s_%s"%(i,j)]
 
 L_params = L_params[1:]
 
@@ -60,7 +65,7 @@ for counter, form in enumerate(new_forms):
         initialiseVals("nltheta%s"%(counter))
         form = form.replace("nltheta*","nltheta%s*" %(counter))
     if "**nlthetap" in form:
-        initialiseVals("nlthetap%s"%(counter))#,2.0,1.0)
+        initialiseVals("nlthetap%s"%(counter),2.0,1.0)
         form = form.replace("**nlthetap","**nlthetap%s" %(counter))
     # if "X**nlthetap" in form:
     #     initialiseVals("nlthetap%s"%(counter),2.0,1.0)
@@ -89,10 +94,10 @@ W_string = W_string.replace("Y",Y)
 # W_string += "k1LS/2./(k4LS*k2LS+(1.0-k4LS)*k3LS)*(k4LS*exp(k2LS*(I1-3.0)**2.)+(1.0-k4LS)*exp(k3LS*(I4-1.0)**2.0)-1.0)"
 # W_string += "k1MN/(k2MN+k3MN)*(exp(k2MN*(I1-3.)**2.+k3MN*(sqrt(I4)-1.)**4.)-1.)"
 
-print("Initial params = ", init_guess_string[19:-2] +"\n")
-print("Lower bound = ", lower_bound_string[23:-2] +"\n")
-print("Upper bound = ", upper_bound_string[22:-2] +"\n")
-print("Energy form = ", W_string[14:-3] +"\n")
+print("Initial params = ", init_guess_string[:-2] +"\n")
+print("Lower bound = ", lower_bound_string[:-2] +"\n")
+print("Upper bound = ", upper_bound_string[:-2] +"\n")
+print("Energy form = ", W_string[:-3] +"\n")
 
 mat = 'sparse_fit'
 if mat=='yeoh':
@@ -147,7 +152,8 @@ import time
 start = time.time()
 
 mm = material.models
-mm[0].fiber_dirs = [np.array([1,0,0])]
+for model in mm:
+    model.fiber_dirs = [np.array([1,0,0])]
 sample = PlanarBiaxialExtension(material,disp_measure='stretch',force_measure='1pk')
 sample_value_bounds = sample.parameters_wbounds()
 
@@ -194,64 +200,72 @@ c_all,c_low,c_high = sample_value_bounds
 fixed_params = ['L10','L20','thick'] # WILL NEED OTHER LINEAR PARAMS AFTER SPARSITY CHECK
 c_fix  = c_all.copy()
 
-# WILL START LOOP HERE
-for key, value in c_all.items():
-    if key not in fixed_params:
-        c_fix[key]=False
-    else:
-        c_fix[key]=True
-
-def complete_params(cval,c_all,c_fix):
-    i=0
-    for key,value in c_all.items():
-        if not c_fix[key]:
-            try:
-                c_all[key] = cval[i]
-                i += 1
-            except IndexError as err:
-                print("Non-fixed parameters and cval are of different length",err)
-    return
-
-def residual(c,c_all,c_fix,measure):
-    complete_params(c,c_all,c_fix)
-    x = sample.disp_controlled(inp,c_all)
-    return (x-measure).flatten()
+params_removed = 1
 
 from scipy.optimize import least_squares
 
-c0 = np.array([value for key, value in c_all.items() if not c_fix[key]])
-low  = np.array([value for key, value in c_low.items() if not c_fix[key]])
-high = np.array([value for key, value in c_high.items() if not c_fix[key]])
-bounds = (low,high)
-result = least_squares(residual,x0=c0,args=(c_all,c_fix,out),bounds=bounds)
-
-res = sample.disp_controlled(inp,c_all) # For stretches in
-
-#%%
-
-colors = cycle(cm.rainbow(np.linspace(0, 1,len(set(protocols)))))
-fig,(ax1,ax2) = plt.subplots(2,1)
-for i in set(protocols):
-    cl = next(colors)
-    subset = protocols==i
-    ax1.plot(inp[subset][:,0],out[subset][:,0],'o',color=cl)
-    ax1.plot(inp[subset][:,0],res[subset][:,0],'-',color=cl)
-    ax2.plot(inp[subset][:,1],out[subset][:,1],'o',color=cl)
-    ax2.plot(inp[subset][:,1],res[subset][:,1],'-',color=cl)
-
-ax1.set(xlabel='$\lambda_1$', ylabel='$P_{11}$')
-ax2.set(xlabel='$\lambda_2$', ylabel='$P_{22}$')
-
-fig.tight_layout()
-
-plt.show()
-
-# for var in c_all:
-    # if abs(c_all[var]) < tol:
-        # fixed_params += var
-        # c_all[var] = 0.0
-        # update bounds?
-#REPEAT LOOP HERE
+# WILL START LOOP HERE
+while params_removed != 0:
+    for key, value in c_all.items():
+        if key not in fixed_params:
+            c_fix[key]=False
+        else:
+            c_fix[key]=True
+    
+    def complete_params(cval,c_all,c_fix):
+        i=0
+        for key,value in c_all.items():
+            if not c_fix[key]:
+                try:
+                    c_all[key] = cval[i]
+                    i += 1
+                except IndexError as err:
+                    print("Non-fixed parameters and cval are of different length",err)
+        return
+    
+    def residual(c,c_all,c_fix,measure):
+        complete_params(c,c_all,c_fix)
+        x = sample.disp_controlled(inp,c_all)
+        return (x-measure).flatten()
+    
+    c0 = np.array([value for key, value in c_all.items() if not c_fix[key]])
+    low  = np.array([value for key, value in c_low.items() if not c_fix[key]])
+    high = np.array([value for key, value in c_high.items() if not c_fix[key]])
+    bounds = (low,high)
+    result = least_squares(residual,x0=c0,args=(c_all,c_fix,out),bounds=bounds)
+    
+    res = sample.disp_controlled(inp,c_all) # For stretches in
+    
+    #%%
+    
+    colors = cycle(cm.rainbow(np.linspace(0, 1,len(set(protocols)))))
+    fig,(ax1,ax2) = plt.subplots(2,1)
+    for i in set(protocols):
+        cl = next(colors)
+        subset = protocols==i
+        ax1.plot(inp[subset][:,0],out[subset][:,0],'o',color=cl)
+        ax1.plot(inp[subset][:,0],res[subset][:,0],'-',color=cl)
+        ax2.plot(inp[subset][:,1],out[subset][:,1],'o',color=cl)
+        ax2.plot(inp[subset][:,1],res[subset][:,1],'-',color=cl)
+    
+    ax1.set(xlabel='$\lambda_1$', ylabel='$P_{11}$')
+    ax2.set(xlabel='$\lambda_2$', ylabel='$P_{22}$')
+    
+    fig.tight_layout()
+    
+    plt.show()
+    
+    #%%
+    
+    fixed_params_len_old = len(fixed_params)
+    
+    for var in c_all:
+        if (abs(c_all[var]) < tol*max(c_all.values(),key=abs)) and (c_fix[var]==False):
+            fixed_params += [var]
+            c_all[var] = 0.0
+            # update bounds?
+    params_removed = len(fixed_params) - fixed_params_len_old
+    # REPEAT LOOP HERE
 
 end = time.time()
 print("Time spent evaluating: ",end - start)
