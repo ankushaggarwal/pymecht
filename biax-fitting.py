@@ -16,10 +16,13 @@ constI1 = True
 constI4 = True
 constI6 = False
 
-tol = 0.1 # tolerance of biggest linear parameter to smallest. Removes lowest (tol)*100% of terms
+tol = 0.5 # tolerance of biggest linear parameter to smallest. Removes lowest (tol)*100% of terms
 
 X = "(I1-3.)"
 Y = "(sqrt(I4)-1.)"
+Z = "sqrt(I4)-1."
+
+all_sub_vars = {"X":X,"Y":Y,"Z":Z}
 
 # SHOULD MAKE A LIBRARY THAT INCLUDES:
 # X, Y, X*Y, X^2, Y^2, X^3, Y^3, etc.
@@ -79,12 +82,10 @@ for counter, form in enumerate(new_forms):
         L_params += ["ltheta%s" %(counter)]
     W_string += form+" + "
 
-W_string = W_string.replace("*X**0","")
-W_string = W_string.replace("*Y**0","")
-W_string = W_string.replace("X**1","X")
-W_string = W_string.replace("Y**1","Y")
-W_string = W_string.replace("X",X)
-W_string = W_string.replace("Y",Y)
+for sub_var in all_sub_vars:
+    W_string = W_string.replace("*"+sub_var+"**0","")
+    W_string = W_string.replace(sub_var+"**1",all_sub_vars[sub_var])
+    W_string = W_string.replace(sub_var,all_sub_vars[sub_var])
 
 # W_string += "(k1GOH/(2.*k2GOH))*(exp(k2GOH*(k3GOH*I1+(1.-3.*k3GOH)*I4-1)**2.)-1.)"
 # W_string += "(k1HGO/(2.*k2HGO))*(exp(k2HGO*(I4-1.)**2.)-1.)"
@@ -119,7 +120,10 @@ elif mat == 'hgo2':
 elif mat == 'arb':
     material = MatModel('arb')
 elif mat == 'sparse_fit':
-    material = MatModel('goh','hgo','expI1','Holzapfel','hy','ls','mn','arb')
+    # material = MatModel('goh','hgo','expI1','Holzapfel','hy','ls','mn','arb')
+    arb_mat = ARB(W_string[:-3],init_guess_string[:-2],lower_bound_string[:-2],upper_bound_string[:-2])
+    # material = MatModel('goh','hgo','expI1','Holzapfel','hy','ls','mn',arb_mat)
+    material = MatModel(arb_mat)
 
 df = pd.read_excel(io='/mnt/WD_Black/Aggarwal_postdoc/ross-temp/ConstantInvariant_DrAggarwal_0517212.xlsx',sheet_name='TVAL1',header=[0,1])
 df = df.rename(columns=lambda x: x if not 'Unnamed' in str(x) else '')
@@ -186,14 +190,15 @@ elif mat == 'hgo2':
     sample_value_bounds[2]['k2_1']=40.
     sample_value_bounds[2]['k4_0']=40.
 elif mat == 'sparse_fit':
+    pass
     #SORT BOUNDS
-    L_params += ['k1_0']
-    L_params += ['k3_1']
-    L_params += ['k1_2']
-    L_params += ['k1_3']
-    L_params += ['k3_4']
-    L_params += ['k1_5']
-    L_params += ['k1_6']
+    # L_params += ['k1_0']
+    # L_params += ['k3_1']
+    # L_params += ['k1_2']
+    # L_params += ['k1_3']
+    # L_params += ['k3_4']
+    # L_params += ['k1_5']
+    # L_params += ['k1_6']
 
 c_all,c_low,c_high = sample_value_bounds
 
