@@ -260,7 +260,7 @@ while params_removed != 0:
     fixed_params_len_old = len(fixed_params)
     
     for var in c_all:
-        if (abs(c_all[var]) < tol*max(c_all.values(),key=abs)) and (c_fix[var]==False):
+        if (abs(c_all[var]) < tol*abs(max(c_all.values(),key=abs))) and (c_fix[var]==False):
             fixed_params += [var]
             c_all[var] = 0.0
             # update bounds?
