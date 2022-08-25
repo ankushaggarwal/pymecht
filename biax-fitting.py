@@ -20,7 +20,7 @@ tol = 0.5 # tolerance of biggest linear parameter to smallest. Removes lowest (t
 
 X = "(I1-3.)"
 Y = "(sqrt(I4)-1.)"
-Z = "sqrt(I4)-1."
+Z = "(I4-1.)"
 
 all_sub_vars = {"X":X,"Y":Y,"Z":Z}
 
@@ -35,14 +35,29 @@ all_sub_vars = {"X":X,"Y":Y,"Z":Z}
 # LS    = k1LS/2./(k4LS*k2LS+(1.0-k4LS)*k3LS)*(k4LS*exp(k2LS*(I1-3.0)**2.)+(1.0-k4LS)*exp(k3LS*(I4-1.0)**2.0)-1.0)
 # MN    = k1MN/(k2MN+k3MN)*(exp(k2MN*(I1-3.)**2.+k3MN*(sqrt(I4)-1.)**4.)-1.)
 # AND SOME NEW FORMS
-new_forms = ["ltheta*exp(nltheta*X)*Y**2.", "ltheta*exp(nltheta*X)*Y", "ltheta*exp(nltheta*X)",\
-             "ltheta*exp(nltheta*Y)*X**2.", "ltheta*exp(nltheta*Y)*X", "ltheta*exp(nltheta*Y)",\
-             "ltheta*X**nlthetap",\
-             "ltheta*X**nlthetap*Y**nlthetap",\
-             "ltheta*X**nlthetap*Y",\
-             "ltheta*X*Y**nlthetap",\
-             "ltheta*exp(nltheta*X**nlthetap)",\
-             "ltheta*exp(nltheta*Y**nlthetap)"]
+new_forms = []#"ltheta*exp(nltheta*X)*Y**2.", "ltheta*exp(nltheta*X)*Y", "ltheta*exp(nltheta*X)",\
+#              "ltheta*exp(nltheta*Y)*X**2.", "ltheta*exp(nltheta*Y)*X", "ltheta*exp(nltheta*Y)",\
+#              "ltheta*X**nlthetap",\
+#              "ltheta*X**nlthetap*Y**nlthetap",\
+#              "ltheta*X**nlthetap*Y",\
+#              "ltheta*X*Y**nlthetap",\
+#              "ltheta*exp(nltheta*X**nlthetap)",\
+#              "ltheta*exp(nltheta*Y**nlthetap)"\
+#                    \
+#              "ltheta*exp(nltheta*X)*Z**2.", "ltheta*exp(nltheta*X)*Z", "ltheta*exp(nltheta*X)",\
+#              "ltheta*exp(nltheta*Z)*X**2.", "ltheta*exp(nltheta*Z)*X", "ltheta*exp(nltheta*Z)",\
+#              "ltheta*X**nlthetap",\
+#              "ltheta*X**nlthetap*Z**nlthetap",\
+#              "ltheta*X**nlthetap*Z",\
+#              "ltheta*X*Z**nlthetap",\
+#              "ltheta*exp(nltheta*X**nlthetap)",\
+#              "ltheta*exp(nltheta*Z**nlthetap)"]
+
+# library = ['X',                 'Y',                'Z',\
+#            'X**2',              'Y**2',             'Z**2'\
+#            'X**3',              'Y**3',             'Z**3'\
+#            'exp(thetanl*X)',    'exp(thetanl*Y)',   'exp(thetanl*Z)'\
+#            'exp(thetanl*X**2)', 'exp(thetanl*Y**2)','exp(thetanl*Z**2)']
 
 # ltheta_00=1., ltheta_01=1., ltheta_02=1., theta_03=1., theta_10=1., theta_11=1., theta_12=1., theta_13=1., theta_20=1., theta_21=1., theta_22=1., theta_23=1., theta_30=1., theta_31=1., theta_32=1., theta_33=1., k1GOH=1., k2GOH=1., k3GOH=1., k1HGO=1., k2HGO=1., k3HGO=1., k4HGO=1., k1Holz=1., k2Holz=1., k3Holz=1., k3HY=1., k4HY=1., k1LS=1., k2LS=1., k3LS=1., k4LS=1., k1MN=1., k2MN=1., k3MN=1.
 
@@ -52,14 +67,50 @@ lower_bound_string = ""
 upper_bound_string = ""
 L_params = []
 
+W_string_list = []
+
 for i in range(0,4):
     for j in range(0,4):
-        if (i==0) and (j==0):
-            pass
-        else:
-            W_string += "ltheta_%s_%s*X**%s*Y**%s + " %(i,j,i,j)
-            initialiseVals("ltheta_%s_%s"%(i,j))
-            L_params += ["ltheta_%s_%s"%(i,j)]
+        for k in range(0,1):
+            sub_term = ""
+            for l in range(0,3):
+                for m in range(0,3):
+                    for n in range(0,1):
+                        if (l==0) and (m==0) and (n==0):
+                            pass
+                        else:
+                            sub_term += "nltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s + " %(i,j,k,l,m,n,l,m,n)
+                            initialiseVals("nltheta_%s%s%s%s%s%s"%(i,j,k,l,m,n))
+            if (i==0) and (j==0) and (k==0) and (l==0) and (m==0) and (n==0):
+                pass
+            else:
+                # W_string_list += ["ltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s*(exp(nltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s + " %(i,j,k,l,m,n,i,j,k,i,j,k,l,m,n,l,m,n) + sub_term +")-1)"]
+                W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s*(exp(" %(i,j,k,i,j,k) + sub_term[:-3] +")-1) + "
+                initialiseVals("ltheta_%s%s%s"%(i,j,k))
+                L_params += ["ltheta_%s%s%s"%(i,j,k)]
+    
+# if (len(set(W_string_list)) == len(W_string_list)):
+#     print("All terms are unique!")
+# else:
+#     print("Fail! Try again.")
+
+# for i in range(0,4):
+#     for j in range(0,4):
+#         if (i==0) and (j==0):
+#             pass
+#         else:
+#             W_string += "ltheta_X%s_Y%s*X**%s*Y**%s + " %(i,j,i,j)
+#             initialiseVals("ltheta_X%s_Y%s"%(i,j))
+#             L_params += ["ltheta_X%s_Y%s"%(i,j)]
+            
+# for i in range(0,4):
+#     for j in range(0,4):
+#         if (i==0) and (j==0):
+#             pass
+#         else:
+#             W_string += "ltheta_X%s_Z%s*X**%s*Y**%s + " %(i,j,i,j)
+#             initialiseVals("ltheta_X%s_Z%s"%(i,j))
+#             L_params += ["ltheta_X%s_Z%s"%(i,j)]
 
 L_params = L_params[1:]
 
