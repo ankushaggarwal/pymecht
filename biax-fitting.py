@@ -6,34 +6,7 @@ from matplotlib import cm
 from itertools import cycle
 import pandas as pd
 
-import linecache
-import os
-import tracemalloc
-
-def display_top(snapshot, key_type='lineno', limit=3):
-    snapshot = snapshot.filter_traces((
-        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
-        tracemalloc.Filter(False, "<unknown>"),
-    ))
-    top_stats = snapshot.statistics(key_type)
-
-    print("Top %s lines" % limit)
-    for index, stat in enumerate(top_stats[:limit], 1):
-        frame = stat.traceback[0]
-        # replace "/path/to/module/file.py" with "module/file.py"
-        filename = os.sep.join(frame.filename.split(os.sep)[-2:])
-        print("#%s: %s:%s: %.1f KiB"
-              % (index, filename, frame.lineno, stat.size / 1024))
-        line = linecache.getline(frame.filename, frame.lineno).strip()
-        if line:
-            print('    %s' % line)
-
-    other = top_stats[limit:]
-    if other:
-        size = sum(stat.size for stat in other)
-        print("%s other: %.1f KiB" % (len(other), size / 1024))
-    total = sum(stat.size for stat in top_stats)
-    print("Total allocated size: %.1f KiB" % (total / 1024))
+from memory_profiler import profile
 
 def initialiseVals(_var, _init_guess=1., _lower_bound=-1000., _upper_bound=1000.):
     global init_guess_string, lower_bound_string, upper_bound_string
@@ -41,8 +14,7 @@ def initialiseVals(_var, _init_guess=1., _lower_bound=-1000., _upper_bound=1000.
     lower_bound_string += _var + " = %s, " %(_lower_bound)
     upper_bound_string += _var + " = %s, " %(_upper_bound)
 
-tracemalloc.start()
-
+@profile
 def main():
     global init_guess_string, lower_bound_string, upper_bound_string
     
@@ -120,7 +92,7 @@ def main():
                     pass
                 else:
                     # W_string_list += ["ltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s*(exp(nltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s + " %(i,j,k,l,m,n,i,j,k,i,j,k,l,m,n,l,m,n) + sub_term +")-1)"]
-                    W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s + "%(i,j,k,i,j,k)#*(exp(" %(i,j,k,i,j,k) + sub_term[:-3] +")-1) + "
+                    W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s + "%(i,j,k,i,j,k)# + "*(exp(" + sub_term[:-3] +")-1) + "
                     initialiseVals("ltheta_%s%s%s"%(i,j,k))
                     L_params += ["ltheta_%s%s%s"%(i,j,k)]
         
@@ -234,6 +206,7 @@ def main():
         out = np.append(out, np.transpose([df['Applied']['P11'][subset].to_numpy(),df['Applied']['P22'][subset].to_numpy()]), axis=0)
         protocols = np.append(protocols, np.transpose(df['Protocol'][subset].to_numpy()))
     
+    # data = np.load('biax-data.npz')
     # inp = data['inp'] # stretches
     # out = data['out'] # stresses
     # protocols = data['protocols']
@@ -363,13 +336,13 @@ def main():
     end = time.time()
     print("Time spent evaluating: ",end - start)
     
+    print(c_all)
+    
     return
 
 cProfile.run('main()', 'profile_results')
 # main()
 
-snapshot = tracemalloc.take_snapshot()
-display_top(snapshot)
 
 #%%
 
