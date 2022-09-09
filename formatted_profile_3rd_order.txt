@@ -1,0 +1,110 @@
+Thu Aug 25 18:24:23 2022    profile_results
+
+         80354782 function calls (79574272 primitive calls) in 1544.343 seconds
+
+   Ordered by: cumulative time
+   List reduced from 6051 to 100 due to restriction <100>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    682/1    0.018    0.000 2070.541 2070.541 {built-in method builtins.exec}
+        1    0.019    0.019 2070.541 2070.541 /mnt/WD_Black/Aggarwal_postdoc/pymecht/biax-fitting.py:15(main)
+      505    0.048    0.000 2007.471    3.975 /mnt/WD_Black/Aggarwal_postdoc/pymecht/SampleExperiment.py:19(disp_controlled)
+        3    0.001    0.000 2001.627  667.209 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/scipy/optimize/_lsq/least_squares.py:240(least_squares)
+      502    0.336    0.001 1995.521    3.975 /mnt/WD_Black/Aggarwal_postdoc/pymecht/biax-fitting.py:286(residual)
+      505   13.554    0.027 1960.530    3.882 /mnt/WD_Black/Aggarwal_postdoc/pymecht/SampleExperiment.py:23(<listcomp>)
+   611555   73.310    0.000 1936.187    0.003 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:91(stress)
+        3    0.000    0.000 1879.966  626.655 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/scipy/optimize/_lsq/trf.py:112(trf)
+        3    0.024    0.008 1879.965  626.655 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/scipy/optimize/_lsq/trf.py:205(trf_bounds)
+       43    0.001    0.000 1791.894   41.672 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/scipy/optimize/_lsq/least_squares.py:885(jac_wrapped)
+       43    0.003    0.000 1791.893   41.672 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/scipy/optimize/_numdiff.py:275(approx_derivative)
+       43    0.045    0.001 1791.869   41.671 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/scipy/optimize/_numdiff.py:566(_dense_difference)
+      451    0.012    0.000 1791.819    3.973 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/scipy/optimize/_numdiff.py:455(fun_wrapped)
+   611555   55.793    0.000 1718.555    0.003 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:249(secondPK)
+   611555   17.675    0.000 1327.799    0.002 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:731(partial_deriv)
+   611555   17.075    0.000 1307.997    0.002 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:736(<listcomp>)
+  2446226  764.732    0.000 1292.278    0.001 {built-in method builtins.eval}
+7361761/6747514   72.326    0.000  306.467    0.000 {built-in method numpy.core._multiarray_umath.implement_array_function}
+   611555    4.623    0.000  278.300    0.000 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:205(update)
+   611555   29.567    0.000  273.677    0.000 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:194(invariants)
+       51    0.001    0.000  203.744    3.995 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/scipy/optimize/_lsq/least_squares.py:814(fun_wrapped)
+  1834749   17.717    0.000  124.446    0.000 <__array_function__ internals>:177(diag)
+  1834749   37.241    0.000   89.353    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/lib/twodim_base.py:234(diag)
+   611555    6.118    0.000   87.620    0.000 <__array_function__ internals>:177(det)
+   611555   34.470    0.000   75.692    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/linalg/linalg.py:2092(det)
+  1223110   13.234    0.000   72.072    0.000 <__array_function__ internals>:177(trace)
+  2449787   25.010    0.000   71.487    0.000 <__array_function__ internals>:177(dot)
+  1223110   15.875    0.000   46.122    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/core/fromnumeric.py:1687(trace)
+      505    6.746    0.013   45.542    0.090 /mnt/WD_Black/Aggarwal_postdoc/pymecht/SampleExperiment.py:231(F)
+   611555    7.318    0.000   41.267    0.000 <__array_function__ internals>:177(outer)
+   611555    7.350    0.000   40.487    0.000 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:200(<listcomp>)
+1849151/1849104   18.829    0.000   32.906    0.000 {built-in method builtins.any}
+   611555    6.305    0.000   30.253    0.000 <__array_function__ internals>:177(diagonal)
+   611555   18.119    0.000   26.343    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/core/numeric.py:851(outer)
+   611561    9.663    0.000   23.303    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/linalg/linalg.py:135(_commonType)
+        1    0.000    0.000   22.865   22.865 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/pandas/util/_decorators.py:302(wrapper)
+        1    0.000    0.000   22.864   22.864 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/pandas/io/excel/_base.py:422(read_excel)
+  1223110   22.668    0.000   22.668    0.000 {method 'trace' of 'numpy.ndarray' objects}
+        1    0.000    0.000   19.679   19.679 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/pandas/io/excel/_base.py:1424(parse)
+        1    0.000    0.000   19.679   19.679 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/pandas/io/excel/_base.py:572(parse)
+        1    0.086    0.086   19.576   19.576 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/pandas/io/excel/_openpyxl.py:568(get_sheet_data)
+        1    0.000    0.000   19.346   19.346 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:636(__init__)
+   611555    8.798    0.000   17.979    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/core/fromnumeric.py:1552(diagonal)
+     3484    0.065    0.000   17.942    0.005 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/openpyxl/worksheet/_read_only.py:58(_cells_by_row)
+     3484    0.585    0.000   16.878    0.005 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/openpyxl/worksheet/_reader.py:113(parse)
+  4892440   15.460    0.000   15.460    0.000 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:97(<genexpr>)
+4545200/4540184   13.968    0.000   14.027    0.000 {built-in method builtins.len}
+  3057993   13.385    0.000   13.385    0.000 {built-in method numpy.zeros}
+142893/142889    0.882    0.000   12.420    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/xml/etree/ElementTree.py:1224(iterator)
+   611555    9.149    0.000   11.623    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/lib/twodim_base.py:161(eye)
+  3674120   11.550    0.000   11.550    0.000 {built-in method numpy.asanyarray}
+24478/10760    0.228    0.000   11.084    0.001 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/cache.py:69(wrapper)
+  1223447    7.362    0.000   10.965    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/linalg/linalg.py:116(isComplexType)
+   611555    6.639    0.000   10.789    0.000 /mnt/WD_Black/Aggarwal_postdoc/pymecht/SampleExperiment.py:252(observe)
+      266    0.003    0.000    9.272    0.035 /home/ross/anaconda3/envs/pymecht/lib/python3.8/xml/etree/ElementTree.py:1690(feed)
+      325    1.258    0.004    9.269    0.029 {method 'Parse' of 'pyexpat.xmlparser' objects}
+      209    0.002    0.000    9.200    0.044 /home/ross/anaconda3/envs/pymecht/lib/python3.8/xml/etree/ElementTree.py:1268(feed)
+       18    0.013    0.001    9.071    0.504 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/axes/_base.py:4561(get_tightbbox)
+  1230474    8.948    0.000    8.949    0.000 {built-in method numpy.array}
+       48    0.005    0.000    8.834    0.184 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/axis.py:1090(get_tightbbox)
+    651/9    0.024    0.000    8.529    0.948 <frozen importlib._bootstrap>:986(_find_and_load)
+    651/9    0.020    0.000    8.528    0.948 <frozen importlib._bootstrap>:956(_find_and_load_unlocked)
+    628/8    0.019    0.000    8.519    1.065 <frozen importlib._bootstrap>:650(_load_unlocked)
+    627/8    0.010    0.000    8.517    1.065 <frozen importlib._bootstrap_external>:837(exec_module)
+    698/8    0.006    0.000    8.517    1.065 <frozen importlib._bootstrap>:211(_call_with_frames_removed)
+2384307/2382671    8.095    0.000    8.404    0.000 {built-in method builtins.isinstance}
+   611555    8.308    0.000    8.308    0.000 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:106(<dictcomp>)
+        3    0.001    0.000    7.987    2.662 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/figure.py:3162(tight_layout)
+        3    0.000    0.000    7.956    2.652 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/tight_layout.py:251(get_tight_layout_figure)
+        3    0.001    0.000    7.948    2.649 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/tight_layout.py:19(_auto_adjust_subplotpars)
+  2449787    7.878    0.000    7.878    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/core/multiarray.py:736(dot)
+      828    0.027    0.000    7.222    0.009 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/text.py:290(_get_layout)
+      888    0.044    0.000    7.075    0.008 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/text.py:872(get_window_extent)
+        4    0.000    0.000    7.056    1.764 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/function.py:2438(diff)
+   1864/4    0.025    0.000    7.056    1.764 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/expr.py:3500(diff)
+   1864/4    0.073    0.000    7.056    1.764 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/function.py:1939(_derivative_dispatch)
+   1864/4    0.210    0.000    7.055    1.764 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/function.py:1268(__new__)
+      216    0.006    0.000    7.027    0.033 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/backends/backend_agg.py:251(get_text_width_height_descent)
+       48    0.001    0.000    6.847    0.143 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/mathtext.py:410(parse)
+       24    0.001    0.000    6.844    0.285 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/matplotlib/mathtext.py:437(_parse_cached)
+1462/1413    0.098    0.000    6.786    0.005 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/operations.py:46(__new__)
+33404/11679    0.158    0.000    6.490    0.001 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/assumptions.py:452(getit)
+   611561    4.156    0.000    6.101    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/linalg/linalg.py:129(_realType)
+    312/2    0.003    0.000    6.033    3.016 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/function.py:1930(_dispatch_eval_derivative_n_times)
+     72/2    0.003    0.000    6.033    3.016 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/basic.py:1703(_eval_derivative_n_times)
+        2    0.000    0.000    6.027    3.013 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/add.py:496(_eval_derivative)
+   611555    3.953    0.000    5.952    0.000 /mnt/WD_Black/Aggarwal_postdoc/pymecht/SampleExperiment.py:240(stretch)
+        2    0.001    0.001    5.877    2.939 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/add.py:498(<listcomp>)
+10338/1320    0.277    0.000    5.683    0.004 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/assumptions.py:464(_ask)
+   611555    5.647    0.000    5.647    0.000 {method 'astype' of 'numpy.generic' objects}
+1845153/1845113    5.646    0.000    5.647    0.000 {built-in method numpy.asarray}
+  1851530    5.636    0.000    5.637    0.000 {built-in method builtins.issubclass}
+  1834749    5.598    0.000    5.598    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/lib/twodim_base.py:230(_diag_dispatcher)
+   611555    4.963    0.000    4.963    0.000 {method 'diagonal' of 'numpy.ndarray' objects}
+  924/921    0.174    0.000    4.959    0.005 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/mul.py:178(flatten)
+        1    0.001    0.001    4.852    4.852 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/__init__.py:1(<module>)
+  1223110    4.615    0.000    4.615    0.000 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/numpy/core/fromnumeric.py:1682(_trace_dispatcher)
+  1224252    4.465    0.000    4.465    0.000 {method 'ravel' of 'numpy.ndarray' objects}
+      120    0.024    0.000    4.257    0.035 /home/ross/anaconda3/envs/pymecht/lib/python3.8/site-packages/sympy/core/mul.py:984(_eval_derivative_n_times)
+        1    0.000    0.000    4.064    4.064 /mnt/WD_Black/Aggarwal_postdoc/pymecht/MatModel.py:709(<listcomp>)
+
+
