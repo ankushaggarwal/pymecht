@@ -599,9 +599,9 @@ class splineI1I4(InvariantHyperelastic):
     '''
     def __init__(self):
         super().__init__()
-        self.param_default  = dict()
-        self.param_low_bd   = dict()
-        self.param_up_bd    = dict()
+        self.param_default  = dict(alpha=1)
+        self.param_low_bd   = dict(alpha=-10)
+        self.param_up_bd    = dict(alpha=10)
         self._warn = False
         self.normalize()
         self.I4term = True
@@ -614,18 +614,22 @@ class splineI1I4(InvariantHyperelastic):
         self._W = W
         self._alpha = alpha
 
-    def _energy(self,**extra_args):
+    def _energy(self,alpha=None,**extra_args):
+        if alpha is None:
+            alpha=self._alpha
         if self._warn and (self.I1<self.minx or self.I1>self.maxx or np.any(self.I4<self.miny) or np.any(self.I4>self.maxy)):
             w = "Outside the training range; be careful interpreting the results "+str(self.I1)+" "+str(self.I4)+"\n"+str(self.minx)+" "+str(self.maxx)+" "+str(self.miny)+" "+str(self.maxy)
             warnings.warn(w)
-        return self._alpha*np.sum(self._W(self.I1,self.I4))
+        return alpha*np.sum(self._W(self.I1,self.I4))
 
-    def partial_deriv(self,**extra_args):
+    def partial_deriv(self,alpha=None,**extra_args):
+        if alpha is None:
+            alpha=self._alpha
         if self._warn and (self.I1<self.minx or self.I1>self.maxx or np.any(self.I4<self.miny) or np.any(self.I4>self.maxy)):
             w = "Outside the training range; be careful interpreting the results "+str(self.I1)+" "+str(self.I4)+"\n"+str(self.minx)+" "+str(self.maxx)+" "+str(self.miny)+" "+str(self.maxy)
             warnings.warn(w)
         a,b = self._W(self.I1,self.I4,dx=1), self._W(self.I1,self.I4,dy=1)
-        return self._alpha*np.sum(a),None,None,self._alpha*b.flatten()
+        return alpha*np.sum(a),None,None,alpha*b.flatten()
 
 if __name__ == "__main__":
     import doctest
