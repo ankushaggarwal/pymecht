@@ -80,8 +80,8 @@ def main():
         for j in range(0,2):
             for k in range(0,1):
                 sub_term = ""
-                for l in range(0,1):
-                    for m in range(0,1):
+                for l in range(0,2):
+                    for m in range(0,2):
                         for n in range(0,1):
                             if (l==0) and (m==0) and (n==0):
                                 pass
@@ -92,7 +92,7 @@ def main():
                     pass
                 else:
                     # W_string_list += ["ltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s*(exp(nltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s + " %(i,j,k,l,m,n,i,j,k,i,j,k,l,m,n,l,m,n) + sub_term +")-1)"]
-                    W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s + "%(i,j,k,i,j,k)# + "*(exp(" + sub_term[:-3] +")-1) + "
+                    W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s"%(i,j,k,i,j,k) + "*(exp(" + sub_term[:-3] +")-1) + "
                     initialiseVals("ltheta_%s%s%s"%(i,j,k))
                     L_params += ["ltheta_%s%s%s"%(i,j,k)]
         
@@ -269,70 +269,85 @@ def main():
     from scipy.optimize import least_squares
     
     # WILL START LOOP HERE
-    while params_removed != 0:
-        for key, value in c_all.items():
-            if key not in fixed_params:
-                c_fix[key]=False
-            else:
-                c_fix[key]=True
-        
-        def complete_params(cval,c_all,c_fix):
-            i=0
-            for key,value in c_all.items():
-                if not c_fix[key]:
-                    try:
-                        c_all[key] = cval[i]
-                        i += 1
-                    except IndexError as err:
-                        print("Non-fixed parameters and cval are of different length",err)
-            return
-        
-        def residual(c,c_all,c_fix,measure):
-            complete_params(c,c_all,c_fix)
-            x = sample.disp_controlled(inp,c_all)
-            return (x-measure).flatten()
-        
-        c0 = np.array([value for key, value in c_all.items() if not c_fix[key]])
-        low  = np.array([value for key, value in c_low.items() if not c_fix[key]])
-        high = np.array([value for key, value in c_high.items() if not c_fix[key]])
-        bounds = (low,high)
-        print("Calculating fit")
-        result = least_squares(residual,x0=c0,args=(c_all,c_fix,out),bounds=bounds)
-        print("Finished calculating fit")
-        
-        res = sample.disp_controlled(inp,c_all) # For stretches in
-        
-        #%%
-        
-        colors = cycle(cm.rainbow(np.linspace(0, 1,len(set(protocols)))))
-        fig,(ax1,ax2) = plt.subplots(2,1)
-        for i in set(protocols):
-            cl = next(colors)
-            subset = protocols==i
-            ax1.plot(inp[subset][:,0],out[subset][:,0],'o',color=cl)
-            ax1.plot(inp[subset][:,0],res[subset][:,0],'-',color=cl)
-            ax2.plot(inp[subset][:,1],out[subset][:,1],'o',color=cl)
-            ax2.plot(inp[subset][:,1],res[subset][:,1],'-',color=cl)
-        
-        ax1.set(xlabel='$\lambda_1$', ylabel='$P_{11}$')
-        ax2.set(xlabel='$\lambda_2$', ylabel='$P_{22}$')
-        
-        fig.tight_layout()
-        
-        plt.show()
-        
-        #%%
-        
-        fixed_params_len_old = len(fixed_params)
-        
-        for var in c_all:
-            if (abs(c_all[var]) < tol*abs(max(c_all.values(),key=abs))) and (c_fix[var]==False):
-                fixed_params += [var]
-                c_all[var] = 0.0
-                # update bounds?
-        params_removed = len(fixed_params) - fixed_params_len_old
-        # REPEAT LOOP HERE
+    for key, value in c_all.items():
+        if key not in fixed_params:
+            c_fix[key]=False
+        else:
+            c_fix[key]=True
     
+    def complete_params(cval,c_all,c_fix):
+        i=0
+        for key,value in c_all.items():
+            if not c_fix[key]:
+                try:
+                    c_all[key] = cval[i]
+                    i += 1
+                except IndexError as err:
+                    print("Non-fixed parameters and cval are of different length",err)
+        return
+    
+    def residual(c,c_all,c_fix,measure):
+        complete_params(c,c_all,c_fix)
+        x = sample.disp_controlled(inp,c_all)
+        # return (x-measure).flatten()
+        orig_len = len(measure)
+        for counter, (measure_val, x_val) in enumerate(zip(measure,x)):
+            if (measure_val[0]<=0.0) or (measure_val[1]<=0.0) or (x_val[0]<=0.0) or (x_val[1]<=0.0):
+                x=np.delete(x,counter-orig_len+len(x),axis=0)
+                measure=np.delete(measure,counter-orig_len+len(measure),axis=0)
+        return (np.log(x)-np.log(measure)).flatten()
+    
+    def Dresidual(c,c_all,c_fix,measure):
+        '''
+        d(residual)/d(c_all)
+        Can be defined analytically or approximately
+        '''
+        jac = []
+        for c_var in c_all:
+            jac += [DresDc_var]
+        return jac
+    
+    c0 = np.array([value for key, value in c_all.items() if not c_fix[key]])
+    low  = np.array([value for key, value in c_low.items() if not c_fix[key]])
+    high = np.array([value for key, value in c_high.items() if not c_fix[key]])
+    bounds = (low,high)
+    print("Calculating fit")
+    result = least_squares(residual,x0=c0,args=(c_all,c_fix,out),bounds=bounds)
+    print("Finished calculating fit after nfev=%s and njev=%s"%(result.nfev,result.njev))
+    
+    res = sample.disp_controlled(inp,c_all) # For stretches in
+    
+    #%%
+    
+    colors = cycle(cm.rainbow(np.linspace(0, 1,len(set(protocols)))))
+    fig,(ax1,ax2) = plt.subplots(2,1)
+    for i in set(protocols):
+        cl = next(colors)
+        subset = protocols==i
+        ax1.plot(inp[subset][:,0],out[subset][:,0],'o',color=cl)
+        ax1.plot(inp[subset][:,0],res[subset][:,0],'-',color=cl)
+        ax2.plot(inp[subset][:,1],out[subset][:,1],'o',color=cl)
+        ax2.plot(inp[subset][:,1],res[subset][:,1],'-',color=cl)
+    
+    ax1.set(xlabel='$\lambda_1$', ylabel='$P_{11}$')
+    ax2.set(xlabel='$\lambda_2$', ylabel='$P_{22}$')
+    
+    fig.tight_layout()
+    
+    plt.show()
+    
+    #%%
+    
+    fixed_params_len_old = len(fixed_params)
+    
+    for var in c_all:
+        if (abs(c_all[var]) < tol*abs(max(c_all.values(),key=abs))) and (c_fix[var]==False):
+            fixed_params += [var]
+            c_all[var] = 0.0
+            # update bounds?
+    params_removed = len(fixed_params) - fixed_params_len_old
+    # REPEAT LOOP HERE
+
     end = time.time()
     print("Time spent evaluating: ",end - start)
     
