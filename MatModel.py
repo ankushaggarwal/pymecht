@@ -633,7 +633,7 @@ class ARB(InvariantHyperelastic):
     Will be developed based on symbolic differentiation.
     Psi = <USER-INPUT FUNCTION AS STRING>
     '''
-    def __init__(self, _W='', _init_guess='', _low_bound='', _up_bound=''):
+    def __init__(self, _W='', _init_guess='', _low_bound='', _up_bound='', dparams=False):
         super().__init__()
         # Added success flag to handle if wrong format is given.
         success = False
@@ -709,15 +709,39 @@ class ARB(InvariantHyperelastic):
         dSEDFdI = [str(sp.powsimp(i)) for i in dSEDFdI]
         
         # Format derivatives for consistent syntax
-        dSEDFdI = [i.replace("I1","self.I1") for i in dSEDFdI]
-        dSEDFdI = [i.replace("I2","self.I2") for i in dSEDFdI]
-        dSEDFdI = [i.replace("I3","self.I3") for i in dSEDFdI]
-        dSEDFdI = [i.replace("I4","self.I4") for i in dSEDFdI]
-        dSEDFdI = [i.replace("exp","np.exp") for i in dSEDFdI]
-        dSEDFdI = [i.replace("sqrt","np.sqrt") for i in dSEDFdI]
+        # dSEDFdI = [i.replace("I1","self.I1") for i in dSEDFdI]
+        # dSEDFdI = [i.replace("I2","self.I2") for i in dSEDFdI]
+        # dSEDFdI = [i.replace("I3","self.I3") for i in dSEDFdI]
+        # dSEDFdI = [i.replace("I4","self.I4") for i in dSEDFdI]
+        # dSEDFdI = [i.replace("exp","np.exp") for i in dSEDFdI]
+        # dSEDFdI = [i.replace("sqrt","np.sqrt") for i in dSEDFdI]
+        dSEDFdI = self.replaceSympySyntax(dSEDFdI)
         
         # Update attribute of class.
         self.denergy_formdI = dSEDFdI
+        
+        # Calculate the partial derivatives wrt the linear and nonlinear params
+        if dparams == True:
+            dSEDFdparams = []
+            for param in self.param_names:
+                # if param[:6] == "ltheta"
+                #     dSEDFdparams += 
+                exec(param + " = sp.symbols(param)")
+                dSEDFdparams += [sp.diff(SEDF,eval(param))]
+            dSEDFdparams = [str(sp.powsimp(i)) for i in dSEDFdparams]
+            dSEDFdparams = self.replaceSympySyntax(dSEDFdparams)
+            self.denergy_formdparams = dSEDFdparams
+        
+        return
+            
+    def replaceSympySyntax(self, function):
+        function = [i.replace("I1","self.I1") for i in function]
+        function = [i.replace("I2","self.I2") for i in function]
+        function = [i.replace("I3","self.I3") for i in function]
+        function = [i.replace("I4","self.I4") for i in function]
+        function = [i.replace("exp","np.exp") for i in function]
+        function = [i.replace("sqrt","np.sqrt") for i in function]
+        return function
 
     def _energy(self,**extra_args):
         # WARNING: UNTESTED
