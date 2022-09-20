@@ -20,10 +20,18 @@ constI4 = True
 constI6 = False
 
 tol = 0.5 # tolerance of biggest linear parameter to smallest. Removes lowest (tol)*100% of terms
+LOGNORM = False
 
 X = "(I1-3.)"
 Y = "(sqrt(I4)-1.)"
 Z = "(I4-1.)"
+
+X_order = 0
+Y_order = 0
+Z_order = 0
+expX_order = 1
+expY_order = 1
+expZ_order = 0
 
 all_sub_vars = {"X":X,"Y":Y,"Z":Z}
 
@@ -72,13 +80,13 @@ L_params = []
 
 W_string_list = []
 
-for i in range(0,4):
-    for j in range(0,4):
-        for k in range(0,1):
+for i in range(0,X_order+1):
+    for j in range(0,Y_order+1):
+        for k in range(0,Z_order+1):
             sub_term = ""
-            for l in range(0,2):
-                for m in range(0,2):
-                    for n in range(0,1):
+            for l in range(0,expX_order+1):
+                for m in range(0,expY_order+1):
+                    for n in range(0,expZ_order+1):
                         if (l==0) and (m==0) and (n==0):
                             pass
                         else:
@@ -88,7 +96,10 @@ for i in range(0,4):
                 pass
             else:
                 # W_string_list += ["ltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s*(exp(nltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s + " %(i,j,k,l,m,n,i,j,k,i,j,k,l,m,n,l,m,n) + sub_term +")-1)"]
-                W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s"%(i,j,k,i,j,k) + "*(exp(" + sub_term[:-3] +")-1) + "
+                if sub_term == "":
+                    W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s + "%(i,j,k,i,j,k)
+                else:
+                    W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s"%(i,j,k,i,j,k) + "*(exp(" + sub_term[:-3] +")-1) + "
                 initialiseVals("ltheta_%s%s%s"%(i,j,k))
                 L_params += ["ltheta_%s%s%s"%(i,j,k)]
     
@@ -282,18 +293,20 @@ def complete_params(cval,c_all,c_fix):
                 print("Non-fixed parameters and cval are of different length",err)
     return
 
-def residual(c,c_all,c_fix,measure):
+def residual(c,c_all,c_fix,measure,_dsampledtheta,_LOGNORM=False,_FINITE_DIFFERENCE=False):
     complete_params(c,c_all,c_fix)
     x = sample.disp_controlled(inp,c_all)
-    # return (x-measure).flatten()
-    orig_len = len(measure)
-    for counter, (measure_val, x_val) in enumerate(zip(measure,x)):
-        if (measure_val[0]<=0.0) or (measure_val[1]<=0.0) or (x_val[0]<=0.0) or (x_val[1]<=0.0):
-            x=np.delete(x,counter-orig_len+len(x),axis=0)
-            measure=np.delete(measure,counter-orig_len+len(measure),axis=0)
-    return (np.log(x)-np.log(measure)).flatten()
 
 def Dresidual(c,c_all,c_fix,measure):
+    if _LOGNORM == False:
+        return (x-measure).flatten()
+    elif _LOGNORM == True:
+        orig_len = len(measure)
+        for counter, (measure_val, x_val) in enumerate(zip(measure,x)):
+            if (measure_val[0]<=0.0) or (measure_val[1]<=0.0) or (x_val[0]<=0.0) or (x_val[1]<=0.0):
+                x=np.delete(x,counter-orig_len+len(x),axis=0)
+                measure=np.delete(measure,counter-orig_len+len(measure),axis=0)
+        return (np.log(x)-np.log(measure)).flatten()
     '''
     d(residual)/d(c_all)
     Can be defined analytically or approximately
