@@ -5,6 +5,7 @@ from pymecht import *
 from matplotlib import cm
 from itertools import cycle
 import pandas as pd
+import sympy as sp
 
 def initialiseVals(_var, _init_guess=1., _lower_bound=-1000., _upper_bound=1000.):
     global init_guess_string, lower_bound_string, upper_bound_string
@@ -21,6 +22,8 @@ constI6 = False
 
 tol = 0.5 # tolerance of biggest linear parameter to smallest. Removes lowest (tol)*100% of terms
 LOGNORM = False
+defined_jac = True
+FINDIF = True
 
 X = "(I1-3.)"
 Y = "(sqrt(I4)-1.)"
@@ -165,6 +168,22 @@ print("Lower bound = ", lower_bound_string[:-2] +"\n")
 print("Upper bound = ", upper_bound_string[:-2] +"\n")
 print("Energy form = ", W_string[:-3] +"\n")
 
+def GenSample(_material):
+    _mm = _material.models
+    for _model in _mm:
+        _model.fiber_dirs = [np.array([1,0,0])]
+    _sample = PlanarBiaxialExtension(_material,disp_measure='stretch',force_measure='1pk')
+    return _sample
+
+def replaceSympySyntax(function):
+    function = [i.replace("I1","self.I1") for i in function]
+    function = [i.replace("I2","self.I2") for i in function]
+    function = [i.replace("I3","self.I3") for i in function]
+    function = [i.replace("I4","self.I4") for i in function]
+    function = [i.replace("exp","np.exp") for i in function]
+    function = [i.replace("sqrt","np.sqrt") for i in function]
+    return function
+
 mat = 'sparse_fit'
 if mat=='yeoh':
     material = MatModel('yeoh')
@@ -189,6 +208,35 @@ elif mat == 'sparse_fit':
     arb_mat = ARB(W_string[:-3],init_guess_string[:-2],lower_bound_string[:-2],upper_bound_string[:-2])
     # material = MatModel('goh','hgo','expI1','Holzapfel','hy','ls','mn',arb_mat)
     material = MatModel(arb_mat)
+    dsampledtheta = {}
+    for i in range(0,X_order+1):
+        for j in range(0,Y_order+1):
+            for k in range(0,Z_order+1):
+                if (i==0) and (j==0) and (k==0) and (l==0) and (m==0) and (n==0):
+                    pass
+                else:
+                    lvarname = "ltheta_%s%s%s" %(i,j,k)
+                    exec(lvarname + " = sp.symbols(lvarname)")
+                    dSEDFdtheta = sp.diff(W_string[:-3],eval(lvarname))
+                    dSEDFdtheta = str(sp.powsimp(dSEDFdtheta))
+                    darb_matdtheta = ARB(dSEDFdtheta,init_guess_string[:-2],lower_bound_string[:-2],upper_bound_string[:-2], dparams=False)
+                    mat_darb_matdtheta = MatModel(darb_matdtheta)
+                    sample_theta = GenSample(mat_darb_matdtheta)
+                    dsampledtheta.update({lvarname:sample_theta})
+                    for l in range(0,expX_order+1):
+                        for m in range(0,expY_order+1):
+                            for n in range(0,expZ_order+1):
+                                if (l==0) and (m==0) and (n==0):
+                                    pass
+                                else:
+                                    nlvarname = "nltheta_%s%s%s%s%s%s" %(i,j,k,l,m,n)
+                                    exec(nlvarname + " = sp.symbols(nlvarname)")
+                                    dSEDFdtheta = sp.diff(W_string[:-3],eval(nlvarname))
+                                    dSEDFdtheta = str(sp.powsimp(dSEDFdtheta))
+                                    darb_matdtheta = ARB(dSEDFdtheta,init_guess_string[:-2],lower_bound_string[:-2],upper_bound_string[:-2], dparams=False)
+                                    mat_darb_matdtheta = MatModel(darb_matdtheta)
+                                    sample_theta = GenSample(mat_darb_matdtheta)
+                                    dsampledtheta.update({nlvarname:sample_theta})
 
 df = pd.read_excel(io='/mnt/WD_Black/Aggarwal_postdoc/ross-temp/ConstantInvariant_DrAggarwal_0517212.xlsx',sheet_name='TVAL1',header=[0,1])
 df = df.rename(columns=lambda x: x if not 'Unnamed' in str(x) else '')
@@ -296,8 +344,6 @@ def complete_params(cval,c_all,c_fix):
 def residual(c,c_all,c_fix,measure,_dsampledtheta,_LOGNORM=False,_FINITE_DIFFERENCE=False):
     complete_params(c,c_all,c_fix)
     x = sample.disp_controlled(inp,c_all)
-
-def Dresidual(c,c_all,c_fix,measure):
     if _LOGNORM == False:
         return (x-measure).flatten()
     elif _LOGNORM == True:
@@ -307,21 +353,57 @@ def Dresidual(c,c_all,c_fix,measure):
                 x=np.delete(x,counter-orig_len+len(x),axis=0)
                 measure=np.delete(measure,counter-orig_len+len(measure),axis=0)
         return (np.log(x)-np.log(measure)).flatten()
+
+def ForwardDifference(c,c_all,c_fix,res,inp,measure,_dsampledtheta,_LOGNORM=False,_FINITE_DIFFERENCE=False):
+    c_all_up = dict(c_all)
+    c_all_up[c] = c_all[c]+c_all[c]*0.00001
+    dres = residual(list(c_all_up.values())[3:],c_all_up,c_fix,measure,_dsampledtheta,_LOGNORM,_FINITE_DIFFERENCE) - res
+    step = c_all[c]*0.00001
+    return dres/step
+
+def CentralDifference(c,c_all,c_fix,measure,inp,_dsampledtheta,_LOGNORM=False,_FINITE_DIFFERENCE=False):
+    c_all_up = dict(c_all)
+    c_all_up[c] = c_all[c]+c_all[c]*0.001
+    c_all_down = dict(c_all)
+    c_all_down[c] = c_all[c]-c_all[c]*0.001
+    dres = residual(list(c_all_up.values())[3:],c_all_up,c_fix,measure,_dsampledtheta,_LOGNORM,_FINITE_DIFFERENCE) - residual(list(c_all_down.values())[3:],c_all_down,c_fix,measure,_dsampledtheta,_LOGNORM,_FINITE_DIFFERENCE)
+    step = c_all[c]*0.002
+    return dres/step
+    
+
+def Dresidual(c,c_all,c_fix,measure,inp,_LOGNORM=False,_FINITE_DIFFERENCE=False):
     '''
     d(residual)/d(c_all)
     Can be defined analytically or approximately
     '''
-    jac = []
-    for c_var in c_all:
-        jac += [DresDc_var]
-    return jac
+    complete_params(c,c_all,c_fix)
+    if _FINITE_DIFFERENCE == True:
+        res = residual(c,c_all,c_fix,measure,dsampledtheta,_LOGNORM,_FINITE_DIFFERENCE)
+        return np.array([ForwardDifference(c_var,c_all,c_fix,res,inp,measure,dsampledtheta,_LOGNORM=False,_FINITE_DIFFERENCE=False).flatten() for c_var in c_all if (c_fix[c_var] == False)]).transpose()
+    else:
+        if _LOGNORM == False:
+            return np.array([dsampledtheta[c_var[:-2]].disp_controlled(inp,c_all).flatten() for c_var in c_all if (c_fix[c_var] == False)]).transpose()
+        elif _LOGNORM == True:
+            x = sample.disp_controlled(inp,c_all)
+            orig_len = len(measure)
+            for counter, (measure_val, x_val) in enumerate(zip(measure,x)):
+                if (measure_val[0]<=0.0) or (measure_val[1]<=0.0) or (x_val[0]<=0.0) or (x_val[1]<=0.0):
+                    x=np.delete(x,counter-orig_len+len(x),axis=0)
+                    measure=np.delete(measure,counter-orig_len+len(measure),axis=0)
+                    inp=np.delete(inp,counter-orig_len+len(inp),axis=0)
+            # res = [(np.log(sample.disp_controlled(inp,c_all))-np.log(measure)).flatten() for i in range(len(c_all)-3)]
+            # return np.multiply(res,[dsampledtheta[c_var[:-2]].disp_controlled(inp,c_all).flatten() for c_var in c_all if (c_fix[c_var] == False)]).transpose()
+            return np.multiply([dsampledtheta[c_var[:-2]].disp_controlled(inp,c_all).flatten() for c_var in c_all if (c_fix[c_var] == False)],1./x.flatten()).transpose()
 
 c0 = np.array([value for key, value in c_all.items() if not c_fix[key]])
 low  = np.array([value for key, value in c_low.items() if not c_fix[key]])
 high = np.array([value for key, value in c_high.items() if not c_fix[key]])
 bounds = (low,high)
 print("Calculating fit")
-result = least_squares(residual,x0=c0,args=(c_all,c_fix,out),bounds=bounds)
+if defined_jac == False:
+    result = least_squares(residual,x0=c0,args=(c_all,c_fix,out,inp,LOGNORM,FINDIF),bounds=bounds)
+elif defined_jac == True:
+    result = least_squares(residual,x0=c0,jac=Dresidual,args=(c_all,c_fix,out,inp,LOGNORM,FINDIF),bounds=bounds)
 print("Finished calculating fit after nfev=%s and njev=%s"%(result.nfev,result.njev))
 
 res = sample.disp_controlled(inp,c_all) # For stretches in
