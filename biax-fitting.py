@@ -52,9 +52,9 @@ def residual(c,c_all,c_fix,measure,inp,sample,_dsampledtheta,_LOGNORM=False,_FIN
 def ForwardDifference(c,c_all,c_fix,res,inp,measure,sample,_dsampledtheta,_LOGNORM=False,_FINITE_DIFFERENCE=False):
     # ParCheck()
     c_all_up = dict(c_all)
-    c_all_up[c] = c_all[c]+c_all[c]*0.00001
+    c_all_up[c] = c_all[c]+c_all[c]*1.e-6
     dres = residual(list(c_all_up.values())[3:],c_all_up,c_fix,measure,inp,sample,_dsampledtheta,_LOGNORM,_FINITE_DIFFERENCE) - res
-    step = c_all[c]*0.00001
+    step = c_all[c]*1.e-6
     return dres/step
 
 def CentralDifference(c,c_all,c_fix,measure,inp,sample,_dsampledtheta,_LOGNORM=False,_FINITE_DIFFERENCE=False):
