@@ -259,9 +259,17 @@ class InvariantHyperelastic:
                 for i,m in enumerate(self.M):
                     S += 2.*dPsidI1[i]*I #contribution from I1 for each different value of I4
         if dPsidI2 is not None:
-            S += 2.*dPsidI2*(self.I1*I-np.dot(F.transpose(),F)) #contribution from I2
+            if type(dPsidI2) != list:
+                S += 2.*dPsidI2*(self.I1*I-np.dot(F.transpose(),F)) #contribution from I2
+            else:
+                for i,m in enumerate(self.M):
+                    S += 2.*dPsidI2[i]*(self.I1*I-np.dot(F.transpose(),F)) #contribution from I2 for each different value of I4
         if dPsidJ is not None:
-            S += dPsidJ*self.J*np.linalg.inv(np.dot(F.transpose(),F)) #contribution from J
+            if type(dPsidJ) != list:
+                S += dPsidJ*self.J*np.linalg.inv(np.dot(F.transpose(),F)) #contribution from J
+            else:
+                for i,m in enumerate(self.M):
+                    S += dPsidJ[i]*self.J*np.linalg.inv(np.dot(F.transpose(),F)) #contribution from J for each different value of I4
         if dPsidI4 is not None:
             if type(dPsidI4) != list:
                 for i,m in enumerate(self.M):
