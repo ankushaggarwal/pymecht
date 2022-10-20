@@ -21,7 +21,7 @@ def ParCheck():
         print(f'Running on process: {rank}')
     return
 
-def initialiseVals(_var, _init_guess=1., _lower_bound=-1000., _upper_bound=1000.):
+def initialiseVals(_var, _init_guess=1., _lower_bound=-1000000., _upper_bound=1000000.):
     global init_guess_string, lower_bound_string, upper_bound_string
     init_guess_string += _var + " = %s, " %(_init_guess)
     lower_bound_string += _var + " = %s, " %(_lower_bound)
@@ -121,13 +121,14 @@ if __name__ == '__main__':
 
     global init_guess_string, lower_bound_string, upper_bound_string
     
-    biax_data = False
+    biax_data = True
     constI1 = True
     constI4 = True
     constI6 = False
     
     tol = 0.5 # tolerance of biggest linear parameter to smallest. Removes lowest (tol)*100% of terms
-    LOGNORM = False
+    use_bounds = False
+    LOGNORM = True
     defined_jac = True
     FINDIF = True
     processes = 2
@@ -190,6 +191,35 @@ if __name__ == '__main__':
     
     W_string_list = []
     
+    best_prev_fit = {'nltheta_000001': 0.46181814064741883,\
+                     'nltheta_000100': 10.225120213005669,\
+                     'nltheta_000101': -14.492322925530248,\
+                     'ltheta_000': 0.44389166431301713,\
+                     'nltheta_001001': 4.759246517304786,\
+                     'nltheta_001100': 9.547692404925037,\
+                     'nltheta_001101': -20.662290864898786,\
+                     'ltheta_001': 0.4494404006211189,\
+                     'nltheta_100001': 11.725991622191112,\
+                     'nltheta_100100': 16.7107751340892,\
+                     'nltheta_100101': -21.66783634350151,\
+                     'ltheta_100': 0.0038139189293467067,\
+                     'nltheta_101001': -149.78215677976337,\
+                     'nltheta_101100': -130.32931766730835,\
+                     'nltheta_101101': -1109.6757813952709,\
+                     'ltheta_101': 3.793748135566219,\
+                     'ltheta_002': -4.598646015584035,\
+                     'ltheta_003': 21.867316076259996,\
+                     'ltheta_102': 58.78571753965589,\
+                     'ltheta_103': -90.95944820584758,\
+                     'ltheta_200': 9.188196510323245,\
+                     'ltheta_201': 11.77843976260001,\
+                     'ltheta_202': -737.5102362909204,\
+                     'ltheta_203': 890.9690038699342,\
+                     'ltheta_300': 201.48487426948628,\
+                     'ltheta_301': -532.8030374249804,\
+                     'ltheta_302': 1763.9869956163097,\
+                     'ltheta_303': -1607.6308335247393}
+    
     for i in range(0,X_order+1):
         for j in range(0,Y_order+1):
             for k in range(0,Z_order+1):
@@ -201,7 +231,10 @@ if __name__ == '__main__':
                                 pass
                             else:
                                 sub_term += "nltheta_%s%s%s%s%s%s*X**%s*Y**%s*Z**%s + " %(i,j,k,l,m,n,l,m,n)
-                                initialiseVals("nltheta_%s%s%s%s%s%s"%(i,j,k,l,m,n))
+                                if "nltheta_%s%s%s%s%s%s" %(i,j,k,l,m,n,) in best_prev_fit:
+                                    initialiseVals("nltheta_%s%s%s%s%s%s"%(i,j,k,l,m,n),best_prev_fit["nltheta_%s%s%s%s%s%s"%(i,j,k,l,m,n)])
+                                else:
+                                    initialiseVals("nltheta_%s%s%s%s%s%s"%(i,j,k,l,m,n))
                 if (i==0) and (j==0) and (k==0) and (l==0) and (m==0) and (n==0):
                     pass
                 else:
@@ -210,7 +243,10 @@ if __name__ == '__main__':
                         W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s + "%(i,j,k,i,j,k)
                     else:
                         W_string += "ltheta_%s%s%s*X**%s*Y**%s*Z**%s"%(i,j,k,i,j,k) + "*(exp(" + sub_term[:-3] +")-1) + "
-                    initialiseVals("ltheta_%s%s%s"%(i,j,k))
+                    if "ltheta_%s%s%s" %(i,j,k) in best_prev_fit:
+                        initialiseVals("ltheta_%s%s%s"%(i,j,k),best_prev_fit["ltheta_%s%s%s"%(i,j,k)])
+                    else:
+                        initialiseVals("ltheta_%s%s%s"%(i,j,k))
                     L_params += ["ltheta_%s%s%s"%(i,j,k)]
         
     # if (len(set(W_string_list)) == len(W_string_list)):
@@ -440,9 +476,13 @@ if __name__ == '__main__':
         high = np.array([value for key, value in c_high.items() if not c_fix[key]])
         bounds = (low,high)
         print("Calculating fit")
-        if defined_jac == False:
+        if (defined_jac == False) and (use_bounds == False):
+            result = least_squares(residual,x0=c0,args=(c_all,c_fix,out,inp,sample,dsampledtheta,LOGNORM,FINDIF))
+        elif (defined_jac == False) and (use_bounds == True):
             result = least_squares(residual,x0=c0,args=(c_all,c_fix,out,inp,sample,dsampledtheta,LOGNORM,FINDIF),bounds=bounds)
-        elif defined_jac == True:
+        elif (defined_jac == True) and (use_bounds == False):
+            result = least_squares(residual,x0=c0,jac=Dresidual,args=(c_all,c_fix,out,inp,sample,dsampledtheta,LOGNORM,FINDIF))
+        elif (defined_jac == True) and (use_bounds == True):
             result = least_squares(residual,x0=c0,jac=Dresidual,args=(c_all,c_fix,out,inp,sample,dsampledtheta,LOGNORM,FINDIF),bounds=bounds)
         print("Finished calculating fit after nfev=%s and njev=%s"%(result.nfev,result.njev))
         
