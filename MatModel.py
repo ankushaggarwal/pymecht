@@ -253,22 +253,14 @@ class InvariantHyperelastic:
         #J23 = self.J**(-2./3.)
         S = np.zeros([3,3])
         if dPsidI1 is not None:
-            if type(dPsidI1) != list:
-                S += 2.*dPsidI1*I #contribution from I1
-            else:
-                for i,m in enumerate(self.M):
-                    S += 2.*dPsidI1[i]*I #contribution from I1 for each different value of I4
+            S += 2.*dPsidI1*I #contribution from I1
         if dPsidI2 is not None:
             S += 2.*dPsidI2*(self.I1*I-np.dot(F.transpose(),F)) #contribution from I2
         if dPsidJ is not None:
             S += dPsidJ*self.J*np.linalg.inv(np.dot(F.transpose(),F)) #contribution from J
         if dPsidI4 is not None:
-            if type(dPsidI4) != list:
-                for i,m in enumerate(self.M):
-                    S += 2.*dPsidI4*np.outer(m,m) #contribution from I4 which does not depend on the value of I4
-            else:
-                for i,m in enumerate(self.M):
-                    S += 2.*dPsidI4[i]*np.outer(m,m) #contribution from I4 which is a function of I4
+            for i,m in enumerate(self.M):
+                S += 2.*dPsidI4[i]*np.outer(m,m) #contribution from I4
         return S
 
     def normalize(self): #normalize the fiber directions to identity magnitudes
