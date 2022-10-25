@@ -138,10 +138,10 @@ if __name__ == '__main__':
     Z = "(I4-1.)"
     
     X_order = 1
-    Y_order = 1
-    Z_order = 0
-    expX_order = 1
-    expY_order = 1
+    Y_order = 0
+    Z_order = 1
+    expX_order = 0
+    expY_order = 0
     expZ_order = 0
     
     all_sub_vars = {"X":X,"Y":Y,"Z":Z}
