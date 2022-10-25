@@ -714,7 +714,7 @@ class ARB(InvariantHyperelastic):
                     sp.diff(SEDF,I4)
         
         # Store derivatives as strings
-        dSEDFdI = [str(sp.powdenest(sp.simplify(sp.powsimp(i)))) for i in dSEDFdI] # 62.78572702407837 s
+        dSEDFdI = [str(sp.powdenest(sp.factor_terms(sp.powsimp(i)))) for i in dSEDFdI] # 62.78572702407837 s
         
         # Format derivatives for consistent syntax
         # dSEDFdI = [i.replace("I1","self.I1") for i in dSEDFdI]
