@@ -10,8 +10,8 @@ authors = [{ name = "Ankush Aggarwal", email = "ankush.aggarwal@glasgow.ac.uk" }
 dependencies = ["matplotlib >= 3.4.1", "numpy >= 1.22.2", "pyDOE >= 0.3.8", "scipy >= 1.8.0", "torch >= 1.10.1", "sympy >= 1.10.1"]
 requires-python = ">=3.0"
 
-[project.optional-dependencies]
-dev = ["doctest >= 2.4.9"]
+#[project.optional-dependencies]
+#dev = ["doctest >= 2.4.9"]
 
 #[project.scripts]
 #greet = "greetings.command:process"
