@@ -31,9 +31,9 @@ jobs:
     
     # Yes we have to explictly install pytest. In a "real" example this could be included in a 
     # requirement.txt or environment.yml to setup your environment
- #   - name: Install PyTest
- #     run: |
- #       python -m pip install pytest
+    - name: Install pymecht
+      run: |
+        pip install pymecht/.
     # Now run the tests
  #   - name: Test with pytest
  #     run: |
