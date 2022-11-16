@@ -7,8 +7,9 @@ on:
   pull_request:
     branches:
       - master
-      - actions
   push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -35,6 +36,15 @@ jobs:
       run: |
         pip install pymecht/.
     # Now run the tests
- #   - name: Test with pytest
- #     run: |
- #       pytest
+    # - name: Test LinearFEM with doctest
+    #   run: |
+    #     python pymecht/LinearFEM.py
+    - name: Test MatModel with doctest
+      run: |
+        python pymecht/MatModel.py
+    # - name: Test RandomParameters with doctest
+    #   run: |
+    #     python pymecht/RandomParameters.py
+    # - name: Test SampleExperiment with doctest
+    #   run: |
+    #     python pymecht/SampleExperiment.py
