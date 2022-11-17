@@ -1,9 +1,7 @@
-from SampleExperiment import *
-from MatModel import *
-from LinearFEM import *
-from RandomParameters import *
+from pymecht import *
 from scipy.special import erfi
 from matplotlib import pyplot as plt
+import numpy as np
 
 ##################### Create material in different ways ########
 def mat_creation():
@@ -154,31 +152,6 @@ def randomex():
     t = Theta.sample(1)
     print(Theta.prob(t[0]))
 
-######################### FEM example
-def femex():
-    material = MatModel('goh','nh')
-    mm = material.models
-    mm[0].fiber_dirs = [np.array([1,0,0])]
-    sample = UniaxialExtension(material,disp_measure='stretch',force_measure='1stPK')
-    params = sample.parameters
-    def uniax(dy,**extra_args):
-        P = sample.disp_controlled([dy],params)[0]
-        return 0,0,P+1
-
-    x=np.linspace(0,1,10)
-    femodel = LinearFEM1D(x,DOF='equal')
-    femodel.compute=uniax
-    femodel.assemble()
-    femodel.fglobal
-    femodel.Kglobal
-    BC=np.zeros_like(x,dtype=bool)
-    BC[0]=True
-    #BC[-1]=True
-    for i in range(5):
-        femodel.newton_step(BC)
-        print(femodel.dof)
-
-
 if __name__=="__main__":
     mat_creation()
     unixex()
@@ -186,4 +159,3 @@ if __name__=="__main__":
     validate_tube()
     #artery0Dmodel()
     randomex()
-    femex()
