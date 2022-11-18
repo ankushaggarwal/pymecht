@@ -1,5 +1,6 @@
 from setuptools import setup
 
 setup(
-    packages = ["pymecht"]
+    packages = ["pymecht"],
+    py_modules = ["Examples"]
 )
