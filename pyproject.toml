@@ -16,9 +16,6 @@ requires-python = ">=3.8"
 #[project.scripts]
 #greet = "greetings.command:process"
 
-[tool.setuptools]
-packages = ["MatModel", "RandomParameters", "SampleExperiment"]
-
 # [tool.setuptools.packages.find]
 # where = ["src"]  # list of folders that contain the packages (["."] by default)
 # include = ["*.py"]  # package names should match these glob patterns (["*"] by default)

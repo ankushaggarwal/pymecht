@@ -1,5 +1,4 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-pymecht/poetry.lock
-pymecht/pymecht.egg-info/*
+pymecht.egg-info/
+build/
