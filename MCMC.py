@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 
 class MCMC:
     def __init__(self,prob_func,params,params_lb=None,params_ub=None,params_fix=None):
@@ -121,7 +122,7 @@ class MCMC:
         if self._samples is None:
             self._samples = [self.c0]
             self._probs = [old_prob]
-        for i in range(n):
+        for i in tqdm(range(n)):
             new = self.proposal()
             #print(new)
             if np.any(new < self.bounds[0]) or np.any(new > self.bounds[1]):
