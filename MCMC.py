@@ -15,6 +15,7 @@ class MCMC:
         print(self.n_params,"parameters will be varied. For changing any of the bounds/fixed, use update_ranges function")
 
         self._samples = None
+        self._probs = None
 
     def _format_float(self,x):
         if (x>0.01 and x<100) or x==0:
@@ -116,19 +117,26 @@ class MCMC:
 
     def run(self,n):
         self.c0 = self._vec(self.params)
-        old_prob = self.prob_func
+        old_prob = self.prob_func(self.c0)
         if self._samples is None:
             self._samples = [self.c0]
+            self._probs = [old_prob]
         for i in range(n):
             new = self.proposal()
-            if np.any(new < self.lb) or np.any(new > self.ub):
+            #print(new)
+            if np.any(new < self.bounds[0]) or np.any(new > self.bounds[1]):
                 continue
             self._complete_params(new) 
             new_prob = self.prob_func(self.params)
-            alpha = min(new_prob/old_prob,1)
+            if new_prob>=old_prob:
+                alpha = 1.
+            else:
+                alpha = min(new_prob/old_prob,1)
             if np.random.uniform() < alpha:
                 self.c0 = new
+                old_prob = new_prob
                 self._samples.append(self.c0)
+                self._probs.append(old_prob)
 
 
     def _complete_params(self,cval):
