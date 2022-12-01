@@ -616,6 +616,28 @@ class ArrudaBoyce(InvariantHyperelastic):
         Nterms = np.array([1.,2*Ninv,3.*Ninv**2,4.*Ninv**3,5.*Ninv**4])
         return np.sum(C*Nterms*self.alpha*Iterms), None, None, None
 
+class Gent(InvariantHyperelastic):
+    '''
+    Gent model
+    Psi = -mu*Jm/2.*ln(1-(I1-3)/Jm)
+    from sympy import *
+    I1, mu, Jm = symbols('I1,mu,Jm')
+    Psi = -mu*Jm/2.*ln(1-(I1-3)/Jm)
+    diff(Psi,I1)
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(mu=1.,Jm=5)
+        self.param_low_bd   = dict(mu=0.0001,Jm=0.)
+        self.param_up_bd    = dict(mu=1000.,Jm=1000.)
+        self.I4term = False
+
+    def _energy(self,mu,Jm,**extra_args):
+        return  -0.5*Jm*mu*np.log(1 - (self.I1 - 3)/Jm) 
+
+    def partial_deriv(self,mu,Jm,**extra_args):
+        return 0.5*mu/(1 - (self.I1 - 3)/Jm), None, None, None
+
 class splineI1I4(InvariantHyperelastic):
     '''
     Spline-based model in I1 and I4
