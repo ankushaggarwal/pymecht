@@ -9,7 +9,7 @@ class MCMC:
         self.update_ranges()
         #Test that the prob_func gives a float
         prob_result = self.prob_func(self.params)
-        if type(prob_result) is not float:
+        if not isinstance(prob_result,float):
             raise ValueError("prob_func should output a float. Instead it gave", prob_result)
         print("MCMC instance created with the following settings")
         self._param_print()
@@ -118,7 +118,7 @@ class MCMC:
 
     def run(self,n):
         self.c0 = self._vec(self.params)
-        old_prob = self.prob_func(self.c0)
+        old_prob = self.prob_func(self.params)
         if self._samples is None:
             self._samples = [self.c0]
             self._probs = [old_prob]
