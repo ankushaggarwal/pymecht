@@ -1,4 +1,4 @@
-from pymecht.Examples import *
+from Examples import *
 
 def test_examples():
     assert mat_creation() == None
