@@ -34,14 +34,14 @@ jobs:
     # requirement.txt or environment.yml to setup your environment
     - name: Install pymecht
       run: |
-        pip install pymecht/.
+        pip install .
     # Now run the tests
     # - name: Test LinearFEM with doctest
     #   run: |
     #     python pymecht/LinearFEM.py
-    - name: Test MatModel with doctest
-      run: |
-        python pymecht/MatModel.py
+    # - name: Test MatModel with doctest
+    #   run: |
+    #     python pymecht/MatModel.py
     # - name: Test RandomParameters with doctest
     #   run: |
     #     python pymecht/RandomParameters.py
