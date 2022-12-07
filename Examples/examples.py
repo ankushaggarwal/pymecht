@@ -34,14 +34,15 @@ def biaxex():
     mm = material.models
     mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
     print("Biaxial")
-    l=np.linspace(1,2,10)
+    l_disp=np.linspace(1,2,10)
     sample=PlanarBiaxialExtension(material)
     params = sample.parameters
     print("Displacement controlled test")
-    print(l,sample.disp_controlled(l,params))
-    l=np.linspace(0,2,10)
+    print(l_disp,sample.disp_controlled(l_disp,params))
+    l_for=np.linspace(0,2,10)
     print("Force controlled test")
-    print(l,sample.force_controlled(l,params))
+    print(l_for,sample.force_controlled(l_for,params))
+    return l_disp,sample.disp_controlled(l_disp,params),l_for,sample.force_controlled(l_for,params)
 
     #For the DOE experiment
     def DOEobs(npoints,theta):
