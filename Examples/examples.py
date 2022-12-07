@@ -10,6 +10,7 @@ def mat_creation():
     mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
     #mm[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
     #material.models[0].fiber_dirs
+    return material
 
 ###################### Uniaxial 
 def unixex():

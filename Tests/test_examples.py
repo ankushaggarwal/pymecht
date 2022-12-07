@@ -1,7 +1,11 @@
 from Examples import *
 
 def test_mat_creation():
-    assert mat_creation() == None
+    assert str(type(mat_creation())) == "<class 'pymecht.MatModel.MatModel'>"
+    assert len(mat_creation().models) == 2
+    assert mat_creation().param_names == [{'k1_0': 'k1', 'k2_0': 'k2', 'k3_0': 'k3'}, {'mu_1': 'mu'}]
+    assert mat_creation().parameters == {'k1_0': 10.0, 'k2_0': 10.0, 'k3_0': 0.1, 'mu_1': 1.0}
+    assert list(mat_creation().models[0].fiber_dirs[0]) == [1., 0., 0.]
 
 def test_unixex():
     assert list(unixex()[0]) == [1.0, 1.1111111111111112, 1.2222222222222223, 1.3333333333333333, 1.4444444444444444, 1.5555555555555556, 1.6666666666666665, 1.7777777777777777, 1.8888888888888888, 2.0]
