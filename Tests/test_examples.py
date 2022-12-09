@@ -1,4 +1,5 @@
 from Examples import *
+import pytest
 
 def test_mat_creation():
     output = mat_creation()
@@ -23,7 +24,9 @@ def test_biaxex():
     assert list(output[3]) == [0.9649576634391019, 1.0739485623031386, 1.0008208331098385, 1.1733660460332205, 1.0044509001685087, 1.2829357327009965, 1.006445307545602, 1.3843445169845912, 1.0073732969995206, 1.4760209149414139]
 
 def test_validate_tube():
-    assert validate_tube() == None
+    output = validate_tube()
+    assert output[0] == pytest.approx(output[1])
+    assert output[2] == pytest.approx(0.6702771145876144)
 
 # def test_artery0Dmodel():
     # assert artery0Dmodel() == None

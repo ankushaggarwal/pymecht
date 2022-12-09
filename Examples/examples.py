@@ -73,8 +73,8 @@ def validate_tube():
     mm = material.models
     mm[0].fiber_dirs = [np.array([0,cos(0.1),sin(0.1)]),np.array([0,cos(-0.1),sin(-0.1)])]
     sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
-    print(sample.disp_controlled([1.1],sample.parameters))
-    print(sample.force_controlled(np.array([-0.29167718]),sample.parameters))
+    force_sol = sample.force_controlled(np.array([-0.29167718]),sample.parameters)
+    print(force_sol)
 
     l=1.1
     result = lambda l: log(l)-1./2/l**2
@@ -88,12 +88,14 @@ def validate_tube():
     l2 = sqrt(1+(l**2-1)/(1+Hbar)**2)
     l1 = lambda l: sqrt(parameters['k2_0'])*(l**2-1)*cos(0.1)**2
     l12 = lambda l: sqrt(parameters['k2_0'])*(l**2-1)*cos(0.1)**2/(1+Hbar)**2
-    print((erfi(l12(l))-erfi(l1(l)))*4*parameters['k1_0']*sqrt(pi)*cos(0.1)**2/4./sqrt(parameters['k2_0']) + (result(l2)-result(l))*parameters['mu_1']) #instead of a factor of 2 for 2 fibers, I had to use double (=4). Not sure why.
+    analytical_sol = (erfi(l12(l))-erfi(l1(l)))*4*parameters['k1_0']*sqrt(pi)*cos(0.1)**2/4./sqrt(parameters['k2_0']) + (result(l2)-result(l))*parameters['mu_1'] #instead of a factor of 2 for 2 fibers, I had to use double (=4). Not sure why.
+    print(analytical_sol)
     print((result(l2)-result(l))*parameters['mu_1'])
 
     #material = MatModel('nh')
-    sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
-    print(sample.disp_controlled([1.1],parameters))
+    pymecht_sol = sample.disp_controlled([1.1],parameters)
+    print(pymecht_sol)
+    return abs(analytical_sol), pymecht_sol[0], force_sol[0]
 
 ############################# Using tube to calculate and plot stresses
 def artery0Dmodel():
