@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
@@ -35,8 +35,12 @@ jobs:
     - name: Install pymecht
       run: |
         pip install .
+    # Install pytest
+    - name: Install pytest
+      run: |
+        pip install pytest
     # Now run the tests
-    - name: Test LinearFEM with doctest
+    - name: Run pytest
       run: |
         pytest
     # - name: Test MatModel with doctest
