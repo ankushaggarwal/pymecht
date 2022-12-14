@@ -1,9 +1,7 @@
-from SampleExperiment import *
-from MatModel import *
-from LinearFEM import *
-from RandomParameters import *
+from pymecht import *
 from scipy.special import erfi
 from matplotlib import pyplot as plt
+import numpy as np
 
 ##################### Create material in different ways ########
 def mat_creation():
@@ -12,6 +10,7 @@ def mat_creation():
     mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
     #mm[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
     #material.models[0].fiber_dirs
+    return material
 
 ###################### Uniaxial 
 def unixex():
@@ -22,11 +21,12 @@ def unixex():
     sample = UniaxialExtension(material)
     params = sample.parameters
     print("Displacement controlled test")
-    l=np.linspace(1,2,10)
-    print(l,sample.disp_controlled(l,params))
-    l=np.linspace(0,2,10)
+    l_disp=np.linspace(1,2,10)
+    print(l_disp,sample.disp_controlled(l_disp,params))
+    l_for=np.linspace(0,2,10)
     print("Force controlled test")
-    print(l,sample.force_controlled(l,params))
+    print(l_for,sample.force_controlled(l_for,params))
+    return l_disp,sample.disp_controlled(l_disp,params),l_for,sample.force_controlled(l_for,params)
 
 ###################### Biaxial 
 def biaxex():
@@ -34,14 +34,15 @@ def biaxex():
     mm = material.models
     mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
     print("Biaxial")
-    l=np.linspace(1,2,10)
+    l_disp=np.linspace(1,2,10)
     sample=PlanarBiaxialExtension(material)
     params = sample.parameters
     print("Displacement controlled test")
-    print(l,sample.disp_controlled(l,params))
-    l=np.linspace(0,2,10)
+    print(l_disp,sample.disp_controlled(l_disp,params))
+    l_for=np.linspace(0,2,10)
     print("Force controlled test")
-    print(l,sample.force_controlled(l,params))
+    print(l_for,sample.force_controlled(l_for,params))
+    return l_disp,sample.disp_controlled(l_disp,params),l_for,sample.force_controlled(l_for,params)
 
     #For the DOE experiment
     def DOEobs(npoints,theta):
@@ -72,8 +73,8 @@ def validate_tube():
     mm = material.models
     mm[0].fiber_dirs = [np.array([0,cos(0.1),sin(0.1)]),np.array([0,cos(-0.1),sin(-0.1)])]
     sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
-    print(sample.disp_controlled([1.1],sample.parameters))
-    print(sample.force_controlled(np.array([-0.29167718]),sample.parameters))
+    force_sol = sample.force_controlled(np.array([-0.29167718]),sample.parameters)
+    print(force_sol)
 
     l=1.1
     result = lambda l: log(l)-1./2/l**2
@@ -87,12 +88,14 @@ def validate_tube():
     l2 = sqrt(1+(l**2-1)/(1+Hbar)**2)
     l1 = lambda l: sqrt(parameters['k2_0'])*(l**2-1)*cos(0.1)**2
     l12 = lambda l: sqrt(parameters['k2_0'])*(l**2-1)*cos(0.1)**2/(1+Hbar)**2
-    print((erfi(l12(l))-erfi(l1(l)))*4*parameters['k1_0']*sqrt(pi)*cos(0.1)**2/4./sqrt(parameters['k2_0']) + (result(l2)-result(l))*parameters['mu_1']) #instead of a factor of 2 for 2 fibers, I had to use double (=4). Not sure why.
+    analytical_sol = (erfi(l12(l))-erfi(l1(l)))*4*parameters['k1_0']*sqrt(pi)*cos(0.1)**2/4./sqrt(parameters['k2_0']) + (result(l2)-result(l))*parameters['mu_1'] #instead of a factor of 2 for 2 fibers, I had to use double (=4). Not sure why.
+    print(analytical_sol)
     print((result(l2)-result(l))*parameters['mu_1'])
 
     #material = MatModel('nh')
-    sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
-    print(sample.disp_controlled([1.1],parameters))
+    pymecht_sol = sample.disp_controlled([1.1],parameters)
+    print(pymecht_sol)
+    return abs(analytical_sol), pymecht_sol[0], force_sol[0]
 
 ############################# Using tube to calculate and plot stresses
 def artery0Dmodel():
@@ -154,31 +157,6 @@ def randomex():
     t = Theta.sample(1)
     print(Theta.prob(t[0]))
 
-######################### FEM example
-def femex():
-    material = MatModel('goh','nh')
-    mm = material.models
-    mm[0].fiber_dirs = [np.array([1,0,0])]
-    sample = UniaxialExtension(material,disp_measure='stretch',force_measure='1stPK')
-    params = sample.parameters
-    def uniax(dy,**extra_args):
-        P = sample.disp_controlled([dy],params)[0]
-        return 0,0,P+1
-
-    x=np.linspace(0,1,10)
-    femodel = LinearFEM1D(x,DOF='equal')
-    femodel.compute=uniax
-    femodel.assemble()
-    femodel.fglobal
-    femodel.Kglobal
-    BC=np.zeros_like(x,dtype=bool)
-    BC[0]=True
-    #BC[-1]=True
-    for i in range(5):
-        femodel.newton_step(BC)
-        print(femodel.dof)
-
-
 if __name__=="__main__":
     mat_creation()
     unixex()
@@ -186,4 +164,3 @@ if __name__=="__main__":
     validate_tube()
     #artery0Dmodel()
     randomex()
-    femex()
