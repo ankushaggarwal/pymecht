@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools"]  # the build tool to use
+build-backend = "setuptools.build_meta"  # the function to use to build the package
+
+[project]
+name = "pymecht"
+version = "0.0.1"
+description = "This is PYthon-based repository is for MECHanics of Tissue mechanics. The focus is on flexibility of adding new constitutive models and varying their parameters."
+authors = [{ name = "Ankush Aggarwal", email = "ankush.aggarwal@glasgow.ac.uk" }, { name = "Ross Williams", email = "r.williams.2@research.gla.ac.uk" }]
+dependencies = ["matplotlib >= 3.4.1", "numpy >= 1.22.2", "pyDOE >= 0.3.8", "scipy >= 1.8.0", "torch >= 1.10.1", "sympy >= 1.10.1"]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = ["pytest >= 7.2.0"]
+
+#[project.scripts]
+#greet = "greetings.command:process"
+
+# [tool.setuptools.packages.find]
+# where = ["src"]  # list of folders that contain the packages (["."] by default)
+# include = ["*.py"]  # package names should match these glob patterns (["*"] by default)
+# # exclude = ["my_package.tests*"]  # exclude packages matching these glob patterns (empty by default)
+# namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
