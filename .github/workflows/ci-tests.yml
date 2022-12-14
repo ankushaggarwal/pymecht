@@ -42,7 +42,7 @@ jobs:
     # Now run the tests
     - name: Run pytest
       run: |
-        pytest
+        python -m pytest
     # - name: Test MatModel with doctest
     #   run: |
     #     python pymecht/MatModel.py
