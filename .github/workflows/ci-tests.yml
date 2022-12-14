@@ -36,9 +36,9 @@ jobs:
       run: |
         pip install .
     # Now run the tests
-    # - name: Test LinearFEM with doctest
-    #   run: |
-    #     python pymecht/LinearFEM.py
+    - name: Test LinearFEM with doctest
+      run: |
+        pytest
     # - name: Test MatModel with doctest
     #   run: |
     #     python pymecht/MatModel.py
