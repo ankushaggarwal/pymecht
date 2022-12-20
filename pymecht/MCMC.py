@@ -8,7 +8,7 @@ class MCMC:
         self.keys = self.params.keys()
         self.update_ranges()
         #Test that the prob_func gives a float
-        prob_result = self.prob_func(self.params)
+        prob_result, value = self.prob_func(self.params)
         if not isinstance(prob_result,float):
             raise ValueError("prob_func should output a float. Instead it gave", prob_result)
         print("MCMC instance created with the following settings")
@@ -17,6 +17,7 @@ class MCMC:
 
         self._samples = None
         self._probs = None
+        self._values = None
 
     def _format_float(self,x):
         if (x>0.01 and x<100) or x==0:
@@ -118,17 +119,18 @@ class MCMC:
 
     def run(self,n):
         self.c0 = self._vec(self.params)
-        old_prob = self.prob_func(self.params)
+        old_prob, old_value = self.prob_func(self.params)
         if self._samples is None:
             self._samples = [self.c0]
             self._probs = [old_prob]
+            self._values = [old_value]
         for i in tqdm(range(n)):
             new = self.proposal()
             #print(new)
             if np.any(new < self.bounds[0]) or np.any(new > self.bounds[1]):
                 continue
             self._complete_params(new) 
-            new_prob = self.prob_func(self.params)
+            new_prob, new_value = self.prob_func(self.params)
             if new_prob>=old_prob:
                 alpha = 1.
             else:
@@ -138,6 +140,7 @@ class MCMC:
                 old_prob = new_prob
                 self._samples.append(self.c0)
                 self._probs.append(old_prob)
+                self._values.append(new_value)
 
 
     def _complete_params(self,cval):
