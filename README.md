@@ -43,7 +43,7 @@ git clone <repo-address>
 ```
 where `<repo-address>` can be replaced by either the https or ssh addresses of the forked repo.
 
-### *Step 2.3 Clone the forked repo*
+### *Step 2.3 Install pymecht as editable*
 To install an editable version of pymecht, navigate to the locally cloned repo and execute:
 ```sh
 pip install -e .
