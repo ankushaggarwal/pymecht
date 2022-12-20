@@ -4,7 +4,7 @@ The focus is on flexibility of adding new constitutive models and varying their 
 
 # Installation
 
-### *Step 1: Create a virtual environment*
+### *Step 1 (optional): Create a virtual environment*
 
 To create an environment in Anaconda, execute:
 ```sh
@@ -15,6 +15,7 @@ To activate this virtual environment, execute:
 ```sh
 conda activate pymecht
 ```
+This is an option, but recommended step. There are other options for create and managing environments (such as venv or virtualenv)
 
 ### *Step 2: Install via pip*
 
