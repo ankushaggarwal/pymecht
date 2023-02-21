@@ -1,0 +1,54 @@
+# This workflow will install Python dependencies, run tests with a variety of Python versions, on Windows and Linux
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Unit tests
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    strategy:
+      # We use `fail-fast: false` for teaching purposess. This ensure that all combinations of the matrix
+      # will run even if one or more fail. 
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9, "3.10"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    # Yes we have to explictly install pytest. In a "real" example this could be included in a 
+    # requirement.txt or environment.yml to setup your environment
+    - name: Install pymecht
+      run: |
+        pip install .
+    # Install pytest
+    - name: Install pytest
+      run: |
+        pip install pytest
+    # Now run the tests
+    - name: Run pytest
+      run: |
+        python -m pytest
+    # - name: Test MatModel with doctest
+    #   run: |
+    #     python pymecht/MatModel.py
+    # - name: Test RandomParameters with doctest
+    #   run: |
+    #     python pymecht/RandomParameters.py
+    # - name: Test SampleExperiment with doctest
+    #   run: |
+    #     python pymecht/SampleExperiment.py
