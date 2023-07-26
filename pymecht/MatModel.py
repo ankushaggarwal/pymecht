@@ -347,9 +347,9 @@ class LS(InvariantHyperelastic):
         self.I4term = True
 
     def _energy(self,k1,k2,k3,k4,**extra_args):
-        esum = k1/2/(k4*k2+(1-k4)*k3)*(k4*exp(k2*(self.I1-3)**2)-1)
+        esum = k1/2/(k4*k2+(1-k4)*k3)*(k4*(exp(k2*(self.I1-3)**2)-1))
         for i4 in self.I4:
-            esum += k1/2/(k4*k2+(1-k4)*k3)*((1-k4)*exp(k3*(i4-1)**2))
+            esum += k1/2/(k4*k2+(1-k4)*k3)*((1-k4)*(exp(k3*(i4-1)**2)-1))
         return esum
 
     def partial_deriv(self,k1,k2,k3,k4,**extra_args):
