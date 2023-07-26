@@ -80,7 +80,14 @@ class SampleExperiment:
 
     @parameters.setter
     def parameters(self,theta):
-        raise ValueError("The dictionary of parameters should not be changed in this way")
+        mat = {}
+        for k in theta.keys():
+            if k in self.param_default:
+                self.param_default[k] = theta[k]
+            else:
+                mat[k] = theta[k]
+        self.update(**self.param_default)
+        self.mat_model.parameters = mat
 
     def parameters_wbounds(self):
         theta = self.param_default.copy()
