@@ -169,6 +169,17 @@ class MatModel:
     def __add__(self,other):
         return MatModel(*(self.models+other.models))
 
+    def test(self,theta=None):
+        if theta is None:
+            theta=self.theta
+        result = []
+        #Test each model if it is of InvariantHyperelastic class
+        for i,m in enumerate(self._models):
+            if isinstance(m,InvariantHyperelastic):
+                thetai = {self.param_names[i][k]:theta[k] for k in self.param_names[i]}
+                result.append(m.test(thetai))
+        return all(result)
+
 class InvariantHyperelastic:
     '''
     An abstract class from which all the invariant-based hyperelastic models should be derived.
@@ -218,16 +229,37 @@ class InvariantHyperelastic:
             self.I1 -= 2*delta
             eminus = self._energy(**theta)
             dPsidI1FD = (eplus-eminus)/2/delta
-            print(dPsidI1,dPsidI1FD,abs(dPsidI1-dPsidI1FD))
+            #print(dPsidI1,dPsidI1FD,abs(dPsidI1-dPsidI1FD))
+            assert abs(dPsidI1-dPsidI1FD)<1e-6
             self.I1 += delta
+        if dPsidI2 is not None:
+            self.I2 += delta
+            eplus = self._energy(**theta)
+            self.I2 -= 2*delta
+            eminus = self._energy(**theta)
+            dPsidI2FD = (eplus-eminus)/2/delta
+            #print(dPsidI2,dPsidI2FD,abs(dPsidI2-dPsidI2FD))
+            assert abs(dPsidI2-dPsidI2FD)<1e-6
+            self.I2 += delta
+        if dPsidJ is not None:
+            self.J += delta
+            eplus = self._energy(**theta)
+            self.J -= 2*delta
+            eminus = self._energy(**theta)
+            dPsidJFD = (eplus-eminus)/2/delta
+            #print(dPsidJ,dPsidJFD,abs(dPsidJ-dPsidJFD))
+            assert abs(dPsidJ-dPsidJFD)<1e-6
+            self.J += delta
         if dPsidI4 is not None:
             self.I4 += delta
             eplus = self._energy(**theta)
             self.I4 -= 2*delta
             eminus = self._energy(**theta)
             dPsidI4FD = (eplus-eminus)/2/delta
-            print(dPsidI4,dPsidI4FD,abs(dPsidI4-dPsidI4FD))
+            #print(dPsidI4,dPsidI4FD,abs(dPsidI4-dPsidI4FD))
+            assert abs(dPsidI4-dPsidI4FD)<1e-6
             self.I4 += delta
+        return True
 
     def energy_stress(self,F,theta): #returns both energy and second PK stress
         self.update(F)
