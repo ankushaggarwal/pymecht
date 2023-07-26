@@ -20,7 +20,7 @@ class SampleExperiment:
         if params is None:
             params = self.parameters
         self.update(**params)
-        output = [self.observe(self.compute(F,params)) for F in self.F(input_)]
+        output = [self.observe(self.compute(F,params)) for F in self._defGrad(input_)]
         return np.array(output).reshape(np.shape(input_))
 
     def force_controlled(self,forces,params=None,x0=None):
@@ -120,7 +120,7 @@ class LinearSpring(SampleExperiment):
             self.x0 = self.L0
             self.compute1 = lambda x: self.k0*(x-self.L0)-self.f0
         self.ndim = 1
-        self.F = lambda x: x
+        self._defGrad = lambda x: x
 
     def update(self,L0,f0,k0,A0,**extra_args):
         self.L0 = L0
@@ -179,7 +179,7 @@ class UniaxialExtension(SampleExperiment):
         self.L0 = L0
         self.A0 = A0
 
-    def F(self,input_):
+    def _defGrad(self,input_):
         #converts the input into 3X3 F tensors
         F = []
         for i in input_:
@@ -244,7 +244,7 @@ class PlanarBiaxialExtension(SampleExperiment):
         self.L0 = np.array([L10,L20])
         self.thick = thick
 
-    def F(self,input_):
+    def _defGrad(self,input_):
         if type(input_).__module__ == np.__name__:
             input_ = input_.reshape(-1,2)
         F = []
@@ -310,7 +310,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     def update(self,Ri,thick,omega,L0,lambdaZ,**extra_args):
         self.Ri,self.thick,self.k,self.L0,self.lambdaZ = Ri,thick,2*pi/(2*pi-omega),L0,lambdaZ
 
-    def F(self,r,R):
+    def _defGrad(self,r,R):
         return np.diag([R/r/self.k/self.lambdaZ,self.k*r/R,self.lambdaZ])
 
     def disp_controlled(self,input_,params=None):
@@ -321,7 +321,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         def integrand(xi,ri,params):
             R = self.Ri+xi*self.thick
             r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
-            F = self.F(r,R)
+            F = self._defGrad(r,R)
             sigma = self.compute(F,params) 
             return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
         
@@ -362,7 +362,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         def integrand(xi,ri,params):
             R = self.Ri+xi*self.thick
             r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
-            F = self.F(r,R)
+            F = self._defGrad(r,R)
             sigma = self.compute(F,params) 
             return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
 
@@ -373,7 +373,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         for xii in xi:
             R = self.Ri+xii*self.thick
             r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
-            F = self.F(r,R)
+            F = self._defGrad(r,R)
             sigmabar = self.compute(F,params)
             I = quad(integrand,0,xii,args=(ri,params))[0] #=sigmarr-sigmarr0=sigmarr+pressure=sigmabar-pi
             pi = sigmabar[0,0] + pressure - I
@@ -415,7 +415,7 @@ class NonUniformTube(SampleExperiment):
     def update(self,Ri,Rip,thick,thickp,omega,L0,lambdaZ,**extra_args):
         self.Ri,self.Rip,self.thick,self.thickp,self.k,self.L0,self.lambdaZ = Ri,Rip,thick,thickp,2*pi/(2*pi-omega),L0,lambdaZ
 
-    #def F(self,r,R,rp,Rp):
+    #def _defGrad(self,r,R,rp,Rp):
     #    return 
 
     def calculate_terms(self,ri,rip,params,terms):
@@ -510,7 +510,7 @@ class NonUniformTube(SampleExperiment):
         def integrand(xi,ri,params):
             R = self.Ri+xi*self.thick
             r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
-            F = self.F(r,R)
+            F = self._defGrad(r,R)
             sigma = self.compute(F,params) 
             return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
 
@@ -521,7 +521,7 @@ class NonUniformTube(SampleExperiment):
         for xii in xi:
             R = self.Ri+xii*self.thick
             r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
-            F = self.F(r,R)
+            F = self._defGrad(r,R)
             sigmabar = self.compute(F,params)
             I = quad(integrand,0,xii,args=(ri,params))[0] #=sigmarr-sigmarr0=sigmarr+pressure=sigmabar-pi
             pi = sigmabar[0,0] + pressure - I
