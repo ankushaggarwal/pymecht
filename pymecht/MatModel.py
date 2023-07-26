@@ -580,7 +580,7 @@ class polyI4(InvariantHyperelastic):
     '''
     def __init__(self):
         super().__init__()
-        self.param_default  = dict(d1=1.,d2=1.,d3=1.)
+        self.param_default  = dict(d1=0.,d2=1.,d3=1.)
         self.param_low_bd   = dict(d1=0.0001,d2=0.,d3=0.)
         self.param_up_bd    = dict(d1=100.,d2=100.,d3=100.)
         self.normalize()
