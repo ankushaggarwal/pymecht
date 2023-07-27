@@ -458,18 +458,20 @@ class LayeredSamples:
     '''
     def __init__(self,*samplesList):
         self._samples = samplesList
-        self.nsamples = len(samplesList)
+        self._nsamples = len(samplesList)
         #check that all the members are instance of SampleExperiment
         if not all([isinstance(s,SampleExperiment) for s in self._samples]):
             raise ValueError("The class only accepts objects of type SampleExperiment")
-        outputs = [s.output for s in self._samples]
-        inputs = [s.inp for s in self._samples]
+        outputs = [s._output for s in self._samples]
+        inputs = [s._inp for s in self._samples]
         self._ndim = samplesList[0]._ndim
         #check if all outputs and inputs are the same
         if len(set(outputs)) > 1:
             raise ValueError("The outputs for all the layers must be the same")
+        self._inp = inputs[0]
         if len(set(inputs)) > 1:
             raise ValueError("The inputs for all the layers must be the same")
+        self._output = outputs[0]
 
     @property
     def parameters(self):
@@ -478,25 +480,26 @@ class LayeredSamples:
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
-        if len(params) != self.nsamples:
+        if len(params) != self._nsamples:
             raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
         total_force = 0.
         for i,s in enumerate(self._samples):
-            total_force += s.disp_controlled(input_,params[i])
+            total_force += s.disp_controlled(input_,params[i]) #TODO this would not be correct for stresses
 
         return total_force
 
-    def force_controlled(self,forces,params,x0=None):
-        
+    def force_controlled(self,forces,params,x0=None): #TODO update this based on SampleExperiment.force_controlled
+        if params is None:
+            params = self.parameters 
         def compare(displ,ybar,params):
-            return self.disp_controlled([displ],params)[0]-ybar
+            return self.disp_controlled(displ,params)[0]-ybar
 
         #solve for the input_ by solving the disp_controlled minus desired output
         forces_temp = forces.reshape(-1,self._ndim)
         ndata = len(forces_temp)
         y=[]
         if x0 is None:
-            x0=self._samples[0].x0 + 1e-5
+            x0=self._samples[0]._x0 + 1e-5
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params))
             if not sol.success:
@@ -519,28 +522,38 @@ class LayeredTube(LayeredSamples):
         for i,s in enumerate(samplesList):
             if i==0:
                 continue
-            s.inp = 'radius' #except the first layer make other layers' input in terms of radius
+            s._inp = 'radius' #except the first layer make other layers' input in terms of radius
 
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
-        if len(params) != self.nsamples:
+        if len(params) != self._nsamples:
             raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
-        total_force = 0.
+        return_scalar, return_list = False, False
+        if type(input_) is list:
+            return_list = True
+        elif type(input_) is float or type(input_) is int:
+            return_scalar = True
+            input_ = [input_]
+        elif type(input_) is not np.ndarray:
+            raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
+        input_ = np.array(input_)
+        total_force = np.zeros_like(input_)
         i_input = input_
         for i,s in enumerate(self._samples):
             total_force += s.disp_controlled(i_input,params[i])
             i_input = s.outer_radius(i_input,params[i])
-
+        if return_scalar:
+            return total_force[0]
+        if return_list:
+            return list(total_force)
         return total_force
 
     def cauchy_stress(self,input_,params=None,n=10):
         if params is None:
             params = self.parameters
-        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculation
-        temp = self._samples[0].output
-        for s in self._samples:
-            s.output = 'pressure'
+        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculatioself._outputfor s in self._samples:
+            s._output = 'pressure'
         pressure = self.disp_controlled(input_,params)[0]
 
         total_thick = 0.
@@ -564,6 +577,6 @@ class LayeredTube(LayeredSamples):
             XI.extend(xi)
             Stress.extend(stress)
         for s in self._samples:
-            s.output = temp
+            s._output = self._output
         return XI,Stress
 
