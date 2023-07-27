@@ -152,6 +152,8 @@ class LinearSpring(SampleExperiment):
         self.f0 = f0
         self.k0 = k0
         self.A0 = A0
+        if self.inp == 'length' or self.inp == 'radius':
+            self.x0 = self.L0
     
     def compute(self,x,params):
         self.update(**params)
@@ -203,6 +205,8 @@ class UniaxialExtension(SampleExperiment):
     def update(self,L0,A0,**extra_args):
         self.L0 = L0
         self.A0 = A0
+        if self.inp == 'length' or self.inp == 'radius':
+            self.x0 = self.L0
 
     def _defGrad(self,input_):
         #converts the input into 3X3 F tensors
@@ -268,6 +272,8 @@ class PlanarBiaxialExtension(SampleExperiment):
     def update(self,L10,L20,thick,**extra_args):
         self.L0 = np.array([L10,L20])
         self.thick = thick
+        if self.inp == 'length':
+            self.x0 = self.L0.copy()
 
     def _defGrad(self,input_):
         if type(input_) is np.ndarray:
@@ -334,6 +340,10 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
 
     def update(self,Ri,thick,omega,L0,lambdaZ,**extra_args):
         self.Ri,self.thick,self.k,self.L0,self.lambdaZ = Ri,thick,2*pi/(2*pi-omega),L0,lambdaZ
+        if self.inp == 'radius':
+            self.x0 = self.Ri
+        elif self.inp == 'area':
+            self.x0 = self.Ri**2*pi
 
     def _defGrad(self,r,R):
         return np.diag([R/r/self.k/self.lambdaZ,self.k*r/R,self.lambdaZ])
