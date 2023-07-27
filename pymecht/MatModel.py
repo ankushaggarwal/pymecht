@@ -44,15 +44,15 @@ class MatModel:
                         except KeyError:
                             print ('Unknown model: ', m)
             self._models = tuple(self._models)
-        self.param_names,self.theta = [],{}
+        self._param_names,self._params = [],{}
         for i,m in enumerate(self._models):
             t1 = m.param_default
-            self.param_names.append({k+'_'+str(i):k for k in t1})
-            self.theta.update({k+'_'+str(i):t1[k] for k in t1})
+            self._param_names.append({k+'_'+str(i):k for k in t1})
+            self._params.update({k+'_'+str(i):t1[k] for k in t1})
 
     @property
     def parameters(self):
-        return self.theta.copy()
+        return self._params.copy()
 
     @property
     def models(self):
@@ -60,10 +60,10 @@ class MatModel:
 
     @parameters.setter
     def parameters(self,theta):
-        if self.theta.keys() != theta.keys():
+        if self._params.keys() != theta.keys():
             raise ValueError("Keys of the input parameters do not match the model parameter keys")
         else:
-            self.theta.update(theta)
+            self._params.update(theta)
 
     def parameters_wbounds(self):
         theta_low,theta_up = {},{}
@@ -72,9 +72,9 @@ class MatModel:
             theta_low.update({k+'_'+str(i):t1[k] for k in t1})
             t2 = m.param_up_bd
             theta_up.update({k+'_'+str(i):t2[k] for k in t2})
-        if set(theta_low.keys()) != set(self.theta.keys()) or set(theta_up.keys()) != set(self.theta.keys()):
-            raise ValueError("The dictionaries of parameter default, upper, and lower values have different set of keys",theta_low,theta_up,self.theta)
-        return self.theta.copy(), theta_low, theta_up
+        if set(theta_low.keys()) != set(self._params.keys()) or set(theta_up.keys()) != set(self._params.keys()):
+            raise ValueError("The dictionaries of parameter default, upper, and lower values have different set of keys",theta_low,theta_up,self._params)
+        return self._params.copy(), theta_low, theta_up
 
     @models.setter
     def models(self,modelsList):
@@ -82,16 +82,16 @@ class MatModel:
 
     def energy(self,F=np.identity(3),theta=None):
         if theta is None:
-            theta=self.theta
+            theta=self._params
         en = 0.
         for i,m in enumerate(self._models):
-            thetai = {self.param_names[i][k]:theta[k] for k in self.param_names[i]}
+            thetai = {self._param_names[i][k]:theta[k] for k in self._param_names[i]}
             en += m.energy(F,thetai)
         return en
 
     def stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
         if theta is None:
-            theta=self.theta
+            theta=self._params
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
         for i in range(len(self.__stressnames)):
@@ -104,7 +104,7 @@ class MatModel:
         S = np.zeros([3,3])
         detF = 1.
         for i,m in enumerate(self._models):
-            thetai = {self.param_names[i][k]:theta[k] for k in self.param_names[i]}
+            thetai = {self._param_names[i][k]:theta[k] for k in self._param_names[i]}
             S += m.secondPK(F,thetai)
             detF = m.J
 
@@ -128,7 +128,7 @@ class MatModel:
 
     def energy_stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
         if theta is None:
-            theta=self.theta
+            theta=self._params
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
         for i in range(len(self.__stressnames)):
@@ -142,7 +142,7 @@ class MatModel:
         S = np.zeros([3,3])
         detF = 1.
         for i,m in enumerate(self._models):
-            thetai = {self.param_names[i][k]:theta[k] for k in self.param_names[i]}
+            thetai = {self._param_names[i][k]:theta[k] for k in self._param_names[i]}
             e,s = m.energy_stress(F,thetai)
             en += e
             S += s
@@ -169,14 +169,14 @@ class MatModel:
     def __add__(self,other):
         return MatModel(*(self.models+other.models))
 
-    def test(self,theta=None):
+    def _test(self,theta=None):
         if theta is None:
-            theta=self.theta
+            theta=self._params
         result = []
         #Test each model if it is of InvariantHyperelastic class
         for i,m in enumerate(self._models):
             if isinstance(m,InvariantHyperelastic):
-                thetai = {self.param_names[i][k]:theta[k] for k in self.param_names[i]}
+                thetai = {self._param_names[i][k]:theta[k] for k in self._param_names[i]}
                 result.append(m.test(thetai))
         return all(result)
 
@@ -718,8 +718,8 @@ class StructModel:
         self.nseg = 1
         self.order_quad = 10
         self.nint = self.nseg*self.order_quad
-        self.theta_i = np.zeros(self.nint)
-        self.theta_weight_i = np.zeros(self.nint)
+        self._theta_i = np.zeros(self.nint)
+        self._theta_weight_i = np.zeros(self.nint)
         #if self.M is None or len(self.M) != 1:
         #    raise ValueError(self.__class__.__name__+" class needs exactly one fiber family")
         #self.m = self.M[0]
@@ -728,7 +728,7 @@ class StructModel:
         self.updateIntegrationTheta(-pi/2.,pi/2.)
         self.prefactor1 = np.sqrt(2*np.pi)
         self.prefactor2 = np.pi/2./np.sqrt(2)
-        self.nvector_iterate[:,0],self.nvector_iterate[:,1] = np.cos(self.theta_i), np.sin(self.theta_i)
+        self.nvector_iterate[:,0],self.nvector_iterate[:,1] = np.cos(self._theta_i), np.sin(self._theta_i)
         self.Q = np.eye(3)
         self.param_default  = dict(A=1.,B=1.,mean_theta=0.,sigma=0.1,aniso_fraction=0.9)
         self.param_low_bd   = dict(A=0.001,B=1.,mean_theta=0.,sigma=0.1,aniso_fraction=0.)
@@ -744,15 +744,15 @@ class StructModel:
             dsize = (t2+t1)/2.
             xi = jac*x+dsize
             wi = jac*w
-            self.theta_i[i*self.order_quad:(i+1)*self.order_quad] = xi
-            self.theta_weight_i[i*self.order_quad:(i+1)*self.order_quad] = wi
+            self._theta_i[i*self.order_quad:(i+1)*self.order_quad] = xi
+            self._theta_weight_i[i*self.order_quad:(i+1)*self.order_quad] = wi
 
     def fiber_distribution(self,normalize,theta,sigma,aniso_fraction,**extra_args):
         return aniso_fraction*np.exp(-theta*theta/(2.*sigma*sigma))/normalize + (1.-aniso_fraction)/np.pi
 
     def updateGammaIterate(self,mean_theta,sigma,aniso_fraction,**extra_args):
         normalize = self.prefactor1*sigma*erf(self.prefactor2/sigma)
-        theta = self.theta_i - mean_theta
+        theta = self._theta_i - mean_theta
         self.Gamma_iterate = aniso_fraction*np.exp(-theta*theta/(2.*sigma*sigma))/normalize + (1.-aniso_fraction)/np.pi
 
     def update(self,F):
@@ -789,7 +789,7 @@ class StructModel:
         vectors = self.nvector_iterate@self.Q
         stretches = np.einsum('ij,ji->i',vectors,(self.E@vectors.T))
         stretches[stretches<0]=0.
-        energy = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)/B-1./B-stretches)*self.theta_weight_i)
+        energy = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)/B-1./B-stretches)*self._theta_weight_i)
         return energy
 
     def _stress(self,A,B,mean_theta,sigma,aniso_fraction,**extra_args):
@@ -797,7 +797,7 @@ class StructModel:
         stretches = np.einsum('ij,ji->i',vectors,(self.E@vectors.T))
         stretches[stretches<0]=0.
         tensors = np.array([np.outer(n,n) for n in vectors])
-        stress = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)-1)*self.theta_weight_i*tensors.T,axis=-1)
+        stress = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)-1)*self._theta_weight_i*tensors.T,axis=-1)
         return stress
 
     def _energy_stress(self,A,B,mean_theta,sigma,aniso_fraction,**extra_args):
@@ -805,8 +805,8 @@ class StructModel:
         stretches = np.einsum('ij,ji->i',vectors,(self.E@vectors.T))
         stretches[stretches<0]=0.
         tensors = np.array([np.outer(n,n) for n in vectors])
-        energy = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)/B-1./B-stretches)*self.theta_weight_i)
-        stress = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)-1)*self.theta_weight_i*tensors.T,axis=-1)
+        energy = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)/B-1./B-stretches)*self._theta_weight_i)
+        stress = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)-1)*self._theta_weight_i*tensors.T,axis=-1)
         return energy,stress
 
 
