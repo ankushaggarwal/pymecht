@@ -25,7 +25,6 @@ class MatModel:
     >>> for name, cls in inspect.getmembers(importlib.import_module("MatModel"), inspect.isclass):
     >>>    print(name,cls.__doc__)
     '''
-    __stressnames = [['cauchy'],['1pk','1stpk','firstpk'],['2pk','2ndpk','secondpk']]
 
     def __init__(self,*modelsList):
         self._models = modelsList
@@ -49,6 +48,7 @@ class MatModel:
             t1 = m.param_default
             self._param_names.append({k+'_'+str(i):k for k in t1})
             self._params.update({k+'_'+str(i):t1[k] for k in t1})
+        self._stressnames = [['cauchy'],['1pk','1stpk','firstpk'],['2pk','2ndpk','secondpk']]
 
     @property
     def parameters(self):
@@ -94,11 +94,11 @@ class MatModel:
             theta=self._params
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
-        for i in range(len(self.__stressnames)):
-            if any(stresstype==x for x in self.__stressnames[i]):
+        for i in range(len(self._stressnames)):
+            if any(stresstype==x for x in self._stressnames[i]):
                 stype = i
         if stype is None:
-            raise ValueError('Unknown stress type, only the following allowed:', self.__stressnames)
+            raise ValueError('Unknown stress type, only the following allowed:', self._stressnames)
 
         #Calculate the second PK stress
         S = np.zeros([3,3])
@@ -131,11 +131,11 @@ class MatModel:
             theta=self._params
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
-        for i in range(len(self.__stressnames)):
-            if any(stresstype==x for x in self.__stressnames[i]):
+        for i in range(len(self._stressnames)):
+            if any(stresstype==x for x in self._stressnames[i]):
                 stype = i
         if stype is None:
-            raise ValueError('Unknown stress type, only the following allowed:', self.__stressnames)
+            raise ValueError('Unknown stress type, only the following allowed:', self._stressnames)
 
         en = 0.
         #Calculate the second PK stress
