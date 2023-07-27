@@ -11,15 +11,15 @@ class SampleExperiment:
     It also defines the coordinate system to be used.
     '''
     def __init__(self,mat_model,disp_measure,force_measure):
-        self.mat_model = mat_model
-        self.inp = disp_measure.replace(" ","").lower()
-        self.output = force_measure.replace(" ","").lower()
+        self._mat_model = mat_model
+        self._inp = disp_measure.replace(" ","").lower()
+        self._output = force_measure.replace(" ","").lower()
         params = {}
 
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
-        self.update(**params)
+        self._update(**params)
         return_scalar, return_list = False, False
         if type(input_) is list:
             return_list = True
@@ -28,7 +28,7 @@ class SampleExperiment:
             return_scalar = True    
         elif type(input_) is not np.ndarray:
             raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
-        output = [self.observe(self.compute(F,params)) for F in self._defGrad(input_)]
+        output = [self._observe(self._compute(F,params)) for F in self._defGrad(input_)]
         if return_scalar:
             return output[0]
         if return_list:
@@ -38,7 +38,7 @@ class SampleExperiment:
     def force_controlled(self,forces,params=None,x0=None):
         if params is None:
             params = self.parameters
-        self.update(**params)
+        self._update(**params)
         return_scalar, return_list = False, False
         if type(forces) is float or type(forces) is int:
             forces = np.array([forces])
@@ -53,11 +53,11 @@ class SampleExperiment:
             return self.disp_controlled([displ],params)[0]-ybar
 
         #solve for the input_ by solving the disp_controlled minus desired output
-        forces_temp = forces.reshape(-1,self.ndim)
+        forces_temp = forces.reshape(-1,self._ndim)
         ndata = len(forces_temp)
         y=[]
         if x0 is None:
-            x0=self.x0 + 1e-5
+            x0=self._x0 + 1e-5
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params))
             if not sol.success or any(np.abs(sol.r)>1e5):
@@ -96,8 +96,8 @@ class SampleExperiment:
 
     @property
     def parameters(self):
-        theta = self.param_default.copy()
-        mat_theta = self.mat_model.parameters
+        theta = self._param_default.copy()
+        mat_theta = self._mat_model.parameters
         if len(theta.keys() & mat_theta.keys())>0:
                 raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
         theta.update(mat_theta)
@@ -107,18 +107,18 @@ class SampleExperiment:
     def parameters(self,theta):
         mat = {}
         for k in theta.keys():
-            if k in self.param_default:
-                self.param_default[k] = theta[k]
+            if k in self._param_default:
+                self._param_default[k] = theta[k]
             else:
                 mat[k] = theta[k]
-        self.update(**self.param_default)
-        self.mat_model.parameters = mat
+        self._update(**self._param_default)
+        self._mat_model.parameters = mat
 
     def parameters_wbounds(self):
-        theta = self.param_default.copy()
-        theta_low = self.param_low_bd.copy()
-        theta_up = self.param_up_bd.copy()
-        mat_theta,mat_theta_low,mat_theta_up = self.mat_model.parameters_wbounds()
+        theta = self._param_default.copy()
+        theta_low = self._param_low_bd.copy()
+        theta_up = self._param_up_bd.copy()
+        mat_theta,mat_theta_low,mat_theta_up = self._mat_model.parameters_wbounds()
         if len(theta.keys() & mat_theta.keys())>0:
                 raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
 
@@ -131,55 +131,55 @@ class SampleExperiment:
 class LinearSpring(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
         super().__init__(mat_model,disp_measure,force_measure)
-        self.param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
-        self.param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
-        self.param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.,thick=0.)
-        self.update(**self.param_default)
-        if self.inp == 'stretch':
-            self.x0 = 1.
-            self.compute1 = lambda x: self.k0*(x-1)*self.L0-self.f0
-        elif self.inp == 'deltal':
-            self.x0 = 0.
-            self.compute1 = lambda x: self.k0*x-self.f0
-        elif self.inp == 'length' or self.inp == 'radius':
-            self.x0 = self.L0
-            self.compute1 = lambda x: self.k0*(x-self.L0)-self.f0
-        self.ndim = 1
+        self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
+        self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
+        self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.,thick=0.)
+        self._update(**self._param_default)
+        if self._inp == 'stretch':
+            self._x0 = 1.
+            self._compute1 = lambda x: self._k0*(x-1)*self._L0-self._f0
+        elif self._inp == 'deltal':
+            self._x0 = 0.
+            self._compute1 = lambda x: self._k0*x-self._f0
+        elif self._inp == 'length' or self._inp == 'radius':
+            self._x0 = self._L0
+            self._compute1 = lambda x: self._k0*(x-self._L0)-self._f0
+        self._ndim = 1
         self._defGrad = lambda x: x
 
-    def update(self,L0,f0,k0,A0,**extra_args):
-        self.L0 = L0
-        self.f0 = f0
-        self.k0 = k0
-        self.A0 = A0
-        if self.inp == 'length' or self.inp == 'radius':
-            self.x0 = self.L0
+    def _update(self,L0,f0,k0,A0,**extra_args):
+        self._L0 = L0
+        self._f0 = f0
+        self._k0 = k0
+        self._A0 = A0
+        if self._inp == 'length' or self._inp == 'radius':
+            self._x0 = self._L0
     
-    def compute(self,x,params):
-        self.update(**params)
-        return self.compute1(x)
+    def _compute(self,x,params):
+        self._update(**params)
+        return self._compute1(x)
 
-    def observe(self,force):
-        if self.output=='pressure' or self.output=='stress':
-            return force/self.A0
+    def _observe(self,force):
+        if self._output=='pressure' or self._output=='stress':
+            return force/self._A0
         return force
 
     def outer_radius(self,x,params):
-        self.update(**params)
-        if self.inp == 'stretch':
-            return x*self.L0
-        elif self.inp == 'deltal':
-            return x+self.L0
-        elif self.inp == 'length' or self.inp == 'radius':
+        self._update(**params)
+        if self._inp == 'stretch':
+            return x*self._L0
+        elif self._inp == 'deltal':
+            return x+self._L0
+        elif self._inp == 'length' or self._inp == 'radius':
             return x
 
 class UniaxialExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
         super().__init__(mat_model,disp_measure,force_measure)
-        self.param_default  = dict(L0=1.,A0=1.)
-        self.param_low_bd   = dict(L0=0.0001,A0=0.0001)
-        self.param_up_bd    = dict(L0=1000.,A0=1000.)
-        self.update(**self.param_default)
+        self._param_default  = dict(L0=1.,A0=1.)
+        self._param_low_bd   = dict(L0=0.0001,A0=0.0001)
+        self._param_up_bd    = dict(L0=1000.,A0=1000.)
+        self._update(**self._param_default)
         #check the fibers in mat_model and set their directions to [1,0,0]
         for mm in mat_model.models:
             F = mm.fiber_dirs
@@ -188,64 +188,64 @@ class UniaxialExtension(SampleExperiment):
             for f in F:
                 if f[1]!=0 or f[2]!= 0:
                     warnings.warn("The UniaxialExtension assumes that fibers are aligned along the first direction. This is not satisfied and the results may be spurious.")
-        if self.output == 'force':
-            self.compute = partial(self.mat_model.stress,stresstype='1pk',incomp=True,Fdiag=True)
+        if self._output == 'force':
+            self._compute = partial(self._mat_model.stress,stresstype='1pk',incomp=True,Fdiag=True)
         else:
-            self.compute = partial(self.mat_model.stress,stresstype=force_measure,incomp=True,Fdiag=True)
-        if self.inp == 'stretch':
-            self.x0 = 1.
-        elif self.inp == 'strain':
-            self.x0 = 0.
-        elif self.inp == 'deltal':
-            self.x0 = 0.
-        elif self.inp == 'length':
-            self.x0 = self.L0
-        self.ndim=1
+            self._compute = partial(self._mat_model.stress,stresstype=force_measure,incomp=True,Fdiag=True)
+        if self._inp == 'stretch':
+            self._x0 = 1.
+        elif self._inp == 'strain':
+            self._x0 = 0.
+        elif self._inp == 'deltal':
+            self._x0 = 0.
+        elif self._inp == 'length':
+            self._x0 = self._L0
+        self._ndim=1
 
-    def update(self,L0,A0,**extra_args):
-        self.L0 = L0
-        self.A0 = A0
-        if self.inp == 'length' or self.inp == 'radius':
-            self.x0 = self.L0
+    def _update(self,L0,A0,**extra_args):
+        self._L0 = L0
+        self._A0 = A0
+        if self._inp == 'length' or self._inp == 'radius':
+            self._x0 = self._L0
 
     def _defGrad(self,input_):
         #converts the input into 3X3 F tensors
         F = []
         for i in input_:
-            i = self.stretch(i)
+            i = self._stretch(i)
             F.append(np.diag([i,1./sqrt(i),1./sqrt(i)]))
         return F
 
-    def stretch(self,l):
+    def _stretch(self,l):
         if type(l) is np.ndarray or isinstance(l,list):
             if len(l)>1:
                 raise ValueError("The length of stretch vector should be one")
             l = l[0]
 
         #converts the input into stretch
-        if self.inp == 'stretch':
+        if self._inp == 'stretch':
             return l
-        if self.inp == 'strain':
+        if self._inp == 'strain':
             return sqrt(l)+1
-        if self.inp == 'deltal':
-            return l/self.L0+1
-        if self.inp == 'length':
-            return l/self.L0
+        if self._inp == 'deltal':
+            return l/self._L0+1
+        if self._inp == 'length':
+            return l/self._L0
 
-    def observe(self,stress):
+    def _observe(self,stress):
         #converts the output into force
         s1 = stress[0,0]
-        if self.output=='force':
-            return s1*self.A0
+        if self._output=='force':
+            return s1*self._A0
         return s1
 
 class PlanarBiaxialExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='cauchy'):
         super().__init__(mat_model,disp_measure,force_measure)
-        self.param_default  = dict(L10=1.,L20=1.,thick=1.)
-        self.param_low_bd   = dict(L10=0.0001,L20=0.0001,thick=0.0001)
-        self.param_up_bd    = dict(L10=1000.,L20=1000.,thick=1000.)
-        self.update(**self.param_default)
+        self._param_default  = dict(L10=1.,L20=1.,thick=1.)
+        self._param_low_bd   = dict(L10=0.0001,L20=0.0001,thick=0.0001)
+        self._param_up_bd    = dict(L10=1000.,L20=1000.,thick=1000.)
+        self._update(**self._param_default)
         #check the fibers in mat_model 
         for mm in mat_model.models:
             F = mm.fiber_dirs
@@ -255,62 +255,62 @@ class PlanarBiaxialExtension(SampleExperiment):
                 if f[2]!= 0:
                     warnings.warn("The PlanarBiaxialExtension assumes that fibers are in the plane. This is not satisfied and the results may be spurious.")
 
-        if self.output == 'force' or self.output == 'tension':
-            self.compute = partial(self.mat_model.stress,stresstype='1pk',incomp=True,Fdiag=True)
+        if self._output == 'force' or self._output == 'tension':
+            self._compute = partial(self._mat_model.stress,stresstype='1pk',incomp=True,Fdiag=True)
         else:
-            self.compute = partial(self.mat_model.stress,stresstype=force_measure,incomp=True,Fdiag=True)
-        if self.inp == 'stretch':
-            self.x0 = np.array([1.,1.])
-        elif self.inp == 'strain':
-            self.x0 = np.zeros(2)
-        elif self.inp == 'deltal':
-            self.x0 = np.zeros(2)
-        elif self.inp == 'length':
-            self.x0 = self.L0.copy()
-        self.ndim=2
+            self._compute = partial(self._mat_model.stress,stresstype=force_measure,incomp=True,Fdiag=True)
+        if self._inp == 'stretch':
+            self._x0 = np.array([1.,1.])
+        elif self._inp == 'strain':
+            self._x0 = np.zeros(2)
+        elif self._inp == 'deltal':
+            self._x0 = np.zeros(2)
+        elif self._inp == 'length':
+            self._x0 = self._L0.copy()
+        self._ndim=2
 
-    def update(self,L10,L20,thick,**extra_args):
-        self.L0 = np.array([L10,L20])
-        self.thick = thick
-        if self.inp == 'length':
-            self.x0 = self.L0.copy()
+    def _update(self,L10,L20,thick,**extra_args):
+        self._L0 = np.array([L10,L20])
+        self._thick = thick
+        if self._inp == 'length':
+            self._x0 = self._L0.copy()
 
     def _defGrad(self,input_):
         if type(input_) is np.ndarray:
             input_ = input_.reshape(-1,2)
         F = []
         for i in input_:
-            i = self.stretch(i)
+            i = self._stretch(i)
             F.append(np.diag([i[0],i[1],1./i[0]/i[1]]))
         return F
 
-    def stretch(self,l):
+    def _stretch(self,l):
         if len(l) != 2:
             raise ValueError("Inputs to PlanarBiaxialExtension must have two components")
-        if self.inp == 'stretch':
+        if self._inp == 'stretch':
             return l
-        if self.inp == 'strain':
+        if self._inp == 'strain':
             return np.sqrt(l)+1
-        if self.inp == 'deltal':
-            return l/self.L0+1
-        if self.inp == 'length':
-            return l/self.L0
+        if self._inp == 'deltal':
+            return l/self._L0+1
+        if self._inp == 'length':
+            return l/self._L0
 
-    def observe(self,stress):
+    def _observe(self,stress):
         s1,s2 = stress[0,0],stress[1,1]
-        if self.output=='force':
-            return np.array([s1*self.L0[1],s2*self.L0[0]])*self.thick
-        if self.output=='tension':
-            return np.array([s1,s2])*self.thick
+        if self._output=='force':
+            return np.array([s1*self._L0[1],s2*self._L0[0]])*self._thick
+        if self._output=='tension':
+            return np.array([s1,s2])*self._thick
         return np.array([s1,s2])
 
 class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='radius',force_measure='force'):
         super().__init__(mat_model,disp_measure,force_measure)
-        self.param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
-        self.param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
-        self.param_up_bd    = dict(Ri=1.5, thick=1., omega=0., L0=1.,lambdaZ=1.)
-        self.update(**self.param_default)
+        self._param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
+        self._param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
+        self._param_up_bd    = dict(Ri=1.5, thick=1., omega=0., L0=1.,lambdaZ=1.)
+        self._update(**self._param_default)
         #check the fibers in mat_model
         for mm in mat_model.models:
             F = mm.fiber_dirs
@@ -325,33 +325,33 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
                 if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
                     warnings.warn("The UniformAxisymmetricTubeInflationExtension assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
                     print(f1,f2)
-        self.compute = partial(self.mat_model.stress,stresstype='cauchy',incomp=False,Fdiag=True)
-        if self.inp == 'stretch':
-            self.x0 = 1.
-        elif self.inp == 'deltalr':
-            self.x0 = 0.
-        elif self.inp == 'radius':
-            self.x0 = self.Ri
-        elif self.inp == 'area':
-            self.x0 = self.Ri**2*pi
+        self._compute = partial(self._mat_model.stress,stresstype='cauchy',incomp=False,Fdiag=True)
+        if self._inp == 'stretch':
+            self._x0 = 1.
+        elif self._inp == 'deltalr':
+            self._x0 = 0.
+        elif self._inp == 'radius':
+            self._x0 = self._Ri
+        elif self._inp == 'area':
+            self._x0 = self._Ri**2*pi
         else:
             raise ValueError("Unknown disp_measure", disp_measure)
-        self.ndim=1
+        self._ndim=1
 
-    def update(self,Ri,thick,omega,L0,lambdaZ,**extra_args):
-        self.Ri,self.thick,self.k,self.L0,self.lambdaZ = Ri,thick,2*pi/(2*pi-omega),L0,lambdaZ
-        if self.inp == 'radius':
-            self.x0 = self.Ri
-        elif self.inp == 'area':
-            self.x0 = self.Ri**2*pi
+    def _update(self,Ri,thick,omega,L0,lambdaZ,**extra_args):
+        self._Ri,self._thick,self._k,self._L0,self._lambdaZ = Ri,thick,2*pi/(2*pi-omega),L0,lambdaZ
+        if self._inp == 'radius':
+            self._x0 = self._Ri
+        elif self._inp == 'area':
+            self._x0 = self._Ri**2*pi
 
     def _defGrad(self,r,R):
-        return np.diag([R/r/self.k/self.lambdaZ,self.k*r/R,self.lambdaZ])
+        return np.diag([R/r/self._k/self._lambdaZ,self._k*r/R,self._lambdaZ])
 
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
-        self.update(**params)
+        self._update(**params)
         output_scalar, output_list = False, False
         if type(input_) is float or type(input_) is int:
             input_ = [input_]
@@ -362,16 +362,16 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
 
         def integrand(xi,ri,params):
-            R = self.Ri+xi*self.thick
-            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            R = self._Ri+xi*self._thick
+            r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
-            sigma = self.compute(F,params) 
-            return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
+            sigma = self._compute(F,params) 
+            return R/self._lambdaZ/r**2*self._thick*(sigma[1,1]-sigma[0,0])
         
-        if self.output=='pressure':
-            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self.stretch(input_)]
-        elif self.output =='force':
-            output = [quad(integrand,0,1,args=(ri,params))[0]*self.L0*self.lambdaZ*pi*ri**2 for ri in self.stretch(input_)]
+        if self._output=='pressure':
+            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(input_)]
+        elif self._output =='force':
+            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri**2 for ri in self._stretch(input_)]
         if output_scalar:
             return output[0]
         if output_list:
@@ -379,27 +379,27 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         return np.array(output).reshape(np.shape(input_))
 
     def outer_radius(self,input_,params):
-        self.update(**params)
+        self._update(**params)
 
-        Ro = self.Ri+self.thick
-        ro = np.array([sqrt((Ro**2-self.Ri**2)/self.k/self.lambdaZ+ri**2) for ri in self.stretch(input_)])
+        Ro = self._Ri+self._thick
+        ro = np.array([sqrt((Ro**2-self._Ri**2)/self._k/self._lambdaZ+ri**2) for ri in self._stretch(input_)])
         return ro.reshape(np.shape(input_))
 
-    def stretch(self,l): #this returns internal radius instead
-        if self.inp == 'stretch':
-            return l*self.Ri
-        if self.inp == 'strain':
+    def _stretch(self,l): #this returns internal radius instead
+        if self._inp == 'stretch':
+            return l*self._Ri
+        if self._inp == 'strain':
             return np.sqrt(l)+1
-        if self.inp == 'deltar':
-            return l+self.Ri
-        if self.inp == 'radius':
+        if self._inp == 'deltar':
+            return l+self._Ri
+        if self._inp == 'radius':
             return l
-        if self.inp == 'area':
+        if self._inp == 'area':
             return np.sqrt(l/pi)
 
     def cauchy_stress(self,input_,params,n=10,pressure=None):
-        self.update(**params)
-        ri = self.stretch(input_)
+        self._update(**params)
+        ri = self._stretch(input_)
 
         if type(ri) is np.ndarray or isinstance(ri,list):
             if len(ri)>1:
@@ -407,21 +407,21 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             ri = ri[0]
 
         def integrand(xi,ri,params):
-            R = self.Ri+xi*self.thick
-            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            R = self._Ri+xi*self._thick
+            r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
-            sigma = self.compute(F,params) 
-            return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
+            sigma = self._compute(F,params) 
+            return R/self._lambdaZ/r**2*self._thick*(sigma[1,1]-sigma[0,0])
 
         Stresses = []
         if pressure is None:
             pressure = quad(integrand,0,1,args=(ri,params))[0]
         xi = np.linspace(0,1,n)
         for xii in xi:
-            R = self.Ri+xii*self.thick
-            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            R = self._Ri+xii*self._thick
+            r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
-            sigmabar = self.compute(F,params)
+            sigmabar = self._compute(F,params)
             I = quad(integrand,0,xii,args=(ri,params))[0] #=sigmarr-sigmarr0=sigmarr+pressure=sigmabar-pi
             pi = sigmabar[0,0] + pressure - I
             Stresses += [sigmabar-pi*np.eye(3)]
@@ -432,10 +432,10 @@ class NonUniformTube(SampleExperiment):
     #This need not be derived from SampleExperiment, but I am keeping that for now. Will decide later.
     def __init__(self,mat_model,disp_measure='radius',force_measure='pressure'):
         super().__init__(mat_model,disp_measure,force_measure)
-        self.param_default  = dict(Ri=1., Rip = 0., thick=0.1, thickp = 0., omega=0., L0=1.,lambdaZ=1.)
-        self.param_low_bd   = dict(Ri=0.5, Rip = 0., thick=0., thickp = 0., omega=0., L0=1.,lambdaZ=1.)
-        self.param_up_bd    = dict(Ri=1.5, Rip = 0., thick=1., thickp = 0., omega=0., L0=1.,lambdaZ=1.)
-        self.update(**self.param_default)
+        self._param_default  = dict(Ri=1., Rip = 0., thick=0.1, thickp = 0., omega=0., L0=1.,lambdaZ=1.)
+        self._param_low_bd   = dict(Ri=0.5, Rip = 0., thick=0., thickp = 0., omega=0., L0=1.,lambdaZ=1.)
+        self._param_up_bd    = dict(Ri=1.5, Rip = 0., thick=1., thickp = 0., omega=0., L0=1.,lambdaZ=1.)
+        self._update(**self._param_default)
         #check the fibers in mat_model
         for mm in mat_model.models:
             F = mm.fiber_dirs
@@ -450,54 +450,54 @@ class NonUniformTube(SampleExperiment):
                 if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
                     warnings.warn("The NonUniformTube assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
                     print(f1,f2)
-        self.compute = partial(self.mat_model.stress,stresstype='1stPK',incomp=False,Fdiag=False)
-        if self.inp == 'radius':
-            self.x0 = [self.Ri,self.Rip]
-        #elif self.inp == 'area':
-        #    self.x0 = [self.Ri**2*pi,self.Ri*2*pi*self.Rip]
+        self._compute = partial(self._mat_model.stress,stresstype='1stPK',incomp=False,Fdiag=False)
+        if self._inp == 'radius':
+            self._x0 = [self._Ri,self._Rip]
+        #elif self._inp == 'area':
+        #    self._x0 = [self._Ri**2*pi,self._Ri*2*pi*self._Rip]
         else:
             raise ValueError("Unknown disp_measure", disp_measure)
-        self.ndim=2
+        self._ndim=2
 
-    def update(self,Ri,Rip,thick,thickp,omega,L0,lambdaZ,**extra_args):
-        self.Ri,self.Rip,self.thick,self.thickp,self.k,self.L0,self.lambdaZ = Ri,Rip,thick,thickp,2*pi/(2*pi-omega),L0,lambdaZ
+    def _update(self,Ri,Rip,thick,thickp,omega,L0,lambdaZ,**extra_args):
+        self._Ri,self._Rip,self._thick,self._thickp,self._k,self._L0,self._lambdaZ = Ri,Rip,thick,thickp,2*pi/(2*pi-omega),L0,lambdaZ
 
     #def _defGrad(self,r,R,rp,Rp):
     #    return 
 
     def calculate_terms(self,ri,rip,params,terms):
-        self.update(**params)
-        Ri = self.Ri
-        Rip = self.Rip
-        v2 = self.lambdaZ
+        self._update(**params)
+        Ri = self._Ri
+        Rip = self._Rip
+        v2 = self._lambdaZ
         if type(terms) is str:
             terms = [terms]
 
         def integrand(xi,term):
-            R = Ri+xi*self.thick
-            r = sqrt((R**2-Ri**2)/self.k/v2+ri**2)
-            Rp = Rip+xi*self.thickp
+            R = Ri+xi*self._thick
+            r = sqrt((R**2-Ri**2)/self._k/v2+ri**2)
+            Rp = Rip+xi*self._thickp
             rp = ri*rip/r + (R*Rp-Ri*Rip)/r/v2
             fac = 1.
-            F = np.array([[R/r/self.k/v2,0, rp-Rp],[0, self.k*r/R,0],[fac*(Rp-rp),0,v2]])
+            F = np.array([[R/r/self._k/v2,0, rp-Rp],[0, self._k*r/R,0],[fac*(Rp-rp),0,v2]])
             #NOTE: All terms exclude the 2*pi factor
             if term=='energy':
-                return self.mat_model.energy(F,params)*R*self.thick
-            P = self.compute(F,params)
+                return self._mat_model.energy(F,params)*R*self._thick
+            P = self._compute(F,params)
             drdu1,drdv2 = ri/r, -(R*R-Ri*Ri)/(2*r*v2**2)
             if term=='du1':
                 term02 = -(2*ri*rip+2*(R*Rp-Ri*Rip)/v2)/(2*r*r)*drdu1+rip/r
                 dFdu1 = np.array([[-R*drdu1/(v2*r*r), 0, term02],[0,drdu1/R,0],[-term02,0,0]])
-                return (P[0,0]*dFdu1[0,0]+P[1,1]*dFdu1[1,1]+P[0,2]*dFdu1[0,2]+fac*P[2,0]*dFdu1[2,0])*R*self.thick
+                return (P[0,0]*dFdu1[0,0]+P[1,1]*dFdu1[1,1]+P[0,2]*dFdu1[0,2]+fac*P[2,0]*dFdu1[2,0])*R*self._thick
             if term=='dv1':
                 #dFdv1 = np.array([[0,0,ri/r],[0,0,0],[0,0,0]])
-                return P[0,2]*ri/r*R*self.thick
+                return P[0,2]*ri/r*R*self._thick
             if term=='du2':
                 return 0
             if term=='dv2':
                 term02 = -(2*ri*rip + 2*(R*Rp-Ri*Rip)/v2)*drdv2/(2*r*r)+(-2*(R*Rp-Ri*Rip)/v2**2)/(2*r)
                 dFdv2 = np.array([[-R/(v2*r*r)*drdv2-R/(v2**2*r), 0, term02], [0,drdv2/R,0],[-term02,0,1]])
-                return (P[0,0]*dFdv2[0,0]+P[1,1]*dFdv2[1,1]+P[0,2]*dFdv2[0,2]+P[2,2] + fac*P[2,0]*dFdv2[2,0])*R*self.thick
+                return (P[0,0]*dFdv2[0,0]+P[1,1]*dFdv2[1,1]+P[0,2]*dFdv2[0,2]+P[2,2] + fac*P[2,0]*dFdv2[2,0])*R*self._thick
             raise AttributeError("Not an acceptable value for terms")
         
         #return quad(integrand,0,1,args=(terms[0]))[0] 
@@ -524,30 +524,30 @@ class NonUniformTube(SampleExperiment):
         print(abs(du1-du1n),abs(dv1-dv1n),abs(dv2-dv2n))
 
     def outer_radius(self,ri,rip,params):
-        self.update(**params)
-        Ro = self.Ri+self.thick
-        ro = sqrt((Ro**2-self.Ri**2)/self.k/self.lambdaZ+ri**2) 
-        Rp = self.Rip+self.thickp
-        rp = ri*rip/ro + (Ro*Rp-self.Ri*self.Rip)/ro/self.lambdaZ
+        self._update(**params)
+        Ro = self._Ri+self._thick
+        ro = sqrt((Ro**2-self._Ri**2)/self._k/self._lambdaZ+ri**2) 
+        Rp = self._Rip+self._thickp
+        rp = ri*rip/ro + (Ro*Rp-self._Ri*self._Rip)/ro/self._lambdaZ
         return ro,rp
 
     #this is not used
-    def stretch(self,l): #this returns internal radius instead
-        if self.inp == 'stretch':
-            return l*self.Ri
-        if self.inp == 'strain':
+    def _stretch(self,l): #this returns internal radius instead
+        if self._inp == 'stretch':
+            return l*self._Ri
+        if self._inp == 'strain':
             return np.sqrt(l)+1
-        if self.inp == 'deltar':
-            return l+self.Ri
-        if self.inp == 'radius':
+        if self._inp == 'deltar':
+            return l+self._Ri
+        if self._inp == 'radius':
             return l
-        if self.inp == 'area':
+        if self._inp == 'area':
             return np.sqrt(l/pi)
 
     #TODO fix this, it was simply copied from uniformtube
     def cauchy_stress(self,input_,params,n=10,pressure=None):
-        self.update(**params)
-        ri = self.stretch(input_)
+        self._update(**params)
+        ri = self._stretch(input_)
 
         if type(ri) is np.ndarray or isinstance(ri,list):
             if len(ri)>1:
@@ -555,21 +555,21 @@ class NonUniformTube(SampleExperiment):
             ri = ri[0]
 
         def integrand(xi,ri,params):
-            R = self.Ri+xi*self.thick
-            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            R = self._Ri+xi*self._thick
+            r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
-            sigma = self.compute(F,params) 
-            return R/self.lambdaZ/r**2*self.thick*(sigma[1,1]-sigma[0,0])
+            sigma = self._compute(F,params) 
+            return R/self._lambdaZ/r**2*self._thick*(sigma[1,1]-sigma[0,0])
 
         Stresses = []
         if pressure is None:
             pressure = quad(integrand,0,1,args=(ri,params))[0]
         xi = np.linspace(0,1,n)
         for xii in xi:
-            R = self.Ri+xii*self.thick
-            r = sqrt((R**2-self.Ri**2)/self.k/self.lambdaZ+ri**2)
+            R = self._Ri+xii*self._thick
+            r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
-            sigmabar = self.compute(F,params)
+            sigmabar = self._compute(F,params)
             I = quad(integrand,0,xii,args=(ri,params))[0] #=sigmarr-sigmarr0=sigmarr+pressure=sigmabar-pi
             pi = sigmabar[0,0] + pressure - I
             Stresses += [sigmabar-pi*np.eye(3)]
@@ -588,7 +588,7 @@ class LayeredSamples:
             raise ValueError("The class only accepts objects of type SampleExperiment")
         outputs = [s.output for s in self._samples]
         inputs = [s.inp for s in self._samples]
-        self.ndim = samplesList[0].ndim
+        self._ndim = samplesList[0]._ndim
         #check if all outputs and inputs are the same
         if len(set(outputs)) > 1:
             raise ValueError("The outputs for all the layers must be the same")
@@ -616,7 +616,7 @@ class LayeredSamples:
             return self.disp_controlled([displ],params)[0]-ybar
 
         #solve for the input_ by solving the disp_controlled minus desired output
-        forces_temp = forces.reshape(-1,self.ndim)
+        forces_temp = forces.reshape(-1,self._ndim)
         ndata = len(forces_temp)
         y=[]
         if x0 is None:
