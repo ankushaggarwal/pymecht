@@ -32,7 +32,8 @@ def test_mat_reference():
     for mname in mat_model_list:
         if mname in ['splineI1I4']: #TODO: splineI1I4 needs a spline setting
             continue
-        model = mat_creation(mname)
+        model = MatModel(mname)
+        model.models[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
         e, S = model.energy_stress(np.eye(3),model.parameters,stresstype='cauchy',incomp=True)
         assert e == pytest.approx(0.0)
         assert S == pytest.approx(np.zeros((3,3)))
@@ -42,7 +43,8 @@ def test_mat_partial_derivs():
     for mname in mat_model_list:
         if mname in ['splineI1I4']:
             continue
-        model = mat_creation(mname)
+        model = MatModel(mname)
+        model.models[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
         assert model._test(model.parameters) #raises error since the parameter names are different
 
 def test_samples():
