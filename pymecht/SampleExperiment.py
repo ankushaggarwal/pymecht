@@ -379,7 +379,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         if self._output=='pressure':
             output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(input_)]
         elif self._output =='force':
-            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri**2 for ri in self._stretch(input_)]
+            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri*2 for ri in self._stretch(input_)]
         if output_scalar:
             return output[0]
         if output_list:
