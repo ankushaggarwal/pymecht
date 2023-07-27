@@ -12,7 +12,7 @@ class MCMC:
         if not isinstance(prob_result,float):
             raise ValueError("prob_func should output a float. Instead it gave", prob_result)
         print("MCMC instance created with the following settings")
-        self._param_print()
+        self._param_print_transpose()
         print(self.n_params,"parameters will be varied. For changing any of the bounds/fixed, use update_ranges function")
 
         self._samples = None
@@ -24,6 +24,42 @@ class MCMC:
             return "{:<12}".format("{:.2f}".format(x))
         else:
             return "{:<12}".format("{:.2e}".format(x))
+
+    def _param_print_transpose(self):
+        header = "{:<18}".format("Keys")
+        header += "{:<12}".format("Initial value")
+        header += "{:<12}".format("Fixed?")
+        header += "{:<12}".format("Lower bound")
+        header += "{:<12}".format("Upper bound")
+        print("-"*len(header))
+        print(header)
+        print("-"*len(header))
+        for k in self.keys:
+            line = "{:<18}".format(k)
+            line += self._format_float(self.params[k])
+            line += "{:<12}".format(str(self.params_fix[k]))
+            if self.lb is None:
+                if self.params_fix[k]:
+                    line += "{:<12}".format("-")
+                else:
+                    line += "{:<12}".format("-inf")
+            else:
+                if self.params_fix[k]:
+                    line += "{:<12}".format("-")
+                else:
+                    line += self._format_float(self.lb[k])
+            if self.ub is None:
+                if self.params_fix[k]:
+                    line += "{:<12}".format("-")
+                else:
+                    line += "{:<12}".format("inf")
+            else:
+                if self.params_fix[k]:
+                    line += "{:<12}".format("-")
+                else:
+                    line += self._format_float(self.ub[k])
+            print(line)
+        print("-"*len(header))
 
     def _param_print(self):
         header = "{:<18}".format("Keys")
