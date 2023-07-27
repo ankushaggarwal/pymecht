@@ -127,6 +127,14 @@ class SampleExperiment:
         theta_up.update(mat_theta_up)
 
         return theta, theta_low, theta_up
+    
+    def __str__(self):
+        out = "An object of type " + self.__class__.__name__ + "with " + self._inp + " as input, " + self._output + " as output, and the following material\n"
+        out += self._mat_model.__str__()
+        return out
+    
+    def __repr__(self):
+        return self.__str__()
 
 class LinearSpring(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):

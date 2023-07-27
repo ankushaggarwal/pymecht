@@ -180,6 +180,19 @@ class MatModel:
                 result.append(m.test(thetai))
         return all(result)
 
+    def __str__(self):
+        p = "s" if len(self._models)>1 else ""
+        out = "Material model with "+str(len(self._models)) +" component"+ p +":\n"
+        for i in range(len(self._models)):
+            out += "Component"+str(i+1)+": "
+            out += self._models[i].__class__.__name__
+            if self._models[i].fiber_dirs is not None:
+                out += "with fiber direction(s):" + self._models[i].fiber_dirs +"\n"
+        return out
+
+    def __repr__(self) -> str:
+        return self.__str__()
+    
 class InvariantHyperelastic:
     '''
     An abstract class from which all the invariant-based hyperelastic models should be derived.
