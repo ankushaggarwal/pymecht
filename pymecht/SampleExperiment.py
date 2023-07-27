@@ -20,13 +20,34 @@ class SampleExperiment:
         if params is None:
             params = self.parameters
         self.update(**params)
+        return_scalar, return_list = False, False
+        if type(input_) is list:
+            return_list = True
+        elif type(input_) is float or type(input_) is int:
+            input_ = [input_]
+            return_scalar = True    
+        elif type(input_) is not np.ndarray:
+            raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
         output = [self.observe(self.compute(F,params)) for F in self._defGrad(input_)]
+        if return_scalar:
+            return output[0]
+        if return_list:
+            return output
         return np.array(output).reshape(np.shape(input_))
 
     def force_controlled(self,forces,params=None,x0=None):
         if params is None:
             params = self.parameters
         self.update(**params)
+        return_scalar, return_list = False, False
+        if type(forces) is float or type(forces) is int:
+            forces = np.array([forces])
+            return_scalar = True
+        elif type(forces) is list:
+            forces = np.array(forces)
+            return_list = True
+        elif type(forces) is not np.ndarray:
+            raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
         
         def compare(displ,ybar,params):
             return self.disp_controlled([displ],params)[0]-ybar
@@ -67,6 +88,10 @@ class SampleExperiment:
                 raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
             x0 = sol.x.copy()
             y.append(sol.x)
+        if return_scalar:
+            return y[0]
+        if return_list:
+            return y
         return np.array(y).reshape(np.shape(forces))
 
     @property
@@ -245,7 +270,7 @@ class PlanarBiaxialExtension(SampleExperiment):
         self.thick = thick
 
     def _defGrad(self,input_):
-        if type(input_).__module__ == np.__name__:
+        if type(input_) is np.ndarray:
             input_ = input_.reshape(-1,2)
         F = []
         for i in input_:
@@ -317,6 +342,14 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         if params is None:
             params = self.parameters
         self.update(**params)
+        output_scalar, output_list = False, False
+        if type(input_) is float or type(input_) is int:
+            input_ = [input_]
+            output_scalar = True
+        elif type(input_) is list:
+            output_list = True
+        elif type(input_) is not np.ndarray:
+            raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
 
         def integrand(xi,ri,params):
             R = self.Ri+xi*self.thick
@@ -329,6 +362,10 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self.stretch(input_)]
         elif self.output =='force':
             output = [quad(integrand,0,1,args=(ri,params))[0]*self.L0*self.lambdaZ*pi*ri**2 for ri in self.stretch(input_)]
+        if output_scalar:
+            return output[0]
+        if output_list:
+            return output
         return np.array(output).reshape(np.shape(input_))
 
     def outer_radius(self,input_,params):
