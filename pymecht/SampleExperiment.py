@@ -14,7 +14,6 @@ class SampleExperiment:
         self._mat_model = mat_model
         self._inp = disp_measure.replace(" ","").lower()
         self._output = force_measure.replace(" ","").lower()
-        params = {}
 
     def disp_controlled(self,input_,params=None):
         if params is None:
@@ -152,6 +151,10 @@ class LinearSpring(SampleExperiment):
         elif self._inp == 'length' or self._inp == 'radius':
             self._x0 = self._L0
             self._compute1 = lambda x: self._k0*(x-self._L0)-self._f0
+        else:
+            raise ValueError(self.__class__.__name__,": Unknown disp_measure", disp_measure,". It should be one of stretch, deltal, length, or radius")
+        if not self._output in ['force','stress','pressure']:
+            raise ValueError(self.__class__.__name__,": Unknown force_measure", force_measure,". It should be one of force, stress, or pressure")
         self._ndim = 1
         self._defGrad = lambda x: x
 
@@ -196,6 +199,10 @@ class UniaxialExtension(SampleExperiment):
             for f in F:
                 if f[1]!=0 or f[2]!= 0:
                     warnings.warn("The UniaxialExtension assumes that fibers are aligned along the first direction. This is not satisfied and the results may be spurious.")
+
+        if not self._output in ['force']+[item for sublist in mat_model._stressnames for item in sublist]:
+            raise ValueError(self.__class__.__name__,": Unknown force_measure", force_measure,". It should be either force or one of the stress measures in the material model")
+
         if self._output == 'force':
             self._compute = partial(self._mat_model.stress,stresstype='1pk',incomp=True,Fdiag=True)
         else:
@@ -208,6 +215,8 @@ class UniaxialExtension(SampleExperiment):
             self._x0 = 0.
         elif self._inp == 'length':
             self._x0 = self._L0
+        else:
+            raise ValueError(self.__class__.__name__,": Unknown disp_measure", disp_measure,". It should be one of stretch, strain, length, or deltal")
         self._ndim=1
 
     def _update(self,L0,A0,**extra_args):
@@ -263,6 +272,9 @@ class PlanarBiaxialExtension(SampleExperiment):
                 if f[2]!= 0:
                     warnings.warn("The PlanarBiaxialExtension assumes that fibers are in the plane. This is not satisfied and the results may be spurious.")
 
+        if not self._output in ['force','tension']+[item for sublist in mat_model._stressnames for item in sublist]:
+            raise ValueError(self.__class__.__name__,": Unknown force_measure", force_measure,". It should be either force, tension, or one of the stress measures in the material model")
+
         if self._output == 'force' or self._output == 'tension':
             self._compute = partial(self._mat_model.stress,stresstype='1pk',incomp=True,Fdiag=True)
         else:
@@ -275,6 +287,8 @@ class PlanarBiaxialExtension(SampleExperiment):
             self._x0 = np.zeros(2)
         elif self._inp == 'length':
             self._x0 = self._L0.copy()
+        else:
+            raise ValueError(self.__class__.__name__,": Unknown disp_measure", disp_measure,". It should be one of stretch, strain, length, or deltal")
         self._ndim=2
 
     def _update(self,L10,L20,thick,**extra_args):
@@ -343,7 +357,9 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         elif self._inp == 'area':
             self._x0 = self._Ri**2*pi
         else:
-            raise ValueError("Unknown disp_measure", disp_measure)
+            raise ValueError(self.__class__.__name__,": Unknown disp_measure", disp_measure,". It should be one of stretch, deltar, radius, or area")
+        if not force_measure in ['force','pressure']:
+            raise ValueError(self.__class__.__name__,": Unknown force_measure", force_measure,". It should be one of force or pressure")
         self._ndim=1
 
     def _update(self,Ri,thick,omega,L0,lambdaZ,**extra_args):
