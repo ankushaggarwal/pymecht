@@ -1,13 +1,91 @@
 from Examples import *
 import pytest
 
+mat_model_list = ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','volPenalty','polyI4','ArrudaBoyce','Gent','splineI1I4','StructModel']
+samples_list = [UniaxialExtension,PlanarBiaxialExtension,UniformAxisymmetricTubeInflationExtension, LinearSpring]
+
 def test_mat_creation():
-    output = mat_creation()
-    assert str(type(output)) == "<class 'pymecht.MatModel.MatModel'>"
-    assert len(output.models) == 2
-    assert output.param_names == [{'k1_0': 'k1', 'k2_0': 'k2', 'k3_0': 'k3'}, {'mu_1': 'mu'}]
-    assert output.parameters == {'k1_0': 10.0, 'k2_0': 10.0, 'k3_0': 0.1, 'mu_1': 1.0}
-    assert list(output.models[0].fiber_dirs[0]) == [1., 0., 0.]
+    #Test creating all individual material models
+    for mname in mat_model_list:
+        output = MatModel(mname)
+        mm = output.models
+        mm[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
+        assert isinstance(output, MatModel)
+        assert len(output.models) == 1
+        assert len(output.models[0].fiber_dirs) == 2 
+
+def test_mat_addition():
+    #Two ways of adding material models
+    mat1, mat2 = MatModel('nh'), MatModel('goh')
+    mat = mat1 + mat2
+    assert isinstance(mat, MatModel)
+    assert len(mat.models) == 2
+    assert len(mat.parameters) == len(mat1.parameters) + len(mat2.parameters)
+
+    mat3 = MatModel('nh','goh')
+    assert isinstance(mat3, MatModel)
+    assert len(mat3.models) == 2
+    assert len(mat3.parameters) == len(mat1.parameters) + len(mat2.parameters)
+
+def test_mat_reference():
+    #Test that reference stress and energy are correctly calculated
+    for mname in mat_model_list:
+        if mname in ['splineI1I4']: #TODO: splineI1I4 needs a spline setting
+            continue
+        model = mat_creation(mname)
+        e, S = model.energy_stress(np.eye(3),model.parameters,stresstype='cauchy',incomp=True)
+        assert e == pytest.approx(0.0)
+        assert S == pytest.approx(np.zeros((3,3)))
+
+def test_mat_partial_derivs():
+    #Tests that the partial derivatives are correctly implemented
+    for mname in mat_model_list:
+        if mname in ['splineI1I4']:
+            continue
+        model = mat_creation(mname)
+        assert model._test(model.parameters) #raises error since the parameter names are different
+
+def test_samples():
+    #Test that the samples are correctly generated
+    mat = MatModel('nh')
+    for s in samples_list:
+        sample = s(mat)
+        assert isinstance(sample, SampleExperiment)
+        assert sample._mat_model == mat
+
+def test_samples_reference():
+    material = MatModel('goh','nh')
+    mm = material.models
+    mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
+    for s in samples_list:
+        sample = s(material)
+        assert sample.disp_controlled(sample._x0, sample.parameters) == pytest.approx(0.0)
+        assert sample.force_controlled(np.zeros_like(sample._x0), sample.parameters) == pytest.approx(sample._x0)
+        params = sample.parameters
+        for k in params.keys():
+            params[k] *= 2
+        sample.parameters = params
+        assert sample.parameters == params
+    
+def test_layered_samples():
+    material = MatModel('goh','nh')
+    mm = material.models
+    mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
+    sample = LayeredUniaxial(UniaxialExtension(material),UniaxialExtension(material))
+    assert isinstance(sample, LayeredSamples)
+    assert len(sample._samples) == 2
+    assert sample._samples[0]._mat_model == material
+    assert sample._samples[1]._mat_model == material
+    assert sample.disp_controlled(sample._samples[0]._x0, sample.parameters) == pytest.approx(0.0)
+    assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) == pytest.approx(sample._samples[0]._x0)
+
+    sample = LayeredTube(UniformAxisymmetricTubeInflationExtension(material),UniformAxisymmetricTubeInflationExtension(material))
+    assert isinstance(sample, LayeredSamples)
+    assert len(sample._samples) == 2
+    assert sample._samples[0]._mat_model == material
+    assert sample._samples[1]._mat_model == material
+    assert sample.disp_controlled([sample._samples[0]._x0], sample.parameters) != pytest.approx(0.0)
+    assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) != pytest.approx(sample._samples[0]._x0)
 
 def test_unixex():
     output = unixex()
