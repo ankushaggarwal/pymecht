@@ -61,7 +61,7 @@ class SampleExperiment:
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params))
             if not sol.success or any(np.abs(sol.r)>1e5):
-                if ndata==1:
+                if ndata==1 or i==0:
                     niter=10
                     for j in range(1,niter+1):
                         df = forces_temp[i]*j/niter
