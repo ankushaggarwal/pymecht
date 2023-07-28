@@ -512,7 +512,17 @@ class LayeredUniaxial(LayeredSamples):
     def __init__(self,*samplesList):
         super().__init__(*samplesList)
         if not all([isinstance(s,UniaxialExtension) for s in self._samples]):
-            raise ValueError("The class only accepts objects of type SampleExperiment")
+            raise ValueError("The class only accepts objects of type UniaxialExtension")
+        if self._output != 'force':
+            warnings.warn("The output of the LayeredUniaxial should be force, as stresses are not additive. The results may be spurious")
+
+class LayeredPlanarBiaxial(LayeredSamples):
+    def __init__(self,*samplesList):
+        super().__init__(*samplesList)
+        if not all([isinstance(s,PlanarBiaxialExtension) for s in self._samples]):
+            raise ValueError("The class only accepts objects of type PlanarBiaxialExtension")
+        if self._output != 'force':
+            warnings.warn("The output of the LayeredPlanarBiaxial should be force, as stresses are not additive. The results may be spurious")
 
 class LayeredTube(LayeredSamples):
     def __init__(self,*samplesList):
