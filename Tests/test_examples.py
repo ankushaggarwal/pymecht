@@ -81,6 +81,14 @@ def test_layered_samples():
     assert sample.disp_controlled(sample._samples[0]._x0, sample.parameters) == pytest.approx(0.0)
     assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) == pytest.approx(sample._samples[0]._x0)
 
+    sample = LayeredPlanarBiaxial(PlanarBiaxialExtension(material),PlanarBiaxialExtension(material))
+    assert isinstance(sample, LayeredSamples)
+    assert len(sample._samples) == 2
+    assert sample._samples[0]._mat_model == material
+    assert sample._samples[1]._mat_model == material
+    assert sample.disp_controlled(sample._samples[0]._x0, sample.parameters) == pytest.approx(0.0)
+    assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) == pytest.approx(sample._samples[0]._x0, 1e-3)
+
     sample = LayeredTube(UniformAxisymmetricTubeInflationExtension(material),UniformAxisymmetricTubeInflationExtension(material))
     assert isinstance(sample, LayeredSamples)
     assert len(sample._samples) == 2
@@ -127,7 +135,7 @@ def test_random_params():
     assert type(param_samples) is list
     assert len(param_samples) == 10
     assert len(param_samples[0]) == len(sample.parameters)
-    
+
 
 def test_unixex():
     output = unixex()
