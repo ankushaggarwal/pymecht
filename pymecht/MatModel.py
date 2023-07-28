@@ -187,7 +187,7 @@ class MatModel:
             out += "Component"+str(i+1)+": "
             out += self._models[i].__class__.__name__
             if self._models[i].fiber_dirs is not None:
-                out += "with fiber direction(s):" + self._models[i].fiber_dirs +"\n"
+                out += "with fiber direction(s):" + str(self._models[i].fiber_dirs) +"\n"
         return out
 
     def __repr__(self) -> str:
