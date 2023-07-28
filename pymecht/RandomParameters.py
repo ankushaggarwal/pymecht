@@ -65,14 +65,14 @@ class Parameter:
         if x is not None:
             self.value = x
 
-    def make_normal(self,key,x=None):
+    def make_normal(self,x=None):
         self.rtype = 'normal'
         self.mean = (self.high+self.low)/2.
         self.std = (self.high-self.low)/4.
         if x is not None:
             self.mean = x
 
-    def make_lognormal(self,key,x=None):
+    def make_lognormal(self,x=None):
         self.rtype = 'lognormal'
         self.mean = (np.log(self.high)+np.log(self.low))/2.
         self.std = (np.log(self.high)-np.log(self.low))/4.
@@ -105,9 +105,46 @@ class RandomParameters:
         for k in param.keys():
             self.parameters[k]=Parameter(param_low[k],param_up[k],param[k],param_type[k])
         #print(self.parameters)
-
+    def _format_float(self,x):
+        if (x>0.01 and x<100) or x==0:
+            return "{:<18}".format("{:.2f}".format(x))
+        else:
+            return "{:<18}".format("{:.2e}".format(x))
+        
     def __str__(self):
-        return str(self.parameters)
+        #return str(self.parameters)
+        lines = ''
+        header = "{:<18}".format("Keys")
+        header += "{:<18}".format("Type")
+        header += "{:<18}".format("Lower/mean")
+        header += "{:<18}".format("Upper/std")
+        lines = header + '\n' + '-'*len(header) + '\n'
+        #print("-"*len(header))
+        #print(header)
+        #print("-"*len(header))
+        for k in self.parameters.keys():
+            line = "{:<18}".format(k)
+            line += "{:<18}".format(self.parameters[k].rtype)
+            if self.parameters[k].rtype == 'fixed':
+                line += self._format_float(self.parameters[k].value)
+                line += self._format_float(self.parameters[k].value)
+            elif self.parameters[k].rtype == 'uniform':
+                line += self._format_float(self.parameters[k].low)
+                line += self._format_float(self.parameters[k].high)
+            elif self.parameters[k].rtype == 'normal':
+                line += self._format_float(self.parameters[k].mean)
+                line += self._format_float(self.parameters[k].std)
+            elif self.parameters[k].rtype == 'lognormal':
+                line += self._format_float(np.exp(self.parameters[k].mean))
+                line += self._format_float(np.exp(self.parameters[k].std))
+            #print(line)
+            lines += line + '\n'
+        lines += '-'*len(header) + '\n'
+        #print("-"*len(header))
+        return lines
+    
+    def __repr__(self):
+        return self.__str__()
 
     def sample(self,N=1,sample_type=None):
         var_type = np.array([param.rtype for param in self.parameters.values()])
@@ -161,6 +198,9 @@ class RandomParameters:
 
     def make_normal(self,key,x=None):
         self.parameters[key].make_normal(x)
+
+    def make_lognormal(self,key,x=None):
+        self.parameters[key].make_lognormal(x)
 
     def add(self,key,value,low,high,rtype):
             self.parameters[key]=Parameter(low,high,value,rtype)
