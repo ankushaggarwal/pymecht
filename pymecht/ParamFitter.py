@@ -24,7 +24,7 @@ class ParamFitter:
 
     def _param_print_transpose(self):
         header = "{:<18}".format("Keys")
-        header += "{:<12}".format("Initial value")
+        header += "{:<12}".format("Value")
         header += "{:<12}".format("Fixed?")
         header += "{:<12}".format("Lower bound")
         header += "{:<12}".format("Upper bound")
@@ -153,6 +153,8 @@ class ParamFitter:
     def fit(self):
         self.c0 = self._vec(self.params)
         result = least_squares(self._residual,x0=self.c0,bounds=self.bounds,verbose=2)
+        print("Fitting completed, with the following results")
+        self._param_print_transpose()
         return result
 
     def _complete_params(self,cval):
