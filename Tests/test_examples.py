@@ -89,6 +89,46 @@ def test_layered_samples():
     assert sample.disp_controlled([sample._samples[0]._x0], sample.parameters) != pytest.approx(0.0)
     assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) != pytest.approx(sample._samples[0]._x0)
 
+def test_mcmc():
+    material = MatModel('goh','nh')
+    mm = material.models
+    mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
+    sample = UniaxialExtension(material)
+    def prob_func(params):
+        return 1.0, 0.0
+    mcmc = MCMC(prob_func, sample.parameters)
+    assert isinstance(mcmc, MCMC)
+    mcmc.std[:] = 1.
+    mcmc.run(5)
+    assert mcmc._samples is not None
+
+def test_param_fitter():
+    material = MatModel('goh','nh')
+    mm = material.models
+    mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
+    sample = UniaxialExtension(material)
+    inp = np.linspace(0,1,10)+1
+    def sim_func(params):
+        return sample.disp_controlled(inp, params)
+    
+    param_fitter = ParamFitter(sim_func, np.linspace(0,1,len(inp)), sample.parameters)
+    assert isinstance(param_fitter, ParamFitter)
+    result = param_fitter.fit()
+    assert result is not None
+
+def test_random_params():
+    material = MatModel('goh','nh')
+    mm = material.models
+    mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
+    sample = UniaxialExtension(material)
+    random_params = RandomParameters(*sample.parameters_wbounds())
+    assert isinstance(random_params, RandomParameters)
+    param_samples = random_params.sample(10)
+    assert type(param_samples) is list
+    assert len(param_samples) == 10
+    assert len(param_samples[0]) == len(sample.parameters)
+    
+
 def test_unixex():
     output = unixex()
     assert output[0] == pytest.approx([1.0, 1.1111111111111112, 1.2222222222222223, 1.3333333333333333, 1.4444444444444444, 1.5555555555555556, 1.6666666666666665, 1.7777777777777777, 1.8888888888888888, 2.0])
