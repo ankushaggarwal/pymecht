@@ -508,6 +508,15 @@ class LayeredSamples:
             y.append(sol.x)
         return np.array(y).reshape(np.shape(forces))
 
+    def __str__(self):
+        out = "An object of type " + self.__class__.__name__ + "with " + str(self._nsamples) + " layers:\n"
+        for i,s in enumerate(self._samples):
+            out += "Layer"+str(i+1)+": "+ s.__str__()
+        return out
+    
+    def __repr__(self):
+        return self.__str__()
+
 class LayeredUniaxial(LayeredSamples):
     def __init__(self,*samplesList):
         super().__init__(*samplesList)
