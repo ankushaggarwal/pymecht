@@ -81,7 +81,7 @@ def test_layered_samples():
     assert sample.disp_controlled(sample._samples[0]._x0, sample.parameters) == pytest.approx(0.0)
     assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) == pytest.approx(sample._samples[0]._x0)
 
-    sample = LayeredPlanarBiaxial(PlanarBiaxialExtension(material),PlanarBiaxialExtension(material))
+    sample = LayeredPlanarBiaxial(PlanarBiaxialExtension(material,force_measure='force'),PlanarBiaxialExtension(material,force_measure='force'))
     assert isinstance(sample, LayeredSamples)
     assert len(sample._samples) == 2
     assert sample._samples[0]._mat_model == material
