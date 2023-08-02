@@ -3,6 +3,23 @@ from scipy.optimize import least_squares
 
 class ParamFitter:
     def __init__(self,sim_func,output,params,params_lb=None,params_ub=None,params_fix=None):
+        '''
+        A class to fit parameters of a simulation function to a given output
+        Parameters
+        ----------
+        sim_func : function
+            A function that takes in a dictionary of parameters and returns a numpy array of the same shape as the output
+        output : numpy array
+            A numpy array of the same shape as the output of the sim_func to be fitted
+        params : dict
+            A dictionary of parameters to be varied
+        params_lb : dict
+            A dictionary of lower bounds of the parameters to be varied, default is -inf
+        params_ub : dict
+            A dictionary of upper bounds of the parameters to be varied, default is inf
+        params_fix : dict
+            A dictionary of boolean values indicating whether the parameters are fixed or not, default is False
+        '''
         self._sim_func = sim_func
         self._output = output
         self.params,self._lb,self._ub,self._params_fix = params,params_lb,params_ub,params_fix
@@ -104,6 +121,17 @@ class ParamFitter:
         print("-"*len(header))
 
     def update_ranges(self,params_lb=None,params_ub=None,params_fix=None):
+        '''
+        Update the bounds and fixed parameters
+        Parameters
+        ----------
+        params_lb : dict
+            A dictionary of lower bounds of the parameters to be varied, default is -inf
+        params_ub : dict
+            A dictionary of upper bounds of the parameters to be varied, default is inf
+        params_fix : dict
+            A dictionary of boolean values indicating whether the parameters are fixed or not, default is False
+        '''
         #update the bounds and fix if provided
         if params_lb is not None:
             self._lb = params_lb
@@ -151,6 +179,13 @@ class ParamFitter:
         return self._sim_func(self.params) - self._output
 
     def fit(self):
+        '''
+        Perform the fitting
+        Returns
+        -------
+        result : scipy.optimize.OptimizeResult
+            The result of the fitting
+        '''
         self.c0 = self._vec(self.params)
         result = least_squares(self._residual,x0=self.c0,bounds=self._bounds,verbose=2)
         print("Fitting completed, with the following results")

@@ -16,6 +16,16 @@ class SampleExperiment:
         self._output = force_measure.replace(" ","").lower()
 
     def disp_controlled(self,input_,params=None):
+        '''
+        Simulates the experiment with the deformation measure as the input
+        Parameters
+        ----------
+        input_ : The input to the experiment. It can be a scalar, a list, or a numpy array
+        params : A dictionary of parameters. If None, the default parameters are used. The default is None.
+        Returns
+        -------
+        The resulting force measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
+        '''
         if params is None:
             params = self.parameters
         self._update(**params)
@@ -35,6 +45,17 @@ class SampleExperiment:
         return np.array(output).reshape(np.shape(input_))
 
     def force_controlled(self,forces,params=None,x0=None):
+        '''
+        Simulates the experiment with the force measure as the input (solves via Newton iteration)
+        Parameters
+        ----------
+        forces : The input to the experiment. It can be a scalar, a list, or a numpy array
+        params : A dictionary of parameters. If None, the default parameters are used. The default is None.
+        x0 : The initial guess for the displacement. If None, the default is used. The default is None.
+        Returns
+        -------
+        The resulting deformation measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
+        '''
         if params is None:
             params = self.parameters
         self._update(**params)
@@ -137,6 +158,22 @@ class SampleExperiment:
 
 class LinearSpring(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
+        '''
+        For simulating a linear spring (can be used to apply Robin boundary condition)
+        Parameters
+        ----------
+        mat_model : A material model object of type MatModel (not used, provide MatModel() for simplicity)
+        disp_measure : The measure of displacement with the following options:
+            'stretch' : Ratio of deformed to reference length
+            'deltal' : Change in length or radius
+            'length' or 'radius' : Deformed length/radius
+            The default is 'stretch'.
+        force_measure : The measure of force with the following options:
+            'force' : Force acting on the spring
+            'stress' : The Cauchy stress
+            'pressure' : The pressure
+            The default is 'force'.
+        '''
         super().__init__(mat_model,disp_measure,force_measure)
         self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
         self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
@@ -186,6 +223,24 @@ class LinearSpring(SampleExperiment):
 
 class UniaxialExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
+        '''
+        For simulating uniaxial extension of a material
+        Parameters
+        ----------
+        mat_model : A material model object of type MatModel
+        disp_measure : The measure of displacement with the following options:
+            'stretch' : The stretch ratio
+            'strain' : The Green-Lagrange strain
+            'deltal' : The change in length
+            'length' : The length
+            The default is 'stretch'.
+        force_measure : The measure of force with the following options:
+            'force' : The force per unit area
+            'cauchy' : The Cauchy stress
+            '1pk' or '1stpk' or 'firstpk' : The first Piola-Kirchhoff stress
+            '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
+            The default is 'force'.
+        '''
         super().__init__(mat_model,disp_measure,force_measure)
         self._param_default  = dict(L0=1.,A0=1.)
         self._param_low_bd   = dict(L0=0.0001,A0=0.0001)
@@ -258,6 +313,25 @@ class UniaxialExtension(SampleExperiment):
 
 class PlanarBiaxialExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='cauchy'):
+        '''
+        For simulating planar biaxial extension of a material
+        Parameters
+        ----------
+        mat_model : A material model object of type MatModel
+        disp_measure : The measure of displacement with the following options:    
+            'stretch' : The stretch ratio
+            'strain' : The Green-Lagrange strain
+            'deltal' : The change in length
+            'length' : The length
+        The default is 'stretch'.
+            force_measure : The measure of force with the following options:
+            'force' : The force per unit area
+            'tension' : The force per unit thickness
+            'cauchy' : The Cauchy stress
+            '1pk' or '1stpk' or 'firstpk' : The first Piola-Kirchhoff stress
+            '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
+            The default is 'cauchy'.
+        '''
         super().__init__(mat_model,disp_measure,force_measure)
         self._param_default  = dict(L10=1.,L20=1.,thick=1.)
         self._param_low_bd   = dict(L10=0.0001,L20=0.0001,thick=0.0001)
@@ -328,6 +402,22 @@ class PlanarBiaxialExtension(SampleExperiment):
 
 class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='radius',force_measure='force'):
+        '''
+        For simulating uniform axisymmetric inflation of a tube
+        Parameters
+        ----------
+        mat_model : A material model object of type MatModel
+        disp_measure : The measure of displacement with the following options:    
+            'stretch' : Ratio of deformed to reference internal radius
+            'deltalr' : Change in internal radius
+            'radius' : Deformed internal radius
+            'area' : Deformed internal area
+            The default is 'radius'.
+        force_measure : The measure of force with the following options:
+            'force' : Total force acting on the tube length 
+            'pressure' : Internal pressure acting on the tube 
+            The default is 'force'.
+        '''
         super().__init__(mat_model,disp_measure,force_measure)
         self._param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
         self._param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
@@ -422,6 +512,19 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             return np.sqrt(l/pi)
 
     def cauchy_stress(self,input_,params,n=10,pressure=None):
+        '''
+        Computes the Cauchy stress at the given input_ points
+        Parameters
+        ----------
+        input_ : Deformation measure at which the stress is to be computed, scalar
+        params : The parameters of the material model
+        n : The number of points along the thickness to report stresses at, default is 10
+        pressure : The pressure corresponding to the deformed radius (optional: if not provided, it will be computed)
+        Returns
+        -------
+        xi : Normalized thickness values at which the stresses are reported
+        Stresses : The Cauchy stress tensors at the thickness locations (nX3X3 array)
+        '''
         self._update(**params)
         ri = self._stretch(input_)
 

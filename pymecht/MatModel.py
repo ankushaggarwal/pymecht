@@ -81,6 +81,16 @@ class MatModel:
         raise ValueError("The component models should not be changed in this way")
 
     def energy(self,F=np.identity(3),theta=None):
+        '''
+        Returns the energy density of the material model
+        Parameters
+        ----------
+            F: the deformation gradient,   default: identity matrix (no deformation)
+            theta: the parameters of the model, if None, then the default values are used
+        Returns
+        -------
+            en: the energy density
+        '''
         if theta is None:
             theta=self._params
         en = 0.
@@ -90,6 +100,23 @@ class MatModel:
         return en
 
     def stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
+        '''
+        Returns the stress tensor of the material model
+        Parameters
+        ----------
+            F: the deformation gradient,   default: identity matrix (no deformation)
+            theta: the parameters of the model, if None, then the default values are used
+            stresstype: the type of stress tensor to return with the following options (case insensitive): 
+                'cauchy': Cauchy stress,
+                '1pk' or '1stpk' or 'firstpk': 1st Piola-Kirchoff stress
+                '2pk' or '2ndpk' or 'secondpk': 2nd Piola-Kirchoff stress
+                default: Cauchy stress
+            incomp: if True, then the material is assumed to be incompressible, default: False
+            Fdiag: if True, then it is assumed that F is diagonal (for faster computation), default: False
+        Returns
+        -------
+            S: the stress 3X3 tensor
+        '''
         if theta is None:
             theta=self._params
         stresstype = stresstype.replace(" ", "").lower()
@@ -127,6 +154,24 @@ class MatModel:
             return S
 
     def energy_stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
+        '''
+        Returns the energy density and stress tensor of the material model
+        Parameters
+        ----------
+            F: the deformation gradient,   default: identity matrix (no deformation)
+            theta: the parameters of the model, if None, then the default values are used
+            stresstype: the type of stress tensor to return with the following options (case insensitive): 
+                'cauchy': Cauchy stress,
+                '1pk' or '1stpk' or 'firstpk': 1st Piola-Kirchoff stress
+                '2pk' or '2ndpk' or 'secondpk': 2nd Piola-Kirchoff stress
+                default: Cauchy stress
+            incomp: if True, then the material is assumed to be incompressible, default: False
+            Fdiag: if True, then it is assumed that F is diagonal (for faster computation), default: False
+        Returns
+        -------
+            en: the energy density
+            S: the stress 3X3 tensor
+        '''
         if theta is None:
             theta=self._params
         stresstype = stresstype.replace(" ", "").lower()
@@ -198,6 +243,7 @@ class InvariantHyperelastic:
     '''
     An abstract class from which all the invariant-based hyperelastic models should be derived.
     Currently, it allows for models that depend on I1, I2, J, and I4 with multiple fiber families
+    It should not be used directly, but rather derived from. Use MatModel class to use the derived classes.
     '''
     def __init__(self):
         self.I1 = 3.

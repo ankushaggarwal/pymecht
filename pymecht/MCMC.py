@@ -3,6 +3,21 @@ from tqdm import tqdm
 
 class MCMC:
     def __init__(self,prob_func,params,params_lb=None,params_ub=None,params_fix=None):
+        '''
+        A class for performing MCMC sampling of a given probability function based on SampleExperiment class object
+        Parameters
+        ----------
+        prob_func : function
+            A function that takes in a dictionary of parameters and returns a tuple of (probability, value)
+        params : dict
+            A dictionary of parameters to be varied
+        params_lb : dict
+            A dictionary of lower bounds of the parameters to be varied, default is -inf
+        params_ub : dict
+            A dictionary of upper bounds of the parameters to be varied, default is inf
+        params_fix : dict
+            A dictionary of boolean values indicating whether the parameters are fixed or not, default is False
+        '''
         self._prob_func = prob_func
         self.params,self._lb,self._ub,self._params_fix = params,params_lb,params_ub,params_fix
         self._keys = self.params.keys()
@@ -107,7 +122,17 @@ class MCMC:
         print("-"*len(header))
 
     def update_ranges(self,params_lb=None,params_ub=None,params_fix=None):
-        #update the bounds and fix if provided
+        '''
+        Update the bounds and fixed parameters
+        Parameters
+        ----------
+        params_lb : dict
+            A dictionary of lower bounds of the parameters to be varied, default is -inf
+        params_ub : dict
+            A dictionary of upper bounds of the parameters to be varied, default is inf
+        params_fix : dict
+            A dictionary of boolean values indicating whether the parameters are fixed or not, default is False
+            '''
         if params_lb is not None:
             self._lb = params_lb
             if self._lb.keys() != self._keys:
@@ -154,6 +179,13 @@ class MCMC:
         return self.c0 + dx
 
     def run(self,n):
+        '''
+        Run the MCMC sampling
+        Parameters
+        ----------
+        n : int
+            Number of MCMC iterations to perform (number of samples will be less than n due to rejection sampling)
+        '''
         self.c0 = self._vec(self.params)
         old_prob, old_value = self._prob_func(self.params)
         if self._samples is None:
