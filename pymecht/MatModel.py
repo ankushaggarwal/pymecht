@@ -4,6 +4,7 @@ import scipy.optimize as opt
 import scipy
 import warnings
 from scipy.special import erf
+from .ParamDict import *
 
 class MatModel:
     '''
@@ -43,16 +44,20 @@ class MatModel:
                         except KeyError:
                             print ('Unknown model: ', m)
             self._models = tuple(self._models)
-        self._param_names,self._params = [],{}
+        self._param_names, self._params = [], ParamDict()
         for i,m in enumerate(self._models):
-            t1 = m.param_default
+            t1, t2, t3 = m.param_default, m.param_low_bd, m.param_up_bd
             self._param_names.append({k+'_'+str(i):k for k in t1})
-            self._params.update({k+'_'+str(i):t1[k] for k in t1})
+            for k in t1:
+                self._params[k+'_'+str(i)] = Param(t1[k],t2[k],t3[k],False)
+            #self._params.update({k+'_'+str(i):t1[k] for k in t1})
         self._stressnames = [['cauchy'],['1pk','1stpk','firstpk'],['2pk','2ndpk','secondpk']]
 
     @property
     def parameters(self):
-        return self._params.copy()
+        theta = ParamDict()
+        theta.update(self._params)
+        return theta
 
     @property
     def models(self):
@@ -93,6 +98,10 @@ class MatModel:
         '''
         if theta is None:
             theta=self._params
+        if type(theta) is ParamDict:
+            theta = theta.val()
+        elif type(theta[list(theta.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         en = 0.
         for i,m in enumerate(self._models):
             thetai = {self._param_names[i][k]:theta[k] for k in self._param_names[i]}
@@ -119,6 +128,10 @@ class MatModel:
         '''
         if theta is None:
             theta=self._params
+        if type(theta) is ParamDict:
+            theta = theta.val()
+        elif type(theta[list(theta.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
         for i in range(len(self._stressnames)):
@@ -174,6 +187,10 @@ class MatModel:
         '''
         if theta is None:
             theta=self._params
+        if type(theta) is ParamDict:
+            theta = theta.val()
+        elif type(theta[list(theta.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
         for i in range(len(self._stressnames)):
@@ -217,6 +234,10 @@ class MatModel:
     def _test(self,theta=None):
         if theta is None:
             theta=self._params
+        if type(theta) is ParamDict:
+            theta = theta.val()
+        elif theta is not None and type(theta[list(theta.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         result = []
         #Test each model if it is of InvariantHyperelastic class
         for i,m in enumerate(self._models):

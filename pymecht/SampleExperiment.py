@@ -4,6 +4,7 @@ from functools import partial
 import scipy.optimize as opt
 import warnings
 from scipy.integrate import quad
+from .ParamDict import *
 
 class SampleExperiment:
     '''
@@ -14,6 +15,9 @@ class SampleExperiment:
         self._mat_model = mat_model
         self._inp = disp_measure.replace(" ","").lower()
         self._output = force_measure.replace(" ","").lower()
+        self._params = ParamDict()
+        for k in self._param_default.keys():
+            self._params[k] = Param(self._param_default[k],self._param_low_bd[k],self._param_up_bd[k],False)
 
     def disp_controlled(self,input_,params=None):
         '''
@@ -28,6 +32,10 @@ class SampleExperiment:
         '''
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params.val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         return_scalar, return_list = False, False
         if type(input_) is list:
@@ -58,6 +66,10 @@ class SampleExperiment:
         '''
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params.val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         return_scalar, return_list = False, False
         if type(forces) is float or type(forces) is int:
@@ -116,7 +128,8 @@ class SampleExperiment:
 
     @property
     def parameters(self):
-        theta = self._param_default.copy()
+        theta = ParamDict()
+        theta.update(self._params)
         mat_theta = self._mat_model.parameters
         if len(theta.keys() & mat_theta.keys())>0:
                 raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
@@ -125,13 +138,19 @@ class SampleExperiment:
 
     @parameters.setter
     def parameters(self,theta):
-        mat = {}
+        if type(theta) is ParamDict:
+            mat = ParamDict()
+        else:
+            mat = {}
         for k in theta.keys():
             if k in self._param_default:
-                self._param_default[k] = theta[k]
+                if type(theta) is ParamDict:
+                    self._params[k] = theta[k]
+                else:
+                    self._params.set(k,theta[k]) 
             else:
                 mat[k] = theta[k]
-        self._update(**self._param_default)
+        self._update(**self._params.val())
         self._mat_model.parameters = mat
 
     def parameters_wbounds(self):
@@ -174,10 +193,10 @@ class LinearSpring(SampleExperiment):
             'pressure' : The pressure
             The default is 'force'.
         '''
-        super().__init__(mat_model,disp_measure,force_measure)
         self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
         self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
         self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.,thick=0.)
+        super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         if self._inp == 'stretch':
             self._x0 = 1.
@@ -241,10 +260,10 @@ class UniaxialExtension(SampleExperiment):
             '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
             The default is 'force'.
         '''
-        super().__init__(mat_model,disp_measure,force_measure)
         self._param_default  = dict(L0=1.,A0=1.)
         self._param_low_bd   = dict(L0=0.0001,A0=0.0001)
         self._param_up_bd    = dict(L0=1000.,A0=1000.)
+        super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         #check the fibers in mat_model and set their directions to [1,0,0]
         for mm in mat_model.models:
@@ -332,10 +351,10 @@ class PlanarBiaxialExtension(SampleExperiment):
             '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
             The default is 'cauchy'.
         '''
-        super().__init__(mat_model,disp_measure,force_measure)
         self._param_default  = dict(L10=1.,L20=1.,thick=1.)
         self._param_low_bd   = dict(L10=0.0001,L20=0.0001,thick=0.0001)
         self._param_up_bd    = dict(L10=1000.,L20=1000.,thick=1000.)
+        super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         #check the fibers in mat_model 
         for mm in mat_model.models:
@@ -418,10 +437,10 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             'pressure' : Internal pressure acting on the tube 
             The default is 'force'.
         '''
-        super().__init__(mat_model,disp_measure,force_measure)
         self._param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
         self._param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
         self._param_up_bd    = dict(Ri=1.5, thick=1., omega=0., L0=1.,lambdaZ=1.)
+        super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         #check the fibers in mat_model
         for mm in mat_model.models:
@@ -465,6 +484,10 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params.val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         output_scalar, output_list = False, False
         if type(input_) is float or type(input_) is int:
@@ -493,6 +516,10 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         return np.array(output).reshape(np.shape(input_))
 
     def outer_radius(self,input_,params):
+        if type(params) is ParamDict:
+            params = params.val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
 
         Ro = self._Ri+self._thick
@@ -575,19 +602,34 @@ class LayeredSamples:
         if len(set(inputs)) > 1:
             raise ValueError("The inputs for all the layers must be the same")
         self._output = outputs[0]
+        self._param_names, self._params = [], ParamDict()
+        for i,s in enumerate(self._samples):
+            pi = s.parameters
+            self._param_names.append({k+'_layer'+str(i):k for k in pi})
+            for k in pi:
+                self._params[k+'_layer'+str(i)] = pi[k]
 
     @property
     def parameters(self):
-        return [s.parameters for s in self._samples]
+        p = ParamDict()
+        p.update(self._params)
+        return p #[s.parameters for s in self._samples]
 
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
-        if len(params) != self._nsamples:
-            raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
+        #if len(params) != self._nsamples:
+        #    raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
         total_force = 0.
+        if type(params) is ParamDict:
+            createParamDict = True
+        else:
+            createParamDict = False
         for i,s in enumerate(self._samples):
-            total_force += s.disp_controlled(input_,params[i]) #TODO this would not be correct for stresses
+            parami = ParamDict() if createParamDict else {}
+            for k in self._param_names[i]:
+                parami[self._param_names[i][k]] = params[k]
+            total_force += s.disp_controlled(input_,parami) #TODO this would not be correct for stresses
 
         return total_force
 
@@ -649,8 +691,10 @@ class LayeredTube(LayeredSamples):
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
-        if len(params) != self._nsamples:
-            raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
+        if type(params) is ParamDict:
+            createParamDict = True
+        else:
+            createParamDict = False
         return_scalar, return_list = False, False
         if type(input_) is list:
             return_list = True
@@ -663,8 +707,11 @@ class LayeredTube(LayeredSamples):
         total_force = np.zeros_like(input_)
         i_input = input_
         for i,s in enumerate(self._samples):
-            total_force += s.disp_controlled(i_input,params[i])
-            i_input = s.outer_radius(i_input,params[i])
+            parami = ParamDict() if createParamDict else {}
+            for k in self._param_names[i]:
+                parami[self._param_names[i][k]] = params[k]
+            total_force += s.disp_controlled(i_input,parami)
+            i_input = s.outer_radius(i_input,parami)
         if return_scalar:
             return total_force[0]
         if return_list:
