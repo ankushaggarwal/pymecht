@@ -162,6 +162,20 @@ class RandomParameters:
         return self.__str__()
 
     def sample(self,N=1,sample_type=None):
+        '''
+        Returns a list of N samples of the parameters
+        Parameters
+        ----------
+        N : int
+            Number of samples
+        sample_type : str
+            Type of sampling to be performed. 
+            Options are None (default), 'lhcube', and 'sobol'
+            If None, random sampling is performed.
+        Returns
+        -------
+        all_samples : A list of N dictionaries with random values of the parameters
+        '''
         var_type = np.array([param.rtype for param in self._parameters.values()])
         ndim = len(var_type)
         nNorm = sum((var_type=='normal')+(var_type=='lognormal'))
@@ -200,6 +214,15 @@ class RandomParameters:
         return all_samples
 
     def fix(self,keys,x=None):
+        '''
+        Fix the parameters to the value x
+        Parameters
+        ----------
+        keys : str or list of str
+            The keys of the parameters to be fixed
+        x : float or list of float
+            The value to which the parameters are fixed
+        '''
         if type(keys) is list:
             if x is None:
                 for key in keys:
@@ -212,15 +235,61 @@ class RandomParameters:
             self._parameters[keys].fix(x)
 
     def make_normal(self,key,x=None):
+        '''
+        Make the parameter normal with mean x
+        Parameters
+        ----------
+        key : str
+            The key of the parameter to be made normal
+        x : float
+            The mean of the normal distribution
+        '''
         self._parameters[key].make_normal(x)
 
     def make_lognormal(self,key,x=None):
+        '''
+        Make the parameter lognormal with mean x
+        Parameters
+        ----------
+        key : str
+            The key of the parameter to be made lognormal
+        x : float
+            The mean of the lognormal distribution
+        '''
         self._parameters[key].make_lognormal(x)
 
     def add(self,key,value,low,high,rtype):
-            self._parameters[key]=Parameter(low,high,value,rtype)
+        '''
+        Add a new parameter
+        Parameters
+        ----------
+        key : str
+            The key of the parameter
+        value : float
+            The default value of the parameter
+        low : float
+            The lower bound of the parameter
+        high : float
+            The upper bound of the parameter
+        rtype : str
+            The type of the parameter. Options are 'fixed', 'uniform', 'normal', and 'lognormal'
+        '''
+        if key in self._parameters.keys():
+            raise ValueError("The key already exists")
+        self._parameters[key]=Parameter(low,high,value,rtype)
 
     def prob(self,param_sample):
+        '''
+        Returns the probability of the parameter sample
+        Parameters
+        ----------
+        param_sample : dict
+            A dictionary of the parameter sample
+        Returns
+        -------
+        p : float
+            The probability of the parameter sample
+        '''
         if set(param_sample.keys()) != set(self._parameters.keys()):
             raise ValueError("The parameter sample has different variables")
 
