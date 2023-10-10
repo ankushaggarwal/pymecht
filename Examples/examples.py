@@ -143,8 +143,7 @@ def artery0Dmodel():
 def randomex():
     model = MatModel('goh','nh')
     mm = model.models
-    t,t1,t2 = model.parameters_wbounds()
-    Theta = RandomParameters(t,t1,t2)
+    Theta = RandomParameters(model.parameters)
     Theta.make_normal('mu_1')
     #Theta.fix('k2',10)
     #Theta.fix('k1',10)

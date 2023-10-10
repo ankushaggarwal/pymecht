@@ -129,7 +129,7 @@ def test_random_params():
     mm = material.models
     mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
     sample = UniaxialExtension(material)
-    random_params = RandomParameters(*sample.parameters_wbounds())
+    random_params = RandomParameters(sample.parameters)
     assert isinstance(random_params, RandomParameters)
     param_samples = random_params.sample(10)
     assert type(param_samples) is list

@@ -92,19 +92,34 @@ class Parameter:
             return 1./(self.std*np.sqrt(2*np.pi))*np.exp(-(np.log(x)-self.mean)**2/(2*self.std**2))
 
 class RandomParameters:
-    def __init__(self,param,param_low,param_up,param_type=None):
-        self.param_sample = param.copy()
-        if param_type is None:
-            param_type = param.copy()
-            for p in param_type.keys():
+    def __init__(self,params):
+        '''
+        A class to generate random parameters from sample parameters
+        Parameters
+        ----------
+        params : ParamDict
+            A dictionary of parameters to be varied
+        '''
+        param = params.val()
+        param_low = params.lb()
+        param_up = params.ub()
+        param_type = params.fixed()
+
+        self._param_sample = param.copy()
+        for p in param_type.keys():
+            if param_type[p]:
+                param_type[p]='fixed'
+                param_low[p]=param[p]
+                param_up[p]=param[p]
+            else:
                 param_type[p]='uniform' #by default all parameters are created uniform
         set_keys = set(param.keys())
         if set(param_low.keys()) != set_keys or set(param_up.keys()) != set_keys or set(param_type.keys()) != set_keys:
             raise ValueError("The dictionaries of parameter default, upper, and lower values have different set of keys",param_low,param_up,param)
-        self.parameters=OrderedDict([])
+        self._parameters=OrderedDict([])
         for k in param.keys():
-            self.parameters[k]=Parameter(param_low[k],param_up[k],param[k],param_type[k])
-        #print(self.parameters)
+            self._parameters[k]=Parameter(param_low[k],param_up[k],param[k],param_type[k])
+        #print(self._parameters)
     def _format_float(self,x):
         if (x>0.01 and x<100) or x==0:
             return "{:<18}".format("{:.2f}".format(x))
@@ -112,7 +127,7 @@ class RandomParameters:
             return "{:<18}".format("{:.2e}".format(x))
         
     def __str__(self):
-        #return str(self.parameters)
+        #return str(self._parameters)
         lines = ''
         header = "{:<18}".format("Keys")
         header += "{:<18}".format("Type")
@@ -122,21 +137,21 @@ class RandomParameters:
         #print("-"*len(header))
         #print(header)
         #print("-"*len(header))
-        for k in self.parameters.keys():
+        for k in self._parameters.keys():
             line = "{:<18}".format(k)
-            line += "{:<18}".format(self.parameters[k].rtype)
-            if self.parameters[k].rtype == 'fixed':
-                line += self._format_float(self.parameters[k].value)
-                line += self._format_float(self.parameters[k].value)
-            elif self.parameters[k].rtype == 'uniform':
-                line += self._format_float(self.parameters[k].low)
-                line += self._format_float(self.parameters[k].high)
-            elif self.parameters[k].rtype == 'normal':
-                line += self._format_float(self.parameters[k].mean)
-                line += self._format_float(self.parameters[k].std)
-            elif self.parameters[k].rtype == 'lognormal':
-                line += self._format_float(np.exp(self.parameters[k].mean))
-                line += self._format_float(np.exp(self.parameters[k].std))
+            line += "{:<18}".format(self._parameters[k].rtype)
+            if self._parameters[k].rtype == 'fixed':
+                line += self._format_float(self._parameters[k].value)
+                line += self._format_float(self._parameters[k].value)
+            elif self._parameters[k].rtype == 'uniform':
+                line += self._format_float(self._parameters[k].low)
+                line += self._format_float(self._parameters[k].high)
+            elif self._parameters[k].rtype == 'normal':
+                line += self._format_float(self._parameters[k].mean)
+                line += self._format_float(self._parameters[k].std)
+            elif self._parameters[k].rtype == 'lognormal':
+                line += self._format_float(np.exp(self._parameters[k].mean))
+                line += self._format_float(np.exp(self._parameters[k].std))
             #print(line)
             lines += line + '\n'
         lines += '-'*len(header) + '\n'
@@ -147,7 +162,7 @@ class RandomParameters:
         return self.__str__()
 
     def sample(self,N=1,sample_type=None):
-        var_type = np.array([param.rtype for param in self.parameters.values()])
+        var_type = np.array([param.rtype for param in self._parameters.values()])
         ndim = len(var_type)
         nNorm = sum((var_type=='normal')+(var_type=='lognormal'))
         nUni  = sum(var_type=='uniform')
@@ -178,9 +193,9 @@ class RandomParameters:
         all_presamples[:,var_type=='uniform'] = uniform_samples
         all_samples = []
         for i in range(N):
-            sample = self.param_sample.copy()
-            for j,k in enumerate(self.parameters.keys()):
-                sample[k] = self.parameters[k].sample(all_presamples[i,j]) 
+            sample = self._param_sample.copy()
+            for j,k in enumerate(self._parameters.keys()):
+                sample[k] = self._parameters[k].sample(all_presamples[i,j]) 
             all_samples.append(sample)
         return all_samples
 
@@ -188,29 +203,29 @@ class RandomParameters:
         if type(keys) is list:
             if x is None:
                 for key in keys:
-                    self.parameters[key].fix(x)
+                    self._parameters[key].fix(x)
             else:
                 assert(len(keys)==len(x))
                 for i,key in enumerate(keys):
-                    self.parameters[key].fix(x[i])
+                    self._parameters[key].fix(x[i])
         else:
-            self.parameters[keys].fix(x)
+            self._parameters[keys].fix(x)
 
     def make_normal(self,key,x=None):
-        self.parameters[key].make_normal(x)
+        self._parameters[key].make_normal(x)
 
     def make_lognormal(self,key,x=None):
-        self.parameters[key].make_lognormal(x)
+        self._parameters[key].make_lognormal(x)
 
     def add(self,key,value,low,high,rtype):
-            self.parameters[key]=Parameter(low,high,value,rtype)
+            self._parameters[key]=Parameter(low,high,value,rtype)
 
     def prob(self,param_sample):
-        if set(param_sample.keys()) != set(self.parameters.keys()):
+        if set(param_sample.keys()) != set(self._parameters.keys()):
             raise ValueError("The parameter sample has different variables")
 
         p=1.
-        for k in self.parameters.keys():
-            p *= self.parameters[k].prob(param_sample[k])
+        for k in self._parameters.keys():
+            p *= self._parameters[k].prob(param_sample[k])
 
         return p
