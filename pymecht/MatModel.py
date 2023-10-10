@@ -70,17 +70,6 @@ class MatModel:
         else:
             self._params.update(theta)
 
-    def parameters_wbounds(self):
-        theta_low,theta_up = {},{}
-        for i,m in enumerate(self._models):
-            t1 = m.param_low_bd
-            theta_low.update({k+'_'+str(i):t1[k] for k in t1})
-            t2 = m.param_up_bd
-            theta_up.update({k+'_'+str(i):t2[k] for k in t2})
-        if set(theta_low.keys()) != set(self._params.keys()) or set(theta_up.keys()) != set(self._params.keys()):
-            raise ValueError("The dictionaries of parameter default, upper, and lower values have different set of keys",theta_low,theta_up,self._params)
-        return self._params.copy(), theta_low, theta_up
-
     @models.setter
     def models(self,modelsList):
         raise ValueError("The component models should not be changed in this way")

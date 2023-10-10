@@ -153,19 +153,19 @@ class SampleExperiment:
         self._update(**self._params.val())
         self._mat_model.parameters = mat
 
-    def parameters_wbounds(self):
-        theta = self._param_default.copy()
-        theta_low = self._param_low_bd.copy()
-        theta_up = self._param_up_bd.copy()
-        mat_theta,mat_theta_low,mat_theta_up = self._mat_model.parameters_wbounds()
-        if len(theta.keys() & mat_theta.keys())>0:
-                raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
-
-        theta.update(mat_theta)
-        theta_low.update(mat_theta_low)
-        theta_up.update(mat_theta_up)
-
-        return theta, theta_low, theta_up
+    #def parameters_wbounds(self):
+    #    theta = self._param_default.copy()
+    #    theta_low = self._param_low_bd.copy()
+    #    theta_up = self._param_up_bd.copy()
+    #    mat_theta,mat_theta_low,mat_theta_up = self._mat_model.parameters_wbounds()
+    #    if len(theta.keys() & mat_theta.keys())>0:
+    #            raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
+    #
+    #    theta.update(mat_theta)
+    #    theta_low.update(mat_theta_low)
+    #    theta_up.update(mat_theta_up)
+    #
+    #    return theta, theta_low, theta_up
     
     def __str__(self):
         out = "An object of type " + self.__class__.__name__ + "with " + self._inp + " as input, " + self._output + " as output, and the following material\n"
