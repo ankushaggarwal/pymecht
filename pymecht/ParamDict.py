@@ -145,7 +145,7 @@ class ParamDict(dict):
 
     def _set(self, x: np.array):
         if len(x) != self._n():
-            raise ValueError("ParamDict.set: length of the input array is not consistent with the number of non-fixed parameters")
+            raise ValueError("ParamDict._set: length of the input array is not consistent with the number of non-fixed parameters")
         i = 0
         for k in self.keys():
             if not self[k].fixed:
