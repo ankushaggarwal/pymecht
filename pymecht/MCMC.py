@@ -57,7 +57,7 @@ class MCMC:
             #print(new)
             if np.any(new < self._bounds[0]) or np.any(new > self._bounds[1]):
                 continue
-            self.params.set(new) 
+            self.params._set(new) 
             new_prob, new_value = self._prob_func(self.params._val())
             if new_prob>=old_prob:
                 alpha = 1.

@@ -143,7 +143,7 @@ class ParamDict(dict):
             raise ValueError(k,"not a key in the ParamDict object")
         self[k].set(x)
 
-    def set(self, x: np.array):
+    def _set(self, x: np.array):
         if len(x) != self._n():
             raise ValueError("ParamDict.set: length of the input array is not consistent with the number of non-fixed parameters")
         i = 0
