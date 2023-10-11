@@ -37,11 +37,21 @@ class Param:
         return self.__str__()
     
     def set(self,value: float):
+        '''
+        Set the value of the parameter
+        Parameters
+        ----------
+        value : float
+            Value of the parameter
+        '''
         self.value = value
         if self.fixed:
             self.low = self.high = self.value
 
     def fix(self):
+        '''
+        Fix the parameter to the current value
+        '''
         self.fixed = True
         self.low, self.high = self.value, self.value
 
@@ -86,46 +96,63 @@ class ParamDict(dict):
             )
         super().__init__(mapping)
 
-    def val(self):
+    def _val(self):
         return {k: p.value for k,p in self.items()}
 
-    def fixed(self):
+    def _fixed(self):
         return {k: p.fixed for k,p in self.items()}
 
-    def lb(self):
+    def _lb(self):
         return {k: p.low for k,p in self.items()}
 
-    def ub(self):
+    def _ub(self):
         return {k: p.high for k,p in self.items()}
 
-    def bounds(self):
+    def _bounds(self):
         return {k: (p.low,p.high) for k,p in self.items()}
 
     def fix(self,k: str):
-            self[k].fix()
+        '''
+        Fix a parameter
+        Parameters
+        ----------
+        k : str
+            Key of the parameter to be fixed
+        '''
+        self[k].fix()
 
-    def vec(self):
+    def _vec(self):
         return [p.value for k,p in self.items() if not p.fixed]
 
-    def bounds_vec(self):
+    def _bounds_vec(self):
         lb = [p.low for k,p in self.items() if not p.fixed]
         ub = [p.high for k,p in self.items() if not p.fixed]
         return (lb,ub)
 
     def set(self,k: str,x: float):
+        '''
+        Set the value of a parameter
+        Parameters
+        ----------
+        k : str
+            Key of the parameter to be set
+        x : float
+            Value of the parameter
+        '''
         if k not in self.keys():
             raise ValueError(k,"not a key in the ParamDict object")
         self[k].set(x)
 
     def set(self, x: np.array):
-        if len(x) != self.n():
+        if len(x) != self._n():
             raise ValueError("ParamDict.set: length of the input array is not consistent with the number of non-fixed parameters")
         i = 0
         for k in self.keys():
             if not self[k].fixed:
                 self[k].set(x[i])
                 i += 1
-    def dict(self,vec: np.ndarray) -> dict:
+
+    def _dict(self,vec: np.ndarray) -> dict:
         x = dict()
         j = 0
         for k in self.keys():
@@ -137,16 +164,37 @@ class ParamDict(dict):
         return x
 
     def to_pandas(self):
+        '''
+        Convert the parameters to a pandas DataFrame
+        Returns
+        -------
+        df : pandas.DataFrame
+            DataFrame containing the parameters
+        '''
         p = dict()
         for k,v in self.items():
             p[k] = [v.value, v.low, v.high, v.fixed]
         return pd.DataFrame.from_dict(p,orient="index", columns=['Initial value', 'Lower bound', 'Upper bound', 'Fixed'])
 
     def save(self,fname):
+        '''
+        Save the parameters to a csv file
+        Parameters
+        ----------
+        fname : str
+            Name of the file to be saved
+        '''
         df = self.to_pandas()
         df.to_csv(fname)
 
     def read(self,fname):
+        '''
+        Read the parameters from a csv file
+        Parameters
+        ----------
+        fname : str
+            Name of the file to be read
+        '''
         df = pd.read_csv(fname,index_col=0)
         for k in df.index:
             self[k]=Param(df.loc[k,'Initial value'],df.loc[k,'Lower bound'],df.loc[k,'Upper bound'],df.loc[k,'Fixed'])
@@ -155,7 +203,7 @@ class ParamDict(dict):
             if p.fixed:
                 self[k].low = self[k].high = self[k].value
 
-    def n(self):
+    def _n(self):
         i = 0
         for k in self.keys():
             if not self[k].fixed:
@@ -187,8 +235,8 @@ if __name__=="__main__":
     p['y'] = Param(0)
     print(p)
     p.fix('x')
-    print(p.bounds_vec())
-    print(p.vec())
+    print(p._bounds_vec())
+    print(p._vec())
 
     p = CustomDict({'x':0,'y':1})
     print(p)

@@ -19,16 +19,16 @@ class ParamFitter:
         self.params = params
         self._keys = self.params.keys()
         #Test that the sim_func gives the same sized result as the "output"
-        sim_result = self._sim_func(self.params.val())
+        sim_result = self._sim_func(self.params._val())
         if sim_result.shape != self._output.shape:
             raise ValueError("Output and simulation results are of different shape", sim_result.shape, self._output.shape)
         print("Parameter fitting instance created with the following settings")
         print(self.params)
-        print(self.params.n(),"parameters will be fitted.")
+        print(self.params._n(),"parameters will be fitted.")
 
     def _residual(self,cval):
-        assert(len(cval)==self.params.n())
-        p = self.params.dict(cval)
+        assert(len(cval)==self.params._n())
+        p = self.params._dict(cval)
         return self._sim_func(p) - self._output
 
     def fit(self):
@@ -39,9 +39,9 @@ class ParamFitter:
         result : scipy.optimize.OptimizeResult
             The result of the fitting
         '''
-        self.c0 = self.params.vec()
-        result = least_squares(self._residual,x0=self.c0,bounds=self.params.bounds_vec(),verbose=2)
-        p = self.params.dict(result.x)
+        self.c0 = self.params._vec()
+        result = least_squares(self._residual,x0=self.c0,bounds=self.params._bounds_vec(),verbose=2)
+        p = self.params._dict(result.x)
         for k in p:
             self.params[k].set(p[k])
         print("Fitting completed, with the following results")

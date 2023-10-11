@@ -33,7 +33,7 @@ class SampleExperiment:
         if params is None:
             params = self.parameters
         if type(params) is ParamDict:
-            params = params.val()
+            params = params._val()
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
@@ -67,7 +67,7 @@ class SampleExperiment:
         if params is None:
             params = self.parameters
         if type(params) is ParamDict:
-            params = params.val()
+            params = params._val()
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
@@ -150,7 +150,7 @@ class SampleExperiment:
                     self._params.set(k,theta[k]) 
             else:
                 mat[k] = theta[k]
-        self._update(**self._params.val())
+        self._update(**self._params._val())
         self._mat_model.parameters = mat
 
     def __str__(self):
@@ -471,7 +471,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         if params is None:
             params = self.parameters
         if type(params) is ParamDict:
-            params = params.val()
+            params = params._val()
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
@@ -503,7 +503,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
 
     def outer_radius(self,input_,params):
         if type(params) is ParamDict:
-            params = params.val()
+            params = params._val()
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)

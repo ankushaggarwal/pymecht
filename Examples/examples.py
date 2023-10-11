@@ -78,7 +78,7 @@ def validate_tube():
 
     l=1.1
     result = lambda l: log(l)-1./2/l**2
-    parameters = sample.parameters.val()
+    parameters = sample.parameters._val()
     parameters['k1_0']=5.
     parameters['k2_0']=15.
     parameters['k3_0']=0.

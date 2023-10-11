@@ -100,10 +100,10 @@ class RandomParameters:
         params : ParamDict
             A dictionary of parameters to be varied
         '''
-        param = params.val()
-        param_low = params.lb()
-        param_up = params.ub()
-        param_type = params.fixed()
+        param = params._val()
+        param_low = params._lb()
+        param_up = params._ub()
+        param_type = params._fixed()
 
         self._param_sample = param.copy()
         for p in param_type.keys():

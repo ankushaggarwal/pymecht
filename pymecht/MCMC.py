@@ -15,23 +15,23 @@ class MCMC:
         self._prob_func = prob_func
         self.params = params
         self._keys = self.params.keys()
-        bounds = self.params.bounds_vec()
+        bounds = self.params._bounds_vec()
         self._bounds = [np.array(bounds[0]), np.array(bounds[1])]
         self.std = (self._bounds[1]-self._bounds[0])/20.
         #Test that the prob_func gives a float
-        prob_result, value = self._prob_func(self.params.val())
+        prob_result, value = self._prob_func(self.params._val())
         if not isinstance(prob_result,float):
             raise ValueError("prob_func should output a float. Instead it gave", prob_result)
         print("MCMC instance created with the following settings")
         print(self.params)
-        print(self.params.n(),"parameters will be varied.")
+        print(self.params._n(),"parameters will be varied.")
 
         self._samples = None
         self._probs = None
         self._values = None
 
     def _proposal(self):
-        dx = np.random.normal(size=self.params.n())*self.std #could multiply by a vector of standard deviations for each parameter
+        dx = np.random.normal(size=self.params._n())*self.std #could multiply by a vector of standard deviations for each parameter
         return self.c0 + dx
 
     def run(self,n):
@@ -42,12 +42,12 @@ class MCMC:
         n : int
             Number of MCMC iterations to perform (number of samples will be less than n due to rejection sampling)
         '''
-        self.c0 = self.params.vec()
-        #bounds_vec = self.params.bounds_vec()
+        self.c0 = self.params._vec()
+        #bounds_vec = self.params._bounds_vec()
         #self.std = (bounds_vec[1]-bounds_vec[0])/20.
-        bounds = self.params.bounds_vec()
+        bounds = self.params._bounds_vec()
         self._bounds = [np.array(bounds[0]), np.array(bounds[1])]
-        old_prob, old_value = self._prob_func(self.params.val())
+        old_prob, old_value = self._prob_func(self.params._val())
         if self._samples is None:
             self._samples = [self.c0]
             self._probs = [old_prob]
@@ -58,7 +58,7 @@ class MCMC:
             if np.any(new < self._bounds[0]) or np.any(new > self._bounds[1]):
                 continue
             self.params.set(new) 
-            new_prob, new_value = self._prob_func(self.params.val())
+            new_prob, new_value = self._prob_func(self.params._val())
             if new_prob>=old_prob:
                 alpha = 1.
             else:

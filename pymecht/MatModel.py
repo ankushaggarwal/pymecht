@@ -55,12 +55,18 @@ class MatModel:
 
     @property
     def parameters(self):
+        '''
+        Parameters of the model
+        '''
         theta = ParamDict()
         theta.update(self._params)
         return theta
 
     @property
     def models(self):
+        '''
+        List of component models
+        '''
         return self._models
 
     @parameters.setter
@@ -88,7 +94,7 @@ class MatModel:
         if theta is None:
             theta=self._params
         if type(theta) is ParamDict:
-            theta = theta.val()
+            theta = theta._val()
         elif type(theta[list(theta.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         en = 0.
@@ -118,7 +124,7 @@ class MatModel:
         if theta is None:
             theta=self._params
         if type(theta) is ParamDict:
-            theta = theta.val()
+            theta = theta._val()
         elif type(theta[list(theta.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         stresstype = stresstype.replace(" ", "").lower()
@@ -177,7 +183,7 @@ class MatModel:
         if theta is None:
             theta=self._params
         if type(theta) is ParamDict:
-            theta = theta.val()
+            theta = theta._val()
         elif type(theta[list(theta.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         stresstype = stresstype.replace(" ", "").lower()
@@ -224,7 +230,7 @@ class MatModel:
         if theta is None:
             theta=self._params
         if type(theta) is ParamDict:
-            theta = theta.val()
+            theta = theta._val()
         elif theta is not None and type(theta[list(theta.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         result = []
