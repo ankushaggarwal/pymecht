@@ -70,3 +70,30 @@ class MCMC:
                 self._probs.append(old_prob)
                 self._values.append(new_value)
 
+        print("MCMC sampling completed. Acceptance rate:",len(self._samples)/n)
+        print("Number of samples:",len(self._samples))
+        print("To access the samples, use get_samples()")
+
+    def get_samples(self):
+        '''
+        Return the samples
+        '''
+        if self._samples is None:
+            raise ValueError("MCMC has not been run yet")
+        return self._samples.copy()
+    
+    def get_probs(self):
+        '''
+        Return the probabilities
+        '''
+        if self._probs is None:
+            raise ValueError("MCMC has not been run yet")
+        return self._probs.copy()
+    
+    def get_values(self):
+        '''
+        Return the values
+        '''
+        if self._values is None:
+            raise ValueError("MCMC has not been run yet")
+        return self._values.copy()
