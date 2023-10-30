@@ -48,10 +48,16 @@ class Param:
         if self.fixed:
             self.low = self.high = self.value
 
-    def fix(self):
+    def fix(self, x=None):
         '''
         Fix the parameter to the current value
+        Parameters
+        ----------
+        x : float, optional
+            Value of the parameter to be fixed to. If not provided, the current value is used.
         '''
+        if x is not None:
+            self.value = x  
         self.fixed = True
         self.low, self.high = self.value, self.value
 
@@ -111,15 +117,17 @@ class ParamDict(dict):
     def _bounds(self):
         return {k: (p.low,p.high) for k,p in self.items()}
 
-    def fix(self,k: str):
+    def fix(self,k: str, x=None):
         '''
         Fix a parameter
         Parameters
         ----------
         k : str
             Key of the parameter to be fixed
+        x : float, optional
+            Value of the parameter to be fixed to. If not provided, the current value is used.
         '''
-        self[k].fix()
+        self[k].fix(x)
 
     def _vec(self):
         return [p.value for k,p in self.items() if not p.fixed]
@@ -143,6 +151,34 @@ class ParamDict(dict):
             raise ValueError(k,"not a key in the ParamDict object")
         self[k].set(x)
 
+    def set_lb(self,k: str,x: float):
+        '''
+        Set the lower bound of a parameter
+        Parameters
+        ----------
+        k : str
+            Key of the parameter to be set
+        x : float
+            Lower bound of the parameter
+        '''
+        if k not in self.keys():
+            raise ValueError(k,"not a key in the ParamDict object")
+        self[k].low = x
+
+    def set_ub(self,k: str,x: float):
+        '''
+        Set the upper bound of a parameter
+        Parameters
+        ----------
+        k : str
+            Key of the parameter to be set
+        x : float
+            Upper bound of the parameter
+        '''
+        if k not in self.keys():
+            raise ValueError(k,"not a key in the ParamDict object")
+        self[k].high = x
+        
     def _set(self, x: np.array):
         if len(x) != self._n():
             raise ValueError("ParamDict._set: length of the input array is not consistent with the number of non-fixed parameters")
@@ -225,18 +261,3 @@ class ParamDict(dict):
     def __repr__(self):
         return self.__str__()
 
-if __name__=="__main__":
-    x = Param(1,0,2,True)
-
-    p = ParamDict()
-
-    p['x'] = x
-
-    p['y'] = Param(0)
-    print(p)
-    p.fix('x')
-    print(p._bounds_vec())
-    print(p._vec())
-
-    p = CustomDict({'x':0,'y':1})
-    print(p)
