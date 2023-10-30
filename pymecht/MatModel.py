@@ -13,13 +13,13 @@ class MatModel:
     >>> from MatModel import *
     >>> mat1 = NH() #A neo-Hookean model
     >>> mat2 = GOH([np.array([1,0,0]),np.array([0.5,0.5,0])]) #A GOH model with two fiber families
-    >>> model = MatModel(mat1,mat2) #can provide as many models as needed as long as their parameters are uniquely named
-    >>> model = MatModel(mat1) + MatModel(mat2) #can also add them after creating the MatModel object
-    >>> model.models #provides a list of the models included
-    >>> model.parameters #provides a dictionary of parameters and their default values
-    >>> model = MatModel('goh','nh') #can also provide a list of model names, however one has to assign fiber directions afterwards
-    >>> mm = model.models
-    >>> mm[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
+    >>> mat_model = MatModel(mat1,mat2) #can provide as many models as needed as long as their parameters are uniquely named
+    >>> mat_model = MatModel(mat1) + MatModel(mat2) #can also add them after creating the MatModel object
+    >>> mat_model.models #provides a list of the models included
+    >>> mat_model.parameters #provides a dictionary of parameters and their default values
+    >>> mat_model = MatModel('goh','nh') #can also provide a list of model names, however one has to assign fiber directions afterwards
+    >>> mats = mat_model.models
+    >>> mats[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
 
     To get an overview of all the classes in this file, try the following:
     >>> import importlib, inspect
@@ -380,6 +380,9 @@ class InvariantHyperelastic:
 
     @property
     def fiber_dirs(self):
+        '''
+        Fiber direction vector(s)
+        '''
         #print("Getting fiber directions")
         return self.M
 
@@ -484,7 +487,7 @@ class MN(InvariantHyperelastic):
             if isinstance(M,list):
                 self.M = M
                 if len(M)!=1:
-                    print('Warning: LS model should be used with only one fiber.', \
+                    print('Warning: MN model should be used with only one fiber.', \
                         'Other situations can give unexpected behavior and', \
                         'non-zero energy at identity deformation gradient')
             else:
@@ -884,19 +887,3 @@ class StructModel:
         energy = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)/B-1./B-stretches)*self._theta_weight_i)
         stress = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)-1)*self._theta_weight_i*tensors.T,axis=-1)
         return energy,stress
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-    for mname in ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','polyI4']:
-        mat = MatModel(mname)
-        mm = mat.models
-        print(mname)
-        mm[0].fiber_dirs = [np.array([1,0,0])]
-        mm[0].test(mat.parameters)
-
-    model = StructModel()
-    params = {'mean_theta':0,'sigma':0.1,'aniso_fraction':0.9,'A':0.1,'B':10}
-    print(model.energy(np.eye(3),params))
-    print(model.secondPK(np.eye(3),params))
