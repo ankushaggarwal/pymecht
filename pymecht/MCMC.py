@@ -2,16 +2,19 @@ import numpy as np
 from tqdm import tqdm
 
 class MCMC:
+    '''
+    A class for performing MCMC sampling of a given probability function based on SampleExperiment class object
+
+    Parameters
+    ----------
+    prob_func : function
+        A function that takes in a dictionary of parameters and returns a tuple of (probability, value)
+
+    params : ParamDict
+        A dictionary of parameters to be varied
+
+    '''
     def __init__(self,prob_func,params):
-        '''
-        A class for performing MCMC sampling of a given probability function based on SampleExperiment class object
-        Parameters
-        ----------
-        prob_func : function
-            A function that takes in a dictionary of parameters and returns a tuple of (probability, value)
-        params : ParamDict
-            A dictionary of parameters to be varied
-        '''
         self._prob_func = prob_func
         self.params = params
         self._keys = self.params.keys()
@@ -37,10 +40,15 @@ class MCMC:
     def run(self,n):
         '''
         Run the MCMC sampling
+
         Parameters
         ----------
         n : int
             Number of MCMC iterations to perform (number of samples will be less than n due to rejection sampling)
+
+        Returns
+        -------
+        None
         '''
         self.c0 = self.params._vec()
         #bounds_vec = self.params._bounds_vec()

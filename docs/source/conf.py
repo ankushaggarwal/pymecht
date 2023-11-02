@@ -20,7 +20,7 @@ extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx.ext.mathjax",
 
 templates_path = ['_templates']
 exclude_patterns = []
-
+autodoc_member_order = 'bysource'
 
 
 # -- Options for HTML output -------------------------------------------------

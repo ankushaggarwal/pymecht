@@ -3,6 +3,12 @@ from collections import UserDict
 import pandas as pd
 
 class Param:
+    '''
+    A data structure for a single parameter. 
+    ParamDict is a dictionary of Param objects.
+
+    This class is used internally by ParamDict and is not intended to be used directly by the user.
+    '''
     def __init__(self,value: float = 0., low: float = -np.inf, high: float = np.inf, fixed: bool = False):
         self.value = value
         self.low = low
@@ -39,10 +45,15 @@ class Param:
     def set(self,value: float):
         '''
         Set the value of the parameter
+
         Parameters
         ----------
         value : float
             Value of the parameter
+
+        Returns
+        -------
+        None
         '''
         self.value = value
         if self.fixed:
@@ -51,10 +62,15 @@ class Param:
     def fix(self, x=None):
         '''
         Fix the parameter to the current value
+
         Parameters
         ----------
         x : float, optional
             Value of the parameter to be fixed to. If not provided, the current value is used.
+
+        Returns
+        -------
+        None
         '''
         if x is not None:
             self.value = x  
@@ -70,6 +86,10 @@ class Param:
         return self
 
 class ParamDict(dict):
+    '''
+    A custom dictionary for storing parameters. The keys are strings and the values are Param objects.
+    The mat_model.parameters and sample_experiment.parameters are instances of ParamDict.
+    '''
     def __init__(self, mapping=None, /, **kwargs):
         if mapping is not None:
             mapping = {
@@ -120,12 +140,18 @@ class ParamDict(dict):
     def fix(self,k: str, x=None):
         '''
         Fix a parameter
+
         Parameters
         ----------
         k : str
             Key of the parameter to be fixed
+
         x : float, optional
             Value of the parameter to be fixed to. If not provided, the current value is used.
+
+        Returns
+        -------
+        None
         '''
         self[k].fix(x)
 
@@ -140,12 +166,18 @@ class ParamDict(dict):
     def set(self,k: str,x: float):
         '''
         Set the value of a parameter
+
         Parameters
         ----------
         k : str
             Key of the parameter to be set
+
         x : float
             Value of the parameter
+        
+        Returns
+        -------
+        None
         '''
         if k not in self.keys():
             raise ValueError(k,"not a key in the ParamDict object")
@@ -154,12 +186,18 @@ class ParamDict(dict):
     def set_lb(self,k: str,x: float):
         '''
         Set the lower bound of a parameter
+
         Parameters
         ----------
         k : str
             Key of the parameter to be set
+
         x : float
             Lower bound of the parameter
+        
+        Returns
+        -------
+        None
         '''
         if k not in self.keys():
             raise ValueError(k,"not a key in the ParamDict object")
@@ -168,12 +206,18 @@ class ParamDict(dict):
     def set_ub(self,k: str,x: float):
         '''
         Set the upper bound of a parameter
+
         Parameters
         ----------
         k : str
             Key of the parameter to be set
+
         x : float
             Upper bound of the parameter
+
+        Returns
+        -------
+        None
         '''
         if k not in self.keys():
             raise ValueError(k,"not a key in the ParamDict object")
@@ -202,9 +246,10 @@ class ParamDict(dict):
     def to_pandas(self):
         '''
         Convert the parameters to a pandas DataFrame
+
         Returns
         -------
-        df : pandas.DataFrame
+        pandas.DataFrame
             DataFrame containing the parameters
         '''
         p = dict()
@@ -215,10 +260,15 @@ class ParamDict(dict):
     def save(self,fname):
         '''
         Save the parameters to a csv file
+
         Parameters
         ----------
         fname : str
             Name of the file to be saved
+        
+        Returns
+        -------
+        None
         '''
         df = self.to_pandas()
         df.to_csv(fname)
@@ -226,10 +276,15 @@ class ParamDict(dict):
     def read(self,fname):
         '''
         Read the parameters from a csv file
+
         Parameters
         ----------
         fname : str
             Name of the file to be read
+
+        Returns
+        -------
+        None
         '''
         df = pd.read_csv(fname,index_col=0)
         for k in df.index:

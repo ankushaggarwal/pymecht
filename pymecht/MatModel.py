@@ -8,26 +8,48 @@ from .ParamDict import *
 
 class MatModel:
     '''
-    A material model class that allows adding different models together
-    For example:
-    >>> from MatModel import *
-    >>> mat1 = NH() #A neo-Hookean model
-    >>> mat2 = GOH([np.array([1,0,0]),np.array([0.5,0.5,0])]) #A GOH model with two fiber families
-    >>> mat_model = MatModel(mat1,mat2) #can provide as many models as needed as long as their parameters are uniquely named
-    >>> mat_model = MatModel(mat1) + MatModel(mat2) #can also add them after creating the MatModel object
-    >>> mat_model.models #provides a list of the models included
-    >>> mat_model.parameters #provides a dictionary of parameters and their default values
-    >>> mat_model = MatModel('goh','nh') #can also provide a list of model names, however one has to assign fiber directions afterwards
-    >>> mats = mat_model.models
-    >>> mats[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
+    The main material model class that allows adding different models together. 
+    This will usually be the starting point in using pyMechT.
 
-    To get an overview of all the classes in this file, try the following:
-    >>> import importlib, inspect
-    >>> for name, cls in inspect.getmembers(importlib.import_module("MatModel"), inspect.isclass):
-    >>>    print(name,cls.__doc__)
+    The models can be provided as a list of model objects, or as a list of strings.
+
+    The passed strings can have lower/upper case. The following models are available:
+        
+            * 'NH': Neo-Hookean model
+            * 'YEOH': Yeoh model
+            * 'LS': Lee-Sacks model
+            * 'MN': May-Newman model
+            * 'GOH': Gasser-Ogden-Holzapfel model
+            * 'HGO': Holzapfel-Gasser-Ogden model
+            * 'expI1': A model with an exponential of I1
+            * 'polyI4': A model with a polynomial of I4
+            * 'HY': Humphrey-Yin model
+            * 'Holzapfel': Holzapfel model
+            * 'volPenalty': A penalty model for volumetric change
+            * 'ArrudaBoyce': Arruda-Boyce model
+            * 'Gent': Gent model
+            * 'splineI1I4': A spline model of I1 and I4
+            * 'StructModel': A structural model with fiber distribution
+
+    Multiple models can be added together to create a composite model, 
+    with each model having its own fiber(s) and parameters.
+
+    Example
+    -------
+        >>> from MatModel import *
+        >>> mat1 = NH() #A neo-Hookean model
+        >>> mat2 = GOH([np.array([1,0,0]),np.array([0.5,0.5,0])]) #A GOH model with two fiber families
+        >>> mat_model = MatModel(mat1,mat2) #can provide as many models as needed as long as their parameters are uniquely named
+        >>> mat_model = MatModel(mat1) + MatModel(mat2) #can also add them after creating the MatModel object
+        >>> mat_model.models #provides a list of the models included
+        >>> mat_model.parameters #provides a dictionary of parameters and their default values
+        >>> mat_model = MatModel('GOH','NH') #can also provide a list of model names, however one has to assign fiber directions afterwards
+        >>> mats = mat_model.models
+        >>> mats[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
+
     '''
-
     def __init__(self,*modelsList):
+
         self._models = modelsList
         #check if any of the components is a string
         if any([isinstance(m,str) for m in modelsList]):
@@ -83,13 +105,20 @@ class MatModel:
     def energy(self,F=np.identity(3),theta=None):
         '''
         Returns the energy density of the material model
+        
         Parameters
         ----------
-            F: the deformation gradient,   default: identity matrix (no deformation)
-            theta: the parameters of the model, if None, then the default values are used
+        F: np.array([3,3]) 
+            the deformation gradient,   default: identity matrix (no deformation)
+            
+        theta: ParamDict or dict 
+            the parameters of the model, if None, then the default values are used
+        
         Returns
         -------
-            en: the energy density
+        float
+            the energy density
+        
         '''
         if theta is None:
             theta=self._params
@@ -106,20 +135,34 @@ class MatModel:
     def stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
         '''
         Returns the stress tensor of the material model
+
         Parameters
         ----------
-            F: the deformation gradient,   default: identity matrix (no deformation)
-            theta: the parameters of the model, if None, then the default values are used
-            stresstype: the type of stress tensor to return with the following options (case insensitive): 
-                'cauchy': Cauchy stress,
-                '1pk' or '1stpk' or 'firstpk': 1st Piola-Kirchoff stress
-                '2pk' or '2ndpk' or 'secondpk': 2nd Piola-Kirchoff stress
-                default: Cauchy stress
-            incomp: if True, then the material is assumed to be incompressible, default: False
-            Fdiag: if True, then it is assumed that F is diagonal (for faster computation), default: False
+        F: np.array([3,3])
+            the deformation gradient, default: identity matrix (no deformation)
+        
+        theta: ParamDict or dict
+            the parameters of the model, if None, then the default values are used
+        
+        stresstype: str
+            the type of stress tensor to return with the following options (case insensitive) 
+
+                * 'cauchy': Cauchy stress,
+                * '1pk' or '1stpk' or 'firstpk': 1st Piola-Kirchoff stress
+                * '2pk' or '2ndpk' or 'secondpk': 2nd Piola-Kirchoff stress
+                * default: Cauchy stress
+            
+        incomp: bool
+            if True, then the material is assumed to be incompressible, default: False
+            
+        Fdiag: bool
+            if True, then it is assumed that F is diagonal (for faster computation), default: False
+        
         Returns
         -------
-            S: the stress 3X3 tensor
+        np.array([3,3])
+            the stress 3X3 tensor
+        
         '''
         if theta is None:
             theta=self._params
@@ -164,21 +207,35 @@ class MatModel:
     def energy_stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
         '''
         Returns the energy density and stress tensor of the material model
+
         Parameters
         ----------
-            F: the deformation gradient,   default: identity matrix (no deformation)
-            theta: the parameters of the model, if None, then the default values are used
-            stresstype: the type of stress tensor to return with the following options (case insensitive): 
-                'cauchy': Cauchy stress,
-                '1pk' or '1stpk' or 'firstpk': 1st Piola-Kirchoff stress
-                '2pk' or '2ndpk' or 'secondpk': 2nd Piola-Kirchoff stress
-                default: Cauchy stress
-            incomp: if True, then the material is assumed to be incompressible, default: False
-            Fdiag: if True, then it is assumed that F is diagonal (for faster computation), default: False
+        F: np.array([3,3])
+            the deformation gradient,   default: identity matrix (no deformation)
+            
+        theta: ParamDict or dict
+            the parameters of the model, if None, then the default values are used
+           
+        stresstype: str
+            the type of stress tensor to return with the following options (case insensitive) 
+
+                * 'cauchy': Cauchy stress,
+                * '1pk' or '1stpk' or 'firstpk': 1st Piola-Kirchoff stress
+                * '2pk' or '2ndpk' or 'secondpk': 2nd Piola-Kirchoff stress
+                * default: Cauchy stress
+            
+        incomp: bool
+            if True, then the material is assumed to be incompressible, default: False
+            
+        Fdiag: bool
+            if True, then it is assumed that F is diagonal (for faster computation), default: False
+        
         Returns
         -------
-            en: the energy density
-            S: the stress 3X3 tensor
+        tuple of (float,np.array([3,3]))
+            first element is the energy density
+            second element is the stress 3X3 tensor
+
         '''
         if theta is None:
             theta=self._params
@@ -399,7 +456,9 @@ class InvariantHyperelastic:
 class NH(InvariantHyperelastic):
     '''
     Neo-Hookean model
-    Psi = mu/2.*(I1-3)
+    
+    .. math::
+        \\Psi = \\frac{\\mu}{2}(I_1-3)
     '''
     def __init__(self):
         super().__init__()
@@ -416,7 +475,9 @@ class NH(InvariantHyperelastic):
 class YEOH(InvariantHyperelastic):
     '''
     Yeoh model
-    Psi = c1*(I1-3)+c2*(I1-3)**2+c3*(I1-3)**3+c4*(I1-3)**4
+
+    .. math::
+        \\Psi = \\sum_{i=1}^4 c_i(I_1-3)^i
     '''
     def __init__(self):
         super().__init__()
@@ -433,12 +494,19 @@ class YEOH(InvariantHyperelastic):
 class LS(InvariantHyperelastic):
     '''
     Lee--Sacks model
-    The partial derivative expressions are obtained using the following code
-    from sympy import *
-    k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
-    Psi = k1/2/(k4*k2+(1-k4)*k3)*(k4*exp(k2*(I1bar-3)**2) + (1-k4)*exp(k3*(I4bar-1)**2)-1)
-    diff(Psi,I1bar)
-    diff(Psi,I4bar)
+
+    .. math::
+        \\Psi = \\frac{k_1}{2(k_4k_2+(1-k_4)k_3)}(k_4\\exp(k_2(I_1-3)^2)+(1-k_4)\\exp(k_3(I_4-1)^2)-1)
+    
+    Derivation
+    ----------
+        The partial derivative expressions are obtained using the following code
+        
+        >>> from sympy import *
+        >>> k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
+        >>> Psi = k1/2/(k4*k2+(1-k4)*k3)*(k4*exp(k2*(I1bar-3)**2) + (1-k4)*exp(k3*(I4bar-1)**2)-1)
+        >>> diff(Psi,I1bar)
+        >>> diff(Psi,I4bar)
     '''
     def __init__(self,M=[]):
         super().__init__()
@@ -471,12 +539,18 @@ class LS(InvariantHyperelastic):
 class MN(InvariantHyperelastic):
     '''
     MayNewman model
+
+    .. math::
+        \\Psi = \\sum_{i=1}^N \\frac{k_1}{k_2+k_3}(\\exp(k_2(I_1-3)^2+k_3(\\sqrt{I_{4i}}-1)^4)-1)
+
+    Derivation
+    ----------
     The partial derivative expressions are obtained using the following code
-    from sympy import *
-    k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
-    Psi = k1/(k2+k3)*(exp(k2*(I1bar-3)**2+k3*(sqrt(I4bar)-1)**4)-1)
-    diff(Psi,I1bar)
-    diff(Psi,I4bar)
+        >>> from sympy import *
+        >>> k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
+        >>> Psi = k1/(k2+k3)*(exp(k2*(I1bar-3)**2+k3*(sqrt(I4bar)-1)**4)-1)
+        >>> diff(Psi,I1bar)
+        >>> diff(Psi,I4bar)
     '''
     def __init__(self,M=[]):
         super().__init__()
@@ -508,13 +582,19 @@ class MN(InvariantHyperelastic):
 
 class GOH(InvariantHyperelastic):
     '''
-    Gasser-Ogden-Holzapfel model
+    Gasser-Ogden-Holzapfel model (without the Neo-Hookean term)
+
+    .. math::
+        \\Psi = \\sum_{i=1}^N \\frac{k_1}{2k_2}(\\exp(k_2(k_3I_1+(1-3k_3)I_{4i}-1)^2)-1)
+
+    Derivation
+    ----------
     The partial derivative expressions are obtained using the following code
-    from sympy import *
-    k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
-    Psi = k1/2/k2*(exp(k2*(k3*I1bar+(1-3*k3)*I4bar-1)**2)-1)
-    diff(Psi,I1bar)
-    diff(Psi,I4bar)
+            >>> from sympy import *
+            >>> k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
+            >>> Psi = k1/2/k2*(exp(k2*(k3*I1bar+(1-3*k3)*I4bar-1)**2)-1)
+            >>> diff(Psi,I1bar)
+            >>> diff(Psi,I4bar)
     '''
     def __init__(self,M=[]):
         super().__init__()
@@ -547,13 +627,19 @@ class GOH(InvariantHyperelastic):
 
 class Holzapfel(InvariantHyperelastic):
     '''
-    Holzapfel (2005) model
+    Holzapfel (2005) model without the neo-Hookean term
+
+    .. math::
+        \\Psi = \\sum_{i=1}^N \\frac{k_1}{2k_2}(\\exp(k_2(k_3(I_1-3)^2+(1-k_3)(I_{4i}-1)^2)-1)
+    
+    Derivation
+    ----------
     The partial derivative expressions are obtained using the following code
-    from sympy import *
-    k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
-    Psi = k1/2/k2*(exp(k2*(k3*(I1bar-3)**2+(1-k3)*(I4bar-1)**2))-1)
-    diff(Psi,I1bar)
-    diff(Psi,I4bar)
+        >>> from sympy import *
+        >>> k1,k2,k3,I1bar,I4bar = symbols('k1 k2 k3 I1bar I4bar')
+        >>> Psi = k1/2/k2*(exp(k2*(k3*(I1bar-3)**2+(1-k3)*(I4bar-1)**2))-1)
+        >>> diff(Psi,I1bar)
+        >>> diff(Psi,I4bar)
     '''
     def __init__(self,M=[]):
         super().__init__()
@@ -588,11 +674,17 @@ class Holzapfel(InvariantHyperelastic):
 class expI1(InvariantHyperelastic):
     '''
     Model with exponential of I1
+
+    .. math::
+        \\Psi = \\frac{k_1}{k_2}(\\exp(k_2(I_1-3))-1)
+    
+    Derivation
+    ----------
     The partial derivative expressions are obtained using the following code
-    from sympy import *
-    k1,k2,I1bar = symbols('k1 k2 I1bar')
-    Psi = k1/k2*(exp(k2*(I1bar-3))-1) 
-    diff(Psi,I1bar)
+        >>> from sympy import *
+        >>> k1,k2,I1bar = symbols('k1 k2 I1bar')
+        >>> Psi = k1/k2*(exp(k2*(I1bar-3))-1) 
+        >>> diff(Psi,I1bar)
     '''
     def __init__(self):
         super().__init__()
@@ -610,12 +702,18 @@ class expI1(InvariantHyperelastic):
 class HGO(InvariantHyperelastic):
     '''
     HGO 2000 model's fiber part
+
+    .. math::
+        \\Psi = \\sum_{i=1}^N \\frac{k_3}{2k_4}(\\exp(k_4(I_{4i}-1)^2)-1)
+    
+    Derivation
+    ----------
     The partial derivative expressions are obtained using the following code
-    from sympy import *
-    k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
-    Psi = k3/2./k4*(exp(k4*(I4bar-1)**2)-1)
-    diff(Psi,I1bar)
-    diff(Psi,I4bar)
+        >>> from sympy import *
+        >>> k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
+        >>> Psi = k3/2./k4*(exp(k4*(I4bar-1)**2)-1)
+        >>> diff(Psi,I1bar)
+        >>> diff(Psi,I4bar)
     '''
     def __init__(self,M=[]):
         super().__init__()
@@ -640,12 +738,18 @@ class HGO(InvariantHyperelastic):
 class HY(InvariantHyperelastic):
     '''
     Humphrey-Yin model's fiber part
+
+    .. math::
+        \\Psi = \\sum_{i=1}^N \\frac{k_3}{k_4}(\\exp(k_4(\\sqrt{I_{4i}}-1)^2)-1)
+    
+    Derivation
+    ----------
     The partial derivative expressions are obtained using the following code
-    from sympy import *
-    k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
-    Psi = k3/k4*(exp(k4*(sqrt(I4bar)-1)**2)-1)
-    diff(Psi,I1bar)
-    diff(Psi,I4bar)
+        >>> from sympy import *
+        >>> k1,k2,k3,k4,I1bar,I4bar = symbols('k1 k2 k3 k4 I1bar I4bar')
+        >>> Psi = k3/k4*(exp(k4*(sqrt(I4bar)-1)**2)-1)
+        >>> diff(Psi,I1bar)
+        >>> diff(Psi,I4bar)
     '''
     def __init__(self,M=[]):
         super().__init__()
@@ -670,7 +774,9 @@ class HY(InvariantHyperelastic):
 class volPenalty(InvariantHyperelastic):
     '''
     Volumetric penality
-    Psi = kappa/2.*(J-1)**2
+
+    .. math::
+        \\Psi = \\frac{\\kappa}{2}(J-1)^2
     '''
     def __init__(self):
         super().__init__()
@@ -687,7 +793,10 @@ class volPenalty(InvariantHyperelastic):
 class polyI4(InvariantHyperelastic):
     '''
     Polynomial in I4 model
-    Psi = d1*(I4-1)+d2*(I4-1)**2+d3*(I4-1)**3
+
+    .. math::
+        \\Psi = \\sum_{i=1}^3 d_i(I_{4i}-1)^i
+
     '''
     def __init__(self):
         super().__init__()
@@ -706,7 +815,11 @@ class polyI4(InvariantHyperelastic):
 class ArrudaBoyce(InvariantHyperelastic):
     '''
     Arruda-Boyce model
-    Psi = C*sum(alpha_i*Ninv**(i-1)*(I1**i-3**i)) from i=1 to i=5
+
+    .. math::
+        \\Psi = \\sum_{i=1}^5 C\\frac{\\alpha_i}{N^i}(I_1^i-3^i)
+
+    where :math:`\\alpha_i` are [1,1/20,11/1050,19/7000,519/673750]
     '''
     def __init__(self):
         super().__init__()
@@ -730,11 +843,17 @@ class ArrudaBoyce(InvariantHyperelastic):
 class Gent(InvariantHyperelastic):
     '''
     Gent model
-    Psi = -mu*Jm/2.*ln(1-(I1-3)/Jm)
-    from sympy import *
-    I1, mu, Jm = symbols('I1,mu,Jm')
-    Psi = -mu*Jm/2.*ln(1-(I1-3)/Jm)
-    diff(Psi,I1)
+
+    .. math::
+        \\Psi = -\\frac{\\mu J_m}{2}\\ln\\left(1-\\frac{I_1-3}{J_m}\\right)
+
+    Derivation
+    ----------
+    The partial derivative expressions are obtained using the following code
+        >>> from sympy import *
+        >>> I1, mu, Jm = symbols('I1,mu,Jm')
+        >>> Psi = -mu*Jm/2.*ln(1-(I1-3)/Jm)
+        >>> diff(Psi,I1)
     '''
     def __init__(self):
         super().__init__()
@@ -751,8 +870,9 @@ class Gent(InvariantHyperelastic):
 
 class splineI1I4(InvariantHyperelastic):
     '''
-    Spline-based model in I1 and I4
-    Psi is loaded from a spline
+    Spline-based model in I1 and I4 for data driven models (without an analytical expression)
+    
+    Psi is loaded from a scipy spline object
     '''
     def __init__(self):
         super().__init__()
@@ -764,6 +884,26 @@ class splineI1I4(InvariantHyperelastic):
         self.I4term = True
 
     def set(self,W,alpha=1):
+        '''
+        Set the spline function and the weight
+        
+        Parameters
+        ----------
+
+        W : scipy.interpolate.fitpack2.RectBivariateSpline
+            The spline function
+        
+        alpha : float
+            The weight of W in the energy function (i.e., :math:`\\Psi = \\alpha W(I1,I4)`)
+        
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        The spline function should be defined on a rectangular grid
+        '''
         if not isinstance(W,scipy.interpolate.fitpack2.RectBivariateSpline):
             raise ValueError("W must be a RectBivariateSpline")
         x,y = W.get_knots()
@@ -790,7 +930,25 @@ class splineI1I4(InvariantHyperelastic):
 
 class StructModel:
     '''
-    A class for simplified structural model
+    A class for simplified structural model with integration over fiber directions
+
+    .. math::
+        \\Psi = \\int_{-\\pi/2}^{\\pi/2} \\Gamma(\\theta) \\psi(\\theta) d\\theta
+
+    where :math:`\\Gamma(\\theta)` is the fiber distribution function and :math:`\\psi(\\theta)` is the fiber energy function.
+
+    The fiber distribution function is assumed to be a truncated Gaussian distribution 
+
+    .. math::
+        \\Gamma(\\theta) = d_e\\frac{1}{P}\\exp\\left(-\\frac{(\\theta-\\theta_0)}{2\\sigma^2}\\right) + \\frac{1-d_e}{\\pi}
+
+    where :math:`P` is the normalization factor and :math:`d_e` is the anisotropy fraction.
+
+    The fiber energy function is assumed to be an exponential function
+
+    .. math::
+        \\psi(\\epsilon) = \\frac{A}{B}\\left(\\frac{\\exp(B \\epsilon)-1}{B}-\\epsilon\\right)
+
     '''
     def __init__(self):
         #define integration rule
