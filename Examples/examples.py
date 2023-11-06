@@ -78,7 +78,7 @@ def validate_tube():
 
     l=1.1
     result = lambda l: log(l)-1./2/l**2
-    parameters = sample.parameters
+    parameters = sample.parameters._val()
     parameters['k1_0']=5.
     parameters['k2_0']=15.
     parameters['k3_0']=0.
@@ -143,8 +143,7 @@ def artery0Dmodel():
 def randomex():
     model = MatModel('goh','nh')
     mm = model.models
-    t,t1,t2 = model.parameters_wbounds()
-    Theta = RandomParameters(t,t1,t2)
+    Theta = RandomParameters(model.parameters)
     Theta.make_normal('mu_1')
     #Theta.fix('k2',10)
     #Theta.fix('k1',10)

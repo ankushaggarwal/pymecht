@@ -4,6 +4,7 @@ import scipy.optimize as opt
 import scipy
 import warnings
 from scipy.special import erf
+from .ParamDict import *
 
 class MatModel:
     '''
@@ -12,13 +13,13 @@ class MatModel:
     >>> from MatModel import *
     >>> mat1 = NH() #A neo-Hookean model
     >>> mat2 = GOH([np.array([1,0,0]),np.array([0.5,0.5,0])]) #A GOH model with two fiber families
-    >>> model = MatModel(mat1,mat2) #can provide as many models as needed as long as their parameters are uniquely named
-    >>> model = MatModel(mat1) + MatModel(mat2) #can also add them after creating the MatModel object
-    >>> model.models #provides a list of the models included
-    >>> model.parameters #provides a dictionary of parameters and their default values
-    >>> model = MatModel('goh','nh') #can also provide a list of model names, however one has to assign fiber directions afterwards
-    >>> mm = model.models
-    >>> mm[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
+    >>> mat_model = MatModel(mat1,mat2) #can provide as many models as needed as long as their parameters are uniquely named
+    >>> mat_model = MatModel(mat1) + MatModel(mat2) #can also add them after creating the MatModel object
+    >>> mat_model.models #provides a list of the models included
+    >>> mat_model.parameters #provides a dictionary of parameters and their default values
+    >>> mat_model = MatModel('goh','nh') #can also provide a list of model names, however one has to assign fiber directions afterwards
+    >>> mats = mat_model.models
+    >>> mats[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
 
     To get an overview of all the classes in this file, try the following:
     >>> import importlib, inspect
@@ -43,19 +44,29 @@ class MatModel:
                         except KeyError:
                             print ('Unknown model: ', m)
             self._models = tuple(self._models)
-        self._param_names,self._params = [],{}
+        self._param_names, self._params = [], ParamDict()
         for i,m in enumerate(self._models):
-            t1 = m.param_default
+            t1, t2, t3 = m.param_default, m.param_low_bd, m.param_up_bd
             self._param_names.append({k+'_'+str(i):k for k in t1})
-            self._params.update({k+'_'+str(i):t1[k] for k in t1})
+            for k in t1:
+                self._params[k+'_'+str(i)] = Param(t1[k],t2[k],t3[k],False)
+            #self._params.update({k+'_'+str(i):t1[k] for k in t1})
         self._stressnames = [['cauchy'],['1pk','1stpk','firstpk'],['2pk','2ndpk','secondpk']]
 
     @property
     def parameters(self):
-        return self._params.copy()
+        '''
+        Parameters of the model
+        '''
+        theta = ParamDict()
+        theta.update(self._params)
+        return theta
 
     @property
     def models(self):
+        '''
+        List of component models
+        '''
         return self._models
 
     @parameters.setter
@@ -65,24 +76,27 @@ class MatModel:
         else:
             self._params.update(theta)
 
-    def parameters_wbounds(self):
-        theta_low,theta_up = {},{}
-        for i,m in enumerate(self._models):
-            t1 = m.param_low_bd
-            theta_low.update({k+'_'+str(i):t1[k] for k in t1})
-            t2 = m.param_up_bd
-            theta_up.update({k+'_'+str(i):t2[k] for k in t2})
-        if set(theta_low.keys()) != set(self._params.keys()) or set(theta_up.keys()) != set(self._params.keys()):
-            raise ValueError("The dictionaries of parameter default, upper, and lower values have different set of keys",theta_low,theta_up,self._params)
-        return self._params.copy(), theta_low, theta_up
-
     @models.setter
     def models(self,modelsList):
         raise ValueError("The component models should not be changed in this way")
 
     def energy(self,F=np.identity(3),theta=None):
+        '''
+        Returns the energy density of the material model
+        Parameters
+        ----------
+            F: the deformation gradient,   default: identity matrix (no deformation)
+            theta: the parameters of the model, if None, then the default values are used
+        Returns
+        -------
+            en: the energy density
+        '''
         if theta is None:
             theta=self._params
+        if type(theta) is ParamDict:
+            theta = theta._val()
+        elif type(theta[list(theta.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         en = 0.
         for i,m in enumerate(self._models):
             thetai = {self._param_names[i][k]:theta[k] for k in self._param_names[i]}
@@ -90,8 +104,29 @@ class MatModel:
         return en
 
     def stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
+        '''
+        Returns the stress tensor of the material model
+        Parameters
+        ----------
+            F: the deformation gradient,   default: identity matrix (no deformation)
+            theta: the parameters of the model, if None, then the default values are used
+            stresstype: the type of stress tensor to return with the following options (case insensitive): 
+                'cauchy': Cauchy stress,
+                '1pk' or '1stpk' or 'firstpk': 1st Piola-Kirchoff stress
+                '2pk' or '2ndpk' or 'secondpk': 2nd Piola-Kirchoff stress
+                default: Cauchy stress
+            incomp: if True, then the material is assumed to be incompressible, default: False
+            Fdiag: if True, then it is assumed that F is diagonal (for faster computation), default: False
+        Returns
+        -------
+            S: the stress 3X3 tensor
+        '''
         if theta is None:
             theta=self._params
+        if type(theta) is ParamDict:
+            theta = theta._val()
+        elif type(theta[list(theta.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
         for i in range(len(self._stressnames)):
@@ -127,8 +162,30 @@ class MatModel:
             return S
 
     def energy_stress(self,F=np.identity(3),theta=None,stresstype='cauchy',incomp=False,Fdiag=False):
+        '''
+        Returns the energy density and stress tensor of the material model
+        Parameters
+        ----------
+            F: the deformation gradient,   default: identity matrix (no deformation)
+            theta: the parameters of the model, if None, then the default values are used
+            stresstype: the type of stress tensor to return with the following options (case insensitive): 
+                'cauchy': Cauchy stress,
+                '1pk' or '1stpk' or 'firstpk': 1st Piola-Kirchoff stress
+                '2pk' or '2ndpk' or 'secondpk': 2nd Piola-Kirchoff stress
+                default: Cauchy stress
+            incomp: if True, then the material is assumed to be incompressible, default: False
+            Fdiag: if True, then it is assumed that F is diagonal (for faster computation), default: False
+        Returns
+        -------
+            en: the energy density
+            S: the stress 3X3 tensor
+        '''
         if theta is None:
             theta=self._params
+        if type(theta) is ParamDict:
+            theta = theta._val()
+        elif type(theta[list(theta.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         stresstype = stresstype.replace(" ", "").lower()
         stype = None
         for i in range(len(self._stressnames)):
@@ -172,6 +229,10 @@ class MatModel:
     def _test(self,theta=None):
         if theta is None:
             theta=self._params
+        if type(theta) is ParamDict:
+            theta = theta._val()
+        elif theta is not None and type(theta[list(theta.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         result = []
         #Test each model if it is of InvariantHyperelastic class
         for i,m in enumerate(self._models):
@@ -187,7 +248,8 @@ class MatModel:
             out += "Component"+str(i+1)+": "
             out += self._models[i].__class__.__name__
             if self._models[i].fiber_dirs is not None:
-                out += "with fiber direction(s):" + self._models[i].fiber_dirs +"\n"
+                out += " with fiber direction(s):" + str(self._models[i].fiber_dirs) 
+            out += "\n"
         return out
 
     def __repr__(self) -> str:
@@ -197,6 +259,7 @@ class InvariantHyperelastic:
     '''
     An abstract class from which all the invariant-based hyperelastic models should be derived.
     Currently, it allows for models that depend on I1, I2, J, and I4 with multiple fiber families
+    It should not be used directly, but rather derived from. Use MatModel class to use the derived classes.
     '''
     def __init__(self):
         self.I1 = 3.
@@ -317,6 +380,9 @@ class InvariantHyperelastic:
 
     @property
     def fiber_dirs(self):
+        '''
+        Fiber direction vector(s)
+        '''
         #print("Getting fiber directions")
         return self.M
 
@@ -421,7 +487,7 @@ class MN(InvariantHyperelastic):
             if isinstance(M,list):
                 self.M = M
                 if len(M)!=1:
-                    print('Warning: LS model should be used with only one fiber.', \
+                    print('Warning: MN model should be used with only one fiber.', \
                         'Other situations can give unexpected behavior and', \
                         'non-zero energy at identity deformation gradient')
             else:
@@ -821,19 +887,3 @@ class StructModel:
         energy = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)/B-1./B-stretches)*self._theta_weight_i)
         stress = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)-1)*self._theta_weight_i*tensors.T,axis=-1)
         return energy,stress
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-    for mname in ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','polyI4']:
-        mat = MatModel(mname)
-        mm = mat.models
-        print(mname)
-        mm[0].fiber_dirs = [np.array([1,0,0])]
-        mm[0].test(mat.parameters)
-
-    model = StructModel()
-    params = {'mean_theta':0,'sigma':0.1,'aniso_fraction':0.9,'A':0.1,'B':10}
-    print(model.energy(np.eye(3),params))
-    print(model.secondPK(np.eye(3),params))

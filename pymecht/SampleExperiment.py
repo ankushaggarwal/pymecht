@@ -4,6 +4,7 @@ from functools import partial
 import scipy.optimize as opt
 import warnings
 from scipy.integrate import quad
+from .ParamDict import *
 
 class SampleExperiment:
     '''
@@ -14,10 +15,27 @@ class SampleExperiment:
         self._mat_model = mat_model
         self._inp = disp_measure.replace(" ","").lower()
         self._output = force_measure.replace(" ","").lower()
+        self._params = ParamDict()
+        for k in self._param_default.keys():
+            self._params[k] = Param(self._param_default[k],self._param_low_bd[k],self._param_up_bd[k],False)
 
     def disp_controlled(self,input_,params=None):
+        '''
+        Simulates the experiment with the deformation measure as the input
+        Parameters
+        ----------
+        input_ : The input to the experiment. It can be a scalar, a list, or a numpy array
+        params : A dictionary of parameters. If None, the default parameters are used. The default is None.
+        Returns
+        -------
+        The resulting force measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
+        '''
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         return_scalar, return_list = False, False
         if type(input_) is list:
@@ -35,8 +53,23 @@ class SampleExperiment:
         return np.array(output).reshape(np.shape(input_))
 
     def force_controlled(self,forces,params=None,x0=None):
+        '''
+        Simulates the experiment with the force measure as the input (solves via Newton iteration)
+        Parameters
+        ----------
+        forces : The input to the experiment. It can be a scalar, a list, or a numpy array
+        params : A dictionary of parameters. If None, the default parameters are used. The default is None.
+        x0 : The initial guess for the displacement. If None, the default is used. The default is None.
+        Returns
+        -------
+        The resulting deformation measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
+        '''
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         return_scalar, return_list = False, False
         if type(forces) is float or type(forces) is int:
@@ -95,7 +128,8 @@ class SampleExperiment:
 
     @property
     def parameters(self):
-        theta = self._param_default.copy()
+        theta = ParamDict()
+        theta.update(self._params)
         mat_theta = self._mat_model.parameters
         if len(theta.keys() & mat_theta.keys())>0:
                 raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
@@ -104,29 +138,21 @@ class SampleExperiment:
 
     @parameters.setter
     def parameters(self,theta):
-        mat = {}
+        if type(theta) is ParamDict:
+            mat = ParamDict()
+        else:
+            mat = {}
         for k in theta.keys():
             if k in self._param_default:
-                self._param_default[k] = theta[k]
+                if type(theta) is ParamDict:
+                    self._params[k] = theta[k]
+                else:
+                    self._params.set(k,theta[k]) 
             else:
                 mat[k] = theta[k]
-        self._update(**self._param_default)
+        self._update(**self._params._val())
         self._mat_model.parameters = mat
 
-    def parameters_wbounds(self):
-        theta = self._param_default.copy()
-        theta_low = self._param_low_bd.copy()
-        theta_up = self._param_up_bd.copy()
-        mat_theta,mat_theta_low,mat_theta_up = self._mat_model.parameters_wbounds()
-        if len(theta.keys() & mat_theta.keys())>0:
-                raise ValueError("Same parameter names in the model and the sample were used. You must modify the parameter names in the classes to avoid conflicts")
-
-        theta.update(mat_theta)
-        theta_low.update(mat_theta_low)
-        theta_up.update(mat_theta_up)
-
-        return theta, theta_low, theta_up
-    
     def __str__(self):
         out = "An object of type " + self.__class__.__name__ + "with " + self._inp + " as input, " + self._output + " as output, and the following material\n"
         out += self._mat_model.__str__()
@@ -137,10 +163,26 @@ class SampleExperiment:
 
 class LinearSpring(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
-        super().__init__(mat_model,disp_measure,force_measure)
+        '''
+        For simulating a linear spring (can be used to apply Robin boundary condition)
+        Parameters
+        ----------
+        mat_model : A material model object of type MatModel (not used, provide MatModel() for simplicity)
+        disp_measure : The measure of displacement with the following options:
+            'stretch' : Ratio of deformed to reference length
+            'deltal' : Change in length or radius
+            'length' or 'radius' : Deformed length/radius
+            The default is 'stretch'.
+        force_measure : The measure of force with the following options:
+            'force' : Force acting on the spring
+            'stress' : The Cauchy stress
+            'pressure' : The pressure
+            The default is 'force'.
+        '''
         self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
         self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
         self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.,thick=0.)
+        super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         if self._inp == 'stretch':
             self._x0 = 1.
@@ -186,10 +228,28 @@ class LinearSpring(SampleExperiment):
 
 class UniaxialExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
-        super().__init__(mat_model,disp_measure,force_measure)
+        '''
+        For simulating uniaxial extension of a material
+        Parameters
+        ----------
+        mat_model : A material model object of type MatModel
+        disp_measure : The measure of displacement with the following options:
+            'stretch' : The stretch ratio
+            'strain' : The Green-Lagrange strain
+            'deltal' : The change in length
+            'length' : The length
+            The default is 'stretch'.
+        force_measure : The measure of force with the following options:
+            'force' : The force per unit area
+            'cauchy' : The Cauchy stress
+            '1pk' or '1stpk' or 'firstpk' : The first Piola-Kirchhoff stress
+            '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
+            The default is 'force'.
+        '''
         self._param_default  = dict(L0=1.,A0=1.)
         self._param_low_bd   = dict(L0=0.0001,A0=0.0001)
         self._param_up_bd    = dict(L0=1000.,A0=1000.)
+        super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         #check the fibers in mat_model and set their directions to [1,0,0]
         for mm in mat_model.models:
@@ -258,10 +318,29 @@ class UniaxialExtension(SampleExperiment):
 
 class PlanarBiaxialExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='stretch',force_measure='cauchy'):
-        super().__init__(mat_model,disp_measure,force_measure)
+        '''
+        For simulating planar biaxial extension of a material
+        Parameters
+        ----------
+        mat_model : A material model object of type MatModel
+        disp_measure : The measure of displacement with the following options:    
+            'stretch' : The stretch ratio
+            'strain' : The Green-Lagrange strain
+            'deltal' : The change in length
+            'length' : The length
+        The default is 'stretch'.
+            force_measure : The measure of force with the following options:
+            'force' : The force per unit area
+            'tension' : The force per unit thickness
+            'cauchy' : The Cauchy stress
+            '1pk' or '1stpk' or 'firstpk' : The first Piola-Kirchhoff stress
+            '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
+            The default is 'cauchy'.
+        '''
         self._param_default  = dict(L10=1.,L20=1.,thick=1.)
         self._param_low_bd   = dict(L10=0.0001,L20=0.0001,thick=0.0001)
         self._param_up_bd    = dict(L10=1000.,L20=1000.,thick=1000.)
+        super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         #check the fibers in mat_model 
         for mm in mat_model.models:
@@ -328,10 +407,26 @@ class PlanarBiaxialExtension(SampleExperiment):
 
 class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     def __init__(self,mat_model,disp_measure='radius',force_measure='force'):
-        super().__init__(mat_model,disp_measure,force_measure)
+        '''
+        For simulating uniform axisymmetric inflation of a tube
+        Parameters
+        ----------
+        mat_model : A material model object of type MatModel
+        disp_measure : The measure of displacement with the following options:    
+            'stretch' : Ratio of deformed to reference internal radius
+            'deltalr' : Change in internal radius
+            'radius' : Deformed internal radius
+            'area' : Deformed internal area
+            The default is 'radius'.
+        force_measure : The measure of force with the following options:
+            'force' : Total force acting on the tube length 
+            'pressure' : Internal pressure acting on the tube 
+            The default is 'force'.
+        '''
         self._param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
         self._param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
         self._param_up_bd    = dict(Ri=1.5, thick=1., omega=0., L0=1.,lambdaZ=1.)
+        super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         #check the fibers in mat_model
         for mm in mat_model.models:
@@ -375,6 +470,10 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         output_scalar, output_list = False, False
         if type(input_) is float or type(input_) is int:
@@ -403,6 +502,10 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         return np.array(output).reshape(np.shape(input_))
 
     def outer_radius(self,input_,params):
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
 
         Ro = self._Ri+self._thick
@@ -422,6 +525,19 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             return np.sqrt(l/pi)
 
     def cauchy_stress(self,input_,params,n=10,pressure=None):
+        '''
+        Computes the Cauchy stress at the given input_ points
+        Parameters
+        ----------
+        input_ : Deformation measure at which the stress is to be computed, scalar
+        params : The parameters of the material model
+        n : The number of points along the thickness to report stresses at, default is 10
+        pressure : The pressure corresponding to the deformed radius (optional: if not provided, it will be computed)
+        Returns
+        -------
+        xi : Normalized thickness values at which the stresses are reported
+        Stresses : The Cauchy stress tensors at the thickness locations (nX3X3 array)
+        '''
         self._update(**params)
         ri = self._stretch(input_)
 
@@ -472,19 +588,34 @@ class LayeredSamples:
         if len(set(inputs)) > 1:
             raise ValueError("The inputs for all the layers must be the same")
         self._output = outputs[0]
+        self._param_names, self._params = [], ParamDict()
+        for i,s in enumerate(self._samples):
+            pi = s.parameters
+            self._param_names.append({k+'_layer'+str(i):k for k in pi})
+            for k in pi:
+                self._params[k+'_layer'+str(i)] = pi[k]
 
     @property
     def parameters(self):
-        return [s.parameters for s in self._samples]
+        p = ParamDict()
+        p.update(self._params)
+        return p #[s.parameters for s in self._samples]
 
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
-        if len(params) != self._nsamples:
-            raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
+        #if len(params) != self._nsamples:
+        #    raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
         total_force = 0.
+        if type(params) is ParamDict:
+            createParamDict = True
+        else:
+            createParamDict = False
         for i,s in enumerate(self._samples):
-            total_force += s.disp_controlled(input_,params[i]) #TODO this would not be correct for stresses
+            parami = ParamDict() if createParamDict else {}
+            for k in self._param_names[i]:
+                parami[self._param_names[i][k]] = params[k]
+            total_force += s.disp_controlled(input_,parami) #TODO this would not be correct for stresses
 
         return total_force
 
@@ -508,11 +639,30 @@ class LayeredSamples:
             y.append(sol.x)
         return np.array(y).reshape(np.shape(forces))
 
+    def __str__(self):
+        out = "An object of type " + self.__class__.__name__ + "with " + str(self._nsamples) + " layers:\n"
+        for i,s in enumerate(self._samples):
+            out += "Layer"+str(i+1)+": "+ s.__str__()
+        return out
+    
+    def __repr__(self):
+        return self.__str__()
+
 class LayeredUniaxial(LayeredSamples):
     def __init__(self,*samplesList):
         super().__init__(*samplesList)
         if not all([isinstance(s,UniaxialExtension) for s in self._samples]):
-            raise ValueError("The class only accepts objects of type SampleExperiment")
+            raise ValueError("The class only accepts objects of type UniaxialExtension")
+        if self._output != 'force':
+            warnings.warn("The output of the LayeredUniaxial should be force, as stresses are not additive. The results may be spurious")
+
+class LayeredPlanarBiaxial(LayeredSamples):
+    def __init__(self,*samplesList):
+        super().__init__(*samplesList)
+        if not all([isinstance(s,PlanarBiaxialExtension) for s in self._samples]):
+            raise ValueError("The class only accepts objects of type PlanarBiaxialExtension")
+        if self._output != 'force':
+            warnings.warn("The output of the LayeredPlanarBiaxial should be force, as stresses are not additive. The results may be spurious")
 
 class LayeredTube(LayeredSamples):
     def __init__(self,*samplesList):
@@ -527,8 +677,10 @@ class LayeredTube(LayeredSamples):
     def disp_controlled(self,input_,params=None):
         if params is None:
             params = self.parameters
-        if len(params) != self._nsamples:
-            raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
+        if type(params) is ParamDict:
+            createParamDict = True
+        else:
+            createParamDict = False
         return_scalar, return_list = False, False
         if type(input_) is list:
             return_list = True
@@ -541,8 +693,11 @@ class LayeredTube(LayeredSamples):
         total_force = np.zeros_like(input_)
         i_input = input_
         for i,s in enumerate(self._samples):
-            total_force += s.disp_controlled(i_input,params[i])
-            i_input = s.outer_radius(i_input,params[i])
+            parami = ParamDict() if createParamDict else {}
+            for k in self._param_names[i]:
+                parami[self._param_names[i][k]] = params[k]
+            total_force += s.disp_controlled(i_input,parami)
+            i_input = s.outer_radius(i_input,parami)
         if return_scalar:
             return total_force[0]
         if return_list:
