@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"  # the function to use to build the pack
 
 [project]
 name = "pymecht"
-version = "0.0.1"
+version = "0.9"
 description = "This is PYthon-based repository is for MECHanics of Tissue mechanics. The focus is on flexibility of adding new constitutive models and varying their parameters."
 readme = "README.md"
 authors = [{ name = "Ankush Aggarwal", email = "ankush.aggarwal@glasgow.ac.uk" }, { name = "Ross Williams", email = "r.williams.2@research.gla.ac.uk" }]
