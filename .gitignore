@@ -2,3 +2,4 @@
 __pycache__/
 pymecht.egg-info/
 build/
+.DS_Store

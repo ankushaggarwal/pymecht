@@ -1,6 +1,23 @@
-# PYMECHT
-This PYthon-based repository is for the MECHanics of Tissues. 
-The focus is on flexibility of adding new constitutive models and varying their parameters.
+![PyPI - Version](https://img.shields.io/pypi/v/pymecht) ![Build Status](https://github.com/ankushaggarwal/pymecht/actions/workflows/ci-tests.yml/badge.svg) [![Documentation Status](https://readthedocs.org/projects/pymecht/badge/?version=latest)](https://pymecht.readthedocs.io/en/latest/?badge=latest) ![Python versions](https://img.shields.io/badge/python-3.8%2B-blue.svg) ![GitHub](https://img.shields.io/github/license/ankushaggarwal/pymecht)
+
+# pyMechT
+
+pyMechT is a <u>Py</u>thon package for simulating the <u>mech</u>anical response of soft biological <u>t</u>issues. The focus is on flexibility of defining models (referred to as *MatModels*). The ethos of pyMechT is to create simplified virtual experimental setups. That is, a *sample* is created of which there are the following options:
+* Uniaxial extension;
+* Biaxial extension; and
+* Inflation-extension.
+
+The MatModel is applied to the sample, such that the parameters encompass both the material parameters and those which define the corresponding sample setup (an example being the dimensions of the specimen). Finally, the samples can be simulated in either *displacement-controlled* or *force-controlled* loading to allow the use of Bayesian inference methods.
+
+Required dependencies are:
+* matplotlib
+* numpy
+* pandas
+* pyDOE
+* scipy
+* torch
+* sympy
+* tqdm
 
 # Installation
 
@@ -22,12 +39,10 @@ This is an option, but recommended step. There are other options for create and 
 <details>
 <summary>User</summary>
 
-Pymecht can be installed directly from Github using:
+Pymecht can be installed directly from PyPI via pip by using:
 ```sh
-pip install git+https://github.com/ankushaggarwal/pymecht.git
+pip install pymecht
 ```
-> **Note**
-> A personal access token may require to be setup in order to install via https. See https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token.
 
 </details>
 
@@ -36,7 +51,7 @@ pip install git+https://github.com/ankushaggarwal/pymecht.git
 To install as a devloper, it is recommended to fork from the repo and clone this fork locally.
 
 ### *Step 2.1 Fork from ankushaggarwal/pymecht*
-To fork a branch, head to the Github repo https://github.com/ankushaggarwal/pymecht and click the fork button in the top right-hand corner.
+To fork a branch, head to the [Github repository](https://github.com/ankushaggarwal/pymecht) and click the fork button in the top right-hand corner.
 ### *Step 2.2 Clone the forked repo*
 To clone this repo locally, use the
 ```sh
@@ -60,6 +75,10 @@ Ensure that pymecht has been installed by executing:
 pip list
 ```
 The package and version should be visible in the resulting list.
+
+# Documentation
+
+Find the full documentation at https://pymecht.readthedocs.io/en/latest/.
 
 # Contributing to pymecht
 
