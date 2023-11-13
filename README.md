@@ -39,7 +39,7 @@ This is an option, but recommended step. There are other options for create and 
 <details>
 <summary>User</summary>
 
-Pymecht can be installed directly from PyPI via pip by using:
+pyMechT can be installed directly from PyPI via pip by using:
 ```sh
 pip install pymecht
 ```
@@ -59,18 +59,18 @@ git clone <repo-address>
 ```
 where `<repo-address>` can be replaced by either the https or ssh addresses of the forked repo.
 
-### *Step 2.3 Install pymecht as editable*
-To install an editable version of pymecht, navigate to the locally cloned repo and execute:
+### *Step 2.3 Install pyMechT as editable*
+To install an editable version of pyMechT, navigate to the locally cloned repo and execute:
 ```sh
 pip install -e .
 ```
-An editable version of pymecht is now installed. All local changes to the cloned source code files will be reflected when pymecht is imported.
+An editable version of pyMechT is now installed. All local changes to the cloned source code files will be reflected when pyMechT is imported.
 
 </details>
 
 ### *Step 3: Check installation*
 
-Ensure that pymecht has been installed by executing:
+Ensure that pyMechT has been installed by executing:
 ```sh
 pip list
 ```
@@ -80,6 +80,6 @@ The package and version should be visible in the resulting list.
 
 Find the full documentation at https://pymecht.readthedocs.io/en/latest/.
 
-# Contributing to pymecht
+# Contributing to pyMechT
 
-To contribute to the pymecht framework, install pymecht using the developer options. All changes should be made to your forked repo. If there is a new feature or bug fix, raise a pull request. In the case that an additional feature is added, a corresponding example and test should be written in the respective python scripts.
+To contribute to the pyMechT framework, install pyMechT using the developer options. All changes should be made to your forked repo. If there is a new feature or bug fix, raise a pull request. In the case that an additional feature is added, a corresponding example and test should be written in the respective python scripts.
