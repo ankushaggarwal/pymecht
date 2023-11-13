@@ -2,18 +2,22 @@ import numpy as np
 from scipy.optimize import least_squares
 
 class ParamFitter:
+    '''
+    A class to fit parameters of a simulation function to a given output
+
+    Parameters
+    ----------
+    sim_func : function
+        A function that takes in a dictionary of parameters and returns a numpy array of the same shape as the output
+
+    output : numpy array
+        A numpy array of the same shape as the output of the sim_func to be fitted
+
+    params : ParamDict
+        A dictionary of parameters to be varied
+
+    '''
     def __init__(self,sim_func,output,params=None):
-        '''
-        A class to fit parameters of a simulation function to a given output
-        Parameters
-        ----------
-        sim_func : function
-            A function that takes in a dictionary of parameters and returns a numpy array of the same shape as the output
-        output : numpy array
-            A numpy array of the same shape as the output of the sim_func to be fitted
-        params : ParamDict
-            A dictionary of parameters to be varied
-        '''
         self._sim_func = sim_func
         self._output = output
         self.params = params
@@ -34,9 +38,10 @@ class ParamFitter:
     def fit(self):
         '''
         Perform the fitting
+
         Returns
         -------
-        result : scipy.optimize.OptimizeResult
+        scipy.optimize.OptimizeResult
             The result of the fitting
         '''
         self.c0 = self.params._vec()
