@@ -585,22 +585,22 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         if self._inp == 'area':
             return np.sqrt(l/pi)
 
-    def cauchy_stress(self,inp,params,n=10,pressure=None):
+    def cauchy_stress(self,inp,params=None,n=10,pressure=None):
         '''
         Computes the Cauchy stress at the given inp points
 
         Parameters
         ----------
-        inp: scalar, list, or numpy array 
+        inp: scalar
             Deformation measure at which the stress is to be computed, scalar
 
         params: ParamDict or dict
-            The parameters of the material model
+            A dictionary of parameters. If None, the default parameters are used. The default is None.
 
         n: int
             The number of points along the thickness to report stresses at, default is 10
 
-        pressure: scalar, list or numpy array 
+        pressure: scalar
             The pressure corresponding to the deformed radius (optional: if not provided, it will be computed)
         
         Returns
@@ -611,7 +611,18 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             Stresses : The Cauchy stress tensors at the thickness locations (nX3X3 array)
 
         '''
+        if params is None:
+            params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
+        if type(inp) is float or type(inp) is int:
+            inp = [inp]
+        elif type(inp) is not np.ndarray and type(inp) is not list:
+            raise ValueError("Input to cauchy_stress should be a scalar, a list, or a numpy array")
+
         ri = self._stretch(inp)
 
         if type(ri) is np.ndarray or isinstance(ri,list):
