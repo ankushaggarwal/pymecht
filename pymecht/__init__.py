@@ -23,3 +23,12 @@ from .RandomParameters import *
 from .SampleExperiment import *
 from .ParamFitter import *
 from .MCMC import *
+
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("pymecht")
+except PackageNotFoundError:
+    # package is not installed
+    pass
+
