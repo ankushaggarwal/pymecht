@@ -2,9 +2,8 @@
 UniaxialExtension and LayeredUniaxialExtension
 ==============================================
 
-
 .. figure:: uniax.svg
-   :alt: 
+   :alt:
    :width: 50.0%
    :align: center
 
@@ -28,3 +27,14 @@ stretch/change in length, strain, or deformed length), the stress or
 force can be calculated using disp_controlled function. Conversely,
 given stress or force, any of the deformation metric are solved
 iteratively.
+
+UniaxialExtension samples can be “layered” via LayeredUniaxialExtension.
+Such a setup can be used for representing, for example, tissues that
+have multiple layers with different material models and possibly even
+different reference lengths. The result would be that there is no zero
+stress state for the layered sample. One has to be careful with the
+inputs and outputs of the layered samples though. It is required to use
+lengths (rather than stretches or strains) as the deformation metric.
+Similarly, the force measure should not be stresses since the stresses
+would not simply add up (instead they would be weighted by each layer’s
+cross-sectional area).

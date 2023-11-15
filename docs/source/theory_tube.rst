@@ -52,12 +52,23 @@ using disp_controlled function. Conversely, given pressure difference or
 force, any of the deformation metric are solved iteratively.
 
 Lastly, the Cauchy stress tensor can be calculated by calculating the
-Lagrange multiplier :math:`p` (which will vary across the thickness) as
-follows:
+Lagrange multiplier :math:`p` (which will vary across the thickness) by 
+assuming the pressure on the external surface as zero, thus:
 
-.. math:: {p}(R) = \bar{\sigma}_{rr}(R) + p_{i} +\int\limits_{R_i}^{R} \frac{RH}{r^2}\left[\sigma_{rr}-\sigma_{\theta\theta}\right] \textrm{d}\xi.\label{lagrange-multiplier2}
+.. math:: {p}(R) = \bar{\sigma}_{rr}(R) + \Delta p +\int\limits_{R_i}^{R} \frac{RH}{r^2}\left[\sigma_{rr}-\sigma_{\theta\theta}\right] \textrm{d}\xi,\label{lagrange-multiplier2}
 
-, where :math:`\bar{\sigma}_{rr}(R)` is the Cauchy normal stress in the
+where :math:`\bar{\sigma}_{rr}(R)` is the Cauchy normal stress in the
 (first) radial direction without the Lagrange multiplier term. Once
-:math:`\bar{p}` is known, all the stresses can be calculated using the
+:math:`{p}(R)` is known, all the stresses can be calculated using the
 usual definition of Cauchy stress.
+
+UniformAxisymmetricTubeInflationExtension samples can be “layered” via
+LayeredTube. Such a setup can be used for representing, for example,
+tissues that have multiple layers with different material models and
+possibly even incompatible reference radius. The result would be that
+there is no zero stress state for the layered sample. If the reference
+compatibility is desired (i.e., if the reference state of each layer is
+desired to also be the equilibrium of the combined layered state), then
+the radius and thickness of each layer should be chosen appropriately.
+Specifically, the outer reference radius of the innermost layer should
+be the inner radius of the second layer, and so on.

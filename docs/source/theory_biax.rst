@@ -2,9 +2,8 @@
 PlanarBiaxialExtension and LayeredPlanarBiaxial
 ===============================================
 
-
 .. figure:: biax.svg
-   :alt: 
+   :alt:
    :width: 50.0%
    :align: center
 
@@ -40,3 +39,14 @@ strain :math:`\epsilon_\alpha = (\lambda_\alpha-1)`. Given deformation
 force measure can be calculated using disp_controlled function.
 Conversely, given stress or force, any of the deformation metric are
 solved iteratively.
+
+PlanarBiaxialExtension samples can be “layered” via
+LayeredPlanarBiaxial. Such a setup can be used for representing, for
+example, tissues that have multiple layers with different material
+models and possibly even different reference lengths. The result would
+be that there is no zero stress state for the layered sample. One has to
+be careful with the inputs and outputs of the layered samples though. It
+is required to use lengths (rather than stretches or strains) as the
+deformation metric. Similarly, the force measure should not be stresses
+since the stresses would not simply add up (instead they would be
+weighted by each layer’s thickness).

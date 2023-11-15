@@ -39,19 +39,21 @@ enforces :math:`J=1`. Thus,
 
    \begin{aligned}
    \mathbf{S} &= 2 \dfrac{\partial \Psi}{\partial \mathbf{C}} - p {\mathbf{C}}^{-1}, \\
-   \mathbf{P} &= \mathbf{F}\cdot\mathbf{S} - p {\mathbf{F}}^{-\top}\\
-   \boldsymbol{\sigma} &= \mathbf{F} \cdot \mathbf{S} \cdot \mathbf{F}^{\top} - p \mathbf{I}.
+   \mathbf{P} &= \mathbf{F}\cdot\left[ 2 \dfrac{\partial \Psi}{\partial \mathbf{C}}\right] - p {\mathbf{F}}^{-\top}\\
+   \boldsymbol{\sigma} &= \mathbf{F} \cdot \left[ 2 \dfrac{\partial \Psi}{\partial \mathbf{C}}\right] \cdot \mathbf{F}^{\top} - p \mathbf{I}.
    \end{aligned}
 
-When calling the stress or energy functions in the code, the deformation
-gradient and model parameters are needed. In addition, whether the
-deformation gradient can be assumed to be diagonal or not can be
-specified (since a diagonal tensor is easier to invert). Lastly, whether
-the material is compressible or not can be specified. For incompressible
-material, the Lagrange multiplier :math:`p` is calculated by setting
-:math:`\sigma_{33}=0`. Generally speaking, while one can use the
-MatModel class directly, it is meant to be used by embedding it into a
-SampleExperiment.
+We also denote the first terms on right hand side (without the Lagrange
+multiplier term) as :math:`\bar{\mathbf{S}}`, :math:`\bar{\mathbf{P}}`,
+and :math:`\bar{\boldsymbol{\sigma}}`. When calling the stress or energy
+functions in the code, the deformation gradient and model parameters are
+needed. In addition, whether the deformation gradient can be assumed to
+be diagonal or not can be specified (since a diagonal tensor is easier
+to invert). Lastly, whether the material is compressible or not can be
+specified. If the incompressible flag is set to True, the Lagrange
+multiplier :math:`p` is calculated by setting :math:`\sigma_{33}=0`.
+Generally speaking, while one can use the MatModel class directly, it is
+meant to be used by embedding it into a SampleExperiment.
 
 For invariant-based material models that depend on the first four strain
 invariants
