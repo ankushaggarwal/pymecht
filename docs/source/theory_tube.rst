@@ -21,7 +21,7 @@ configuration moves to a deformed radius given by
 
 .. math:: r(R) = \sqrt{ r_i^2 + \frac{R^2-R_i^2}{\kappa\lambda_Z} },
 
-where :math:`\kappa=2\pi/(2\pi-\omega)`. Thus, in cylinderical
+where :math:`\kappa=2\pi/(2\pi-\omega)`. Thus, in cylindrical
 coordinates, the deformation gradient at any point is given by
 
 .. math:: \mathbf{F} = \mathop{\mathrm{diag}}\left[\frac{R}{r \kappa \lambda_Z }, \frac{r\kappa}{R}, \lambda_Z\right].
@@ -48,8 +48,9 @@ of the cylinder :math:`A = \pi r_i^2`.
 
 Given deformation (in terms of inner radius/radius stretch/change in
 radius, or deformed luminal area), the force measure can be calculated
-using disp_controlled function. Conversely, given pressure difference or
-force, any of the deformation metric are solved iteratively.
+using :py:meth:`SampleExperiment.disp_controlled` function.
+Conversely, given pressure difference or force, any of the 
+deformation metric are solved iteratively via :py:meth:`SampleExperiment.force_controlled` function.
 
 Lastly, the Cauchy stress tensor can be calculated by calculating the
 Lagrange multiplier :math:`p` (which will vary across the thickness) by 
@@ -59,11 +60,13 @@ assuming the pressure on the external surface as zero, thus:
 
 where :math:`\bar{\sigma}_{rr}(R)` is the Cauchy normal stress in the
 (first) radial direction without the Lagrange multiplier term. Once
-:math:`{p}(R)` is known, all the stresses can be calculated using the
-usual definition of Cauchy stress.
+:math:`{p}(R)` is known, all components of stresse tensors at any radius 
+can be calculated using the usual definition of Cauchy stress via 
+:py:meth:`SampleExperiment.UniformAxisymmetricTubeInflationExtension.cauchy_stress` 
+function.
 
-UniformAxisymmetricTubeInflationExtension samples can be “layered” via
-LayeredTube. Such a setup can be used for representing, for example,
+:py:class:`UniformAxisymmetricTubeInflationExtension` samples can be “layered” via
+:py:class:`LayeredTube`. Such a setup can be used for representing, for example,
 tissues that have multiple layers with different material models and
 possibly even incompatible reference radius. The result would be that
 there is no zero stress state for the layered sample. If the reference
