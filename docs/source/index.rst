@@ -15,6 +15,16 @@ pyMechT's documentation
    :show-inheritance:
 
 .. toctree::
+   :glob:
+   :maxdepth: 1
+   :caption: Theory:
+
+   theory_matmodel
+   theory_uniaxial
+   theory_biax
+   theory_tube
+
+.. toctree::
    :maxdepth: 1
    :caption: Package Reference:
 
