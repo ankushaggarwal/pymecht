@@ -5,6 +5,7 @@ import scipy.optimize as opt
 import warnings
 from scipy.integrate import quad
 from .ParamDict import *
+from .MatModel import MatModel
 
 class SampleExperiment:
     '''
@@ -186,7 +187,7 @@ class LinearSpring(SampleExperiment):
     Parameters
     ----------
     mat_model: MatModel
-        A material model object of type MatModel (not used, provide MatModel() for simplicity)
+        A material model object of type MatModel (not used), default MatModel()
 
     disp_measure: str
         The measure of displacement with the following options:
@@ -203,10 +204,10 @@ class LinearSpring(SampleExperiment):
         * 'pressure' : The pressure
 
     '''
-    def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
-        self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
-        self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
-        self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.,thick=0.)
+    def __init__(self,mat_model=MatModel,disp_measure='stretch',force_measure='force'):
+        self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.)
+        self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.)
+        self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.)
         super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         if self._inp == 'stretch':
