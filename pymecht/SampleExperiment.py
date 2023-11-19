@@ -212,13 +212,13 @@ class LinearSpring(SampleExperiment):
         self._update(**self._param_default)
         if self._inp == 'stretch':
             self._x0 = 1.
-            self._compute1 = lambda x: self._k0*(x-1)*self._L0-self._f0
+            self._compute1 = lambda x: self._k0*(x-1)*self._L0+self._f0
         elif self._inp == 'deltal':
             self._x0 = 0.
-            self._compute1 = lambda x: self._k0*x-self._f0
+            self._compute1 = lambda x: self._k0*x+self._f0
         elif self._inp == 'length' or self._inp == 'radius':
             self._x0 = self._L0
-            self._compute1 = lambda x: self._k0*(x-self._L0)-self._f0
+            self._compute1 = lambda x: self._k0*(x-self._L0)+self._f0
         else:
             raise ValueError(self.__class__.__name__,": Unknown disp_measure", disp_measure,". It should be one of stretch, deltal, length, or radius")
         if not self._output in ['force','stress','pressure']:
