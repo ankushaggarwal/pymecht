@@ -88,10 +88,10 @@ class SampleExperiment:
         self._update(**params)
         return_scalar, return_list = False, False
         if type(forces) is float or type(forces) is int:
-            forces = np.array([forces])
+            forces = np.array([forces],dtype=float)
             return_scalar = True
         elif type(forces) is list:
-            forces = np.array(forces)
+            forces = np.array(forces,dtype=float)
             return_list = True
         elif type(forces) is not np.ndarray:
             raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
@@ -136,7 +136,7 @@ class SampleExperiment:
             x0 = sol.x.copy()
             y.append(sol.x)
         if return_scalar:
-            return y[0]
+            return y[0][0]
         if return_list:
             return y
         return np.array(y).reshape(np.shape(forces))
@@ -697,22 +697,30 @@ class LayeredSamples:
         '''
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         #if len(params) != self._nsamples:
         #    raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
-        total_force = 0.
-        if type(params) is ParamDict:
-            createParamDict = True
-        else:
-            createParamDict = False
+        return_list = False
+        if type(inp) is float or type(inp) is int or type(inp) is np.ndarray:
+            total_force = 0.
+        elif type(inp) is list:
+            total_force = np.zeros(len(inp))
+            inp = np.array(inp)
+            return_list = True
         for i,s in enumerate(self._samples):
-            parami = ParamDict() if createParamDict else {}
+            parami = {}
             for k in self._param_names[i]:
                 parami[self._param_names[i][k]] = params[k]
             total_force += s.disp_controlled(inp,parami) #TODO this would not be correct for stresses
 
+        if return_list:
+            return total_force.to_list()
         return total_force
 
-    def force_controlled(self,forces,params,x0=None): #TODO update this based on SampleExperiment.force_controlled
+    def force_controlled(self,forces,params=None,x0=None): #TODO update this based on SampleExperiment.force_controlled
         '''
         Simulates the experiment with the force measure as the input (solves via Newton iteration)
 
@@ -733,7 +741,22 @@ class LayeredSamples:
             The resulting deformation measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
         '''
         if params is None:
-            params = self.parameters 
+            params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
+
+        return_scalar, return_list = False, False
+        if type(forces) is float or type(forces) is int:
+            forces = np.array([forces],dtype=float)
+            return_scalar = True
+        elif type(forces) is list:
+            forces = np.array(forces,dtype=float)
+            return_list = True
+        elif type(forces) is not np.ndarray:
+            raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
+        
         def compare(displ,ybar,params):
             return self.disp_controlled(displ,params)[0]-ybar
 
@@ -745,10 +768,38 @@ class LayeredSamples:
             x0=self._samples[0]._x0 + 1e-5
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params))
+            if not sol.success or any(np.abs(sol.r)>1e5):
+                if ndata==1 or i==0:
+                    niter=10
+                    for j in range(1,niter+1):
+                        df = forces_temp[i]*j/niter
+                        #print(df,x0)
+                        sol = opt.root(compare,x0,args=(df,params))
+                        if not sol.success or any(np.abs(sol.r)>1e5):
+                            break
+                        x0 = sol.x.copy()
+                    #raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
+                else:
+                    NIter=[5,10,20]
+                    for niter in NIter:
+                        df = (forces_temp[i]-forces_temp[i-1])/niter
+                        x0j = x0.copy()
+                        for j in range(niter):
+                            sol = opt.root(compare,x0j,args=(forces_temp[i-1]+(j+1)*df,params))
+                            #print('subiter',j,'/',niter,forces_temp[i-1]+(j+1)*df,params,x0,sol)
+                            if not sol.success or any(np.abs(sol.r)>1e5):
+                                break
+                            x0j = sol.x.copy()
+                        if sol.success:
+                            break
             if not sol.success:
                 raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
             x0 = sol.x.copy()
             y.append(sol.x)
+        if return_scalar:
+            return y[0][0]
+        if return_list:
+            return y
         return np.array(y).reshape(np.shape(forces))
 
     def __str__(self):
@@ -841,9 +892,9 @@ class LayeredTube(LayeredSamples):
         if params is None:
             params = self.parameters
         if type(params) is ParamDict:
-            createParamDict = True
-        else:
-            createParamDict = False
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         return_scalar, return_list = False, False
         if type(inp) is list:
             return_list = True
@@ -852,11 +903,11 @@ class LayeredTube(LayeredSamples):
             inp = [inp]
         elif type(inp) is not np.ndarray:
             raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
-        inp = np.array(inp)
+        inp = np.array(inp,dtype=float)
         total_force = np.zeros_like(inp)
         i_input = inp
         for i,s in enumerate(self._samples):
-            parami = ParamDict() if createParamDict else {}
+            parami = {}
             for k in self._param_names[i]:
                 parami[self._param_names[i][k]] = params[k]
             total_force += s.disp_controlled(i_input,parami)
