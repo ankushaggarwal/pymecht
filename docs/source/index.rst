@@ -23,6 +23,7 @@ pyMechT's documentation
    theory_uniaxial
    theory_biax
    theory_tube
+   theory_spring
 
 .. toctree::
    :maxdepth: 1
