@@ -15,6 +15,12 @@ pyMechT's documentation
    :show-inheritance:
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Tutorials:
+
+   Examples/tutorial.ipynb
+
+.. toctree::
    :glob:
    :maxdepth: 1
    :caption: Theory:
