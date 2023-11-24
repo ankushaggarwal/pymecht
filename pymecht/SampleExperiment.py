@@ -48,7 +48,7 @@ class SampleExperiment:
         return_scalar, return_list = False, False
         if type(inp) is list:
             return_list = True
-        elif type(inp) is float or type(inp) is int:
+        elif isinstance(inp,(int,float)):
             inp = [inp]
             return_scalar = True    
         elif type(inp) is not np.ndarray:
@@ -98,7 +98,7 @@ class SampleExperiment:
             raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
         
         def compare(displ,ybar,params):
-            return self.disp_controlled([displ],params)[0]-ybar
+            return self.disp_controlled(np.array([displ]),params)[0]-ybar
 
         #solve for the inp by solving the disp_controlled minus desired output
         forces_temp = forces.reshape(-1,self._ndim)
@@ -522,7 +522,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         output_scalar, output_list = False, False
-        if type(inp) is float or type(inp) is int:
+        if isinstance(inp,(int,float)):
             inp = [inp]
             output_scalar = True
         elif type(inp) is list:
@@ -569,9 +569,21 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
+        output_scalar, output_list = False, False
+        if isinstance(inp,(int,float)):
+            inp = [inp]
+            output_scalar = True
+        elif type(inp) is list:
+            output_list = True
+        elif type(inp) is not np.ndarray:
+            raise ValueError("Input to outer_radius should be a scalar, a list, or a numpy array")
 
         Ro = self._Ri+self._thick
         ro = np.array([sqrt((Ro**2-self._Ri**2)/self._k/self._lambdaZ+ri**2) for ri in self._stretch(inp)])
+        if output_scalar:
+            return ro[0]
+        if output_list:
+            return ro
         return ro.reshape(np.shape(inp))
 
     def _stretch(self,l): #this returns internal radius instead
@@ -759,7 +771,7 @@ class LayeredSamples:
             raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
         
         def compare(displ,ybar,params):
-            return self.disp_controlled(displ,params)[0]-ybar
+            return self.disp_controlled(displ,params)-ybar
 
         #solve for the inp by solving the disp_controlled minus desired output
         forces_temp = forces.reshape(-1,self._ndim)
@@ -899,7 +911,7 @@ class LayeredTube(LayeredSamples):
         return_scalar, return_list = False, False
         if type(inp) is list:
             return_list = True
-        elif type(inp) is float or type(inp) is int:
+        elif isinstance(inp,(int,float)):
             return_scalar = True
             inp = [inp]
         elif type(inp) is not np.ndarray:
@@ -932,24 +944,30 @@ class LayeredTube(LayeredSamples):
             The parameters of the material model
 
         n: int
-            The number of points along the thickness to report stresses at, default is 10
+            The number of points along the thickness (of each layer) to report stresses at, default is 10
 
         Returns
         -------
         tuple (xi,Stresses)
             xi : Normalized thickness values at which the stresses are reported (n points)
 
-            Stresses : The Cauchy stress tensors at the thickness locations (nX3X3 array)
+            Stresses : The Cauchy stress tensors at the thickness locations ((nXnlayers)X3X3 array)
 
         '''
         if params is None:
             params = self.parameters
-        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculatioself._outputfor s in self._samples:
+        if type(params) is ParamDict:
+            params = params._val()
+        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculation
+        for s in self._samples:
             s._output = 'pressure'
-        pressure = self.disp_controlled(inp,params)[0]
+        pressure = self.disp_controlled(inp,params)
 
-        total_thick = 0.
-        for s in params: total_thick+=s['thick']
+        thick = []
+        for i in range(len(self._samples)): 
+            thick.append(params['thick_layer'+str(i)])
+        thick = np.array(thick)
+        total_thick = np.sum(thick)
 
         XI, Stress = [],[]
         i_input = inp
@@ -957,15 +975,17 @@ class LayeredTube(LayeredSamples):
         for i,s in enumerate(self._samples):
             if isinstance(s,LinearSpring):
                 continue
-            xi,stress = s.cauchy_stress(i_input,params[i],n,pressure=pressure)
-            pressure -= s.disp_controlled(i_input,params[i])[0]
+            parami = {}
+            for k in self._param_names[i]:
+                parami[self._param_names[i][k]] = params[k]
+            xi,stress = s.cauchy_stress(i_input,parami,n,pressure=pressure)
+            pressure -= s.disp_controlled(i_input,parami)
             if not first_layer:
-                xi = [max(XI)+x*s.thick/total_thick for x in xi]
-                first_layer=False
+                xi = [max(XI)+x*thick[i]/total_thick for x in xi]
             else:
-                xi = [x*s.thick/total_thick for x in xi]
-            i_input = s.outer_radius(i_input,params[i])
-            print(i_input)
+                xi = [x*thick[i]/total_thick for x in xi]
+                first_layer=False
+            i_input = s.outer_radius(i_input,parami)
             XI.extend(xi)
             Stress.extend(stress)
         for s in self._samples:
