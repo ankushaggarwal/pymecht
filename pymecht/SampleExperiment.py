@@ -182,6 +182,18 @@ class SampleExperiment:
 class LinearSpring(SampleExperiment):
     '''
     For simulating a linear spring (can be used to apply Robin boundary condition)
+    
+    +-----------+-----------------------+
+    | Parameter | Description (default) |
+    +===========+=======================+
+    | L0        | Length of spring (1)  |
+    +-----------+-----------------------+
+    | k0        | Stiffness (1)         |
+    +-----------+-----------------------+
+    | f0        | Force (0)             |
+    +-----------+-----------------------+
+    | A0        | Cross-section area (1)|
+    +-----------+-----------------------+
 
     Parameters
     ----------
@@ -254,6 +266,14 @@ class LinearSpring(SampleExperiment):
 class UniaxialExtension(SampleExperiment):
     '''
     For simulating uniaxial extension of a sample
+
+    +-----------+-----------------------+
+    | Parameter | Description (default) |
+    +===========+=======================+
+    | L0        | Length of sample (1)  |
+    +-----------+-----------------------+
+    | A0        | Cross-section area (1)|
+    +-----------+-----------------------+
 
     Parameters
     ----------
@@ -352,6 +372,17 @@ class PlanarBiaxialExtension(SampleExperiment):
     '''
     For simulating planar biaxial extension of a planar sample
 
+    +-----------+---------------------------+
+    | Parameter | Description (default)     |
+    +===========+===========================+
+    | L10       | Ref length: 1st axis (1)  |
+    +-----------+---------------------------+
+    | L20       | Ref length: 2nd axis (1)  |
+    +-----------+---------------------------+
+    | thick     | Sample thicknesse (1)     |
+    +-----------+---------------------------+
+
+
     Parameters
     ----------
     mat_model: MatModel
@@ -447,6 +478,20 @@ class PlanarBiaxialExtension(SampleExperiment):
 class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
     '''
     For simulating uniform axisymmetric inflation of a tube
+
+    +-----------+-----------------------------+
+    | Parameter | Description (default)       |
+    +===========+=============================+
+    | Ri        | Internal radius (1)         |
+    +-----------+-----------------------------+
+    | thick     | Thickness (0.1)             |
+    +-----------+-----------------------------+
+    | omega     | Opening angle (radians) (0) |
+    +-----------+-----------------------------+
+    | L0        | Length of sample (1)        |
+    +-----------+-----------------------------+
+    | lambdaZ   | Longitudinal stretch (1)    |
+    +-----------+-----------------------------+
 
     Parameters
     ----------
