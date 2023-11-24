@@ -931,3 +931,82 @@ class LayeredTube(LayeredSamples):
             s._output = self._output
         return XI,Stress
 
+def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
+    '''
+    Assign single fiber direction to all materials in a sample
+
+    Parameters
+    ----------
+
+    sample: SampleExperiment
+        The sample to which fiber directions need to be assigned
+
+    angle: float
+        The angle of the fiber direction, default 0 
+
+        for UniaxialExtension or PlanarBiaxialExtension
+            with respect to the x-axis and in the xy plane
+
+        for UniformAxisymmetricTubeInflationExtension
+            with respect to the theta-axis and in the theta-z plane
+
+    degrees: bool
+        If True, the angle is asssumed to be in degrees. If False, it is assumed to be in radians; default True
+
+    verbose: bool
+        If True, the function prints the angle after assigning, default True
+
+    '''
+    if degrees:
+        angle_rad = np.deg2rad(angle)
+    models = sample._mat_model.models
+    if isinstance(sample,UniformAxisymmetricTubeInflationExtension):
+        vec = np.array([0,np.cos(angle_rad), np.sin(angle_rad)])
+    elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension):
+        vec = np.array([np.cos(angle_rad), np.sin(angle_rad),0])
+    else:
+        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and UniformAxisymmetricTubeInflationExtension")
+    for m in models:
+        m.fiber_dirs = vec
+    if verbose:
+        print("Fiber directions set to ",angle," degrees (", angle_rad, " radians)")
+
+def specify_two_fibers(sample,angle, degrees = True, verbose=True):
+    '''
+    Assign two symmetric fiber directions to all materials in a sample
+
+    Parameters
+    ----------
+
+    sample: SampleExperiment
+        The sample to which fiber directions need to be assigned
+
+    angle: float
+        The angle of the fiber directions (assigned as :math:`\pm` angle) 
+
+        for UniaxialExtension or PlanarBiaxialExtension
+            with respect to the x-axis and in the xy plane
+        
+        for UniformAxisymmetricTubeInflationExtension
+            with respect to the theta-axis and in the theta-z plane
+
+    degrees: bool
+        If True, the angle is asssumed to be in degrees. If False, it is assumed to be in radians; default True
+
+    verbose: bool
+        If True, the function prints the angle after assigning, default True
+
+    '''
+    if degrees:
+        angle_rad = np.deg2rad(angle)
+    models = sample._mat_model.models
+    if isinstance(sample,UniformAxisymmetricTubeInflationExtension):
+        vec = [np.array([0,np.cos(angle_rad), np.sin(angle_rad)]), np.array([0,np.cos(-angle_rad), np.sin(-angle_rad)])]
+    elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension):
+        vec = [np.array([np.cos(angle_rad), np.sin(angle_rad),0]), np.array([np.cos(-angle_rad), np.sin(-angle_rad),0])]
+    else:
+        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and UniformAxisymmetricTubeInflationExtension")
+    for m in models:
+        m.fiber_dirs = vec
+    if verbose:
+        print("Fiber directions set to ",angle," degrees (", angle_rad, " radians)")
