@@ -631,7 +631,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
-        if type(inp) is float or type(inp) is int:
+        if isinstance(inp,(int,float)):
             inp = [inp]
         elif type(inp) is not np.ndarray and type(inp) is not list:
             raise ValueError("Input to cauchy_stress should be a scalar, a list, or a numpy array")
