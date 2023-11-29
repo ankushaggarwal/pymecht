@@ -72,7 +72,7 @@ def validate_tube():
     material = MatModel('goh','nh')
     mm = material.models
     mm[0].fiber_dirs = [np.array([0,cos(0.1),sin(0.1)]),np.array([0,cos(-0.1),sin(-0.1)])]
-    sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
+    sample = TubeInflation(material,force_measure='pressure')
     force_sol = sample.force_controlled(np.array([-0.29167718]),sample.parameters)
     print(force_sol)
 
@@ -106,7 +106,7 @@ def artery0Dmodel():
     mm = material.models
     mm[0].fiber_dirs = [np.array([0,cos(0.1),sin(0.1)]),np.array([0,cos(-0.1),sin(-0.1)])]
 
-    sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
+    sample = TubeInflation(material,force_measure='pressure')
     params = sample.parameters
     params['k1_0']=5.
     params['k2_0']=15.
@@ -124,8 +124,8 @@ def artery0Dmodel():
     plt.ylabel('von-Mises stress')
     plt.show()
 
-    intima = UniformAxisymmetricTubeInflationExtension(material)
-    media = UniformAxisymmetricTubeInflationExtension(material)
+    intima = TubeInflation(material)
+    media = TubeInflation(material)
     artery = LayeredTube(intima,media)
     combined_parameters = artery.parameters
     combined_parameters[0]['Ri']=1.0

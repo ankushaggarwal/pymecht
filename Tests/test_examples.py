@@ -2,7 +2,7 @@ from Examples import *
 import pytest
 
 mat_model_list = ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','volPenalty','polyI4','ArrudaBoyce','Gent','splineI1I4','StructModel']
-samples_list = [UniaxialExtension,PlanarBiaxialExtension,UniformAxisymmetricTubeInflationExtension, LinearSpring]
+samples_list = [UniaxialExtension,PlanarBiaxialExtension,TubeInflation, LinearSpring]
 
 def test_mat_creation():
     #Test creating all individual material models
@@ -89,7 +89,7 @@ def test_layered_samples():
     assert sample.disp_controlled(sample._samples[0]._x0, sample.parameters) == pytest.approx(0.0)
     assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) == pytest.approx(sample._samples[0]._x0, 1e-3)
 
-    sample = LayeredTube(UniformAxisymmetricTubeInflationExtension(material),UniformAxisymmetricTubeInflationExtension(material))
+    sample = LayeredTube(TubeInflation(material),TubeInflation(material))
     assert isinstance(sample, LayeredSamples)
     assert len(sample._samples) == 2
     assert sample._samples[0]._mat_model == material

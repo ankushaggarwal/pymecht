@@ -444,7 +444,10 @@ class PlanarBiaxialExtension(SampleExperiment):
             return np.array([s1,s2])*self._thick
         return np.array([s1,s2])
 
-class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
+def UniformAxisymmetricTubeInflationExtension(*margs, **args):
+    raise ValueError("The name has changed from UniformAxisymmetricTubeInflationExtension to TubeInflation. Please use TubeInflation instead")
+
+class TubeInflation(SampleExperiment):
     '''
     For simulating uniform axisymmetric inflation of a tube
 
@@ -482,10 +485,10 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
                 warnings.warn("Even number of fiber families are expected. The results may be spurious")
             for f in F:
                 if f[0]!=0:
-                    warnings.warn("The UniformAxisymmetricTubeInflationExtension assumes that fibers are aligned in a helical direction. This is not satisfied and the results may be spurious.")
+                    warnings.warn("The TubeInflation assumes that fibers are aligned in a helical direction. This is not satisfied and the results may be spurious.")
             for f1, f2 in zip(*[iter(F)]*2):
                 if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
-                    warnings.warn("The UniformAxisymmetricTubeInflationExtension assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
+                    warnings.warn("The TubeInflation assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
                     print(f1,f2)
         self._compute = partial(self._mat_model.stress,stresstype='cauchy',incomp=False,Fdiag=True)
         if self._inp == 'stretch':
@@ -827,21 +830,21 @@ class LayeredTube(LayeredSamples):
 
     Parameters
     ----------
-    *samplesList: list of UniformAxisymmetricTubeInflationExtension
-        Any number of UniformAxisymmetricTubeInflationExtension objects constituting the layers
+    *samplesList: list of TubeInflation
+        Any number of TubeInflation objects constituting the layers
 
     Examples
     --------
         >>> import pymecht as pmt
         >>> mat_model = pmt.MatModel('nh')
-        >>> s1 = pmt.UniformAxisymmetricTubeInflationExtension(mat_model)
-        >>> s2 = pmt.UniformAxisymmetricTubeInflationExtension(mat_model)
-        >>> s3 = pmt.UniformAxisymmetricTubeInflationExtension(mat_model)
+        >>> s1 = pmt.TubeInflation(mat_model)
+        >>> s2 = pmt.TubeInflation(mat_model)
+        >>> s3 = pmt.TubeInflation(mat_model)
         >>> layered_sample = pmt.LayeredPlanarBiaxial(s1,s2,s3)
     '''
     def __init__(self,*samplesList):
         super().__init__(*samplesList)
-        if not all([isinstance(s,UniformAxisymmetricTubeInflationExtension) or isinstance(s,LinearSpring) for s in self._samples]):
+        if not all([isinstance(s,TubeInflation) or isinstance(s,LinearSpring) for s in self._samples]):
             raise ValueError("The class only accepts objects of type SampleExperiment")
         for i,s in enumerate(samplesList):
             if i==0:
@@ -947,7 +950,7 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
         for UniaxialExtension or PlanarBiaxialExtension
             with respect to the x-axis and in the xy plane
 
-        for UniformAxisymmetricTubeInflationExtension
+        for TubeInflation
             with respect to the theta-axis and in the theta-z plane
 
     degrees: bool
@@ -960,12 +963,12 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
     if degrees:
         angle_rad = np.deg2rad(angle)
     models = sample._mat_model.models
-    if isinstance(sample,UniformAxisymmetricTubeInflationExtension):
+    if isinstance(sample,TubeInflation):
         vec = np.array([0,np.cos(angle_rad), np.sin(angle_rad)])
     elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension):
         vec = np.array([np.cos(angle_rad), np.sin(angle_rad),0])
     else:
-        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and UniformAxisymmetricTubeInflationExtension")
+        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and TubeInflation")
     for m in models:
         m.fiber_dirs = vec
     if verbose:
@@ -987,7 +990,7 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
         for UniaxialExtension or PlanarBiaxialExtension
             with respect to the x-axis and in the xy plane
         
-        for UniformAxisymmetricTubeInflationExtension
+        for TubeInflation
             with respect to the theta-axis and in the theta-z plane
 
     degrees: bool
@@ -1000,12 +1003,12 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
     if degrees:
         angle_rad = np.deg2rad(angle)
     models = sample._mat_model.models
-    if isinstance(sample,UniformAxisymmetricTubeInflationExtension):
+    if isinstance(sample,TubeInflation):
         vec = [np.array([0,np.cos(angle_rad), np.sin(angle_rad)]), np.array([0,np.cos(-angle_rad), np.sin(-angle_rad)])]
     elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension):
         vec = [np.array([np.cos(angle_rad), np.sin(angle_rad),0]), np.array([np.cos(-angle_rad), np.sin(-angle_rad),0])]
     else:
-        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and UniformAxisymmetricTubeInflationExtension")
+        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and TubeInflation")
     for m in models:
         m.fiber_dirs = vec
     if verbose:
