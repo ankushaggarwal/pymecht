@@ -15,6 +15,12 @@ pyMechT's documentation
    :show-inheritance:
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Tutorials:
+
+   Examples/tutorial.ipynb
+
+.. toctree::
    :glob:
    :maxdepth: 1
    :caption: Theory:
@@ -23,6 +29,7 @@ pyMechT's documentation
    theory_uniaxial
    theory_biax
    theory_tube
+   theory_spring
 
 .. toctree::
    :maxdepth: 1
