@@ -1045,3 +1045,118 @@ class StructModel:
         energy = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)/B-1./B-stretches)*self._theta_weight_i)
         stress = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)-1)*self._theta_weight_i*tensors.T,axis=-1)
         return energy,stress
+
+class ARB(InvariantHyperelastic):
+    '''
+    Model of ARBitrary complexity for development purposes.
+    Will be developed based on symbolic differentiation.
+    Psi = <USER-INPUT FUNCTION AS STRING>
+    '''
+    def __init__(self, _W='', _init_guess='', _low_bound='', _up_bound=''):
+        super().__init__()
+        # Added success flag to handle if wrong format is given.
+        success = False
+        while success == False:
+            try:
+                # Get initial guess. Needed since we don't know formor number
+                # of parameters.
+                if _init_guess!='':
+                    self.param_default = eval('dict('+_init_guess+')')
+                else:
+                    self.param_default  = eval('dict('+input("Please enter inital guess for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=1.,c2=1.,c3=1.,c4=0.)
+                success = True
+            except:
+                print("Invalid format. Please try again.")
+        success = False
+        while success == False:
+            try:
+                if _low_bound!='':
+                    self.param_low_bd = eval('dict('+_low_bound+')')
+                else:
+                    self.param_low_bd   = eval('dict('+input("Please enter lower bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
+                if len(self.param_low_bd) == 0:
+                    print("Warning: Lower bound not set for parameters")
+                success = True
+            except:
+                print("Invalid format. Please try again.")
+        success = False
+        while success == False:
+            try:
+                if _up_bound!='':
+                    self.param_up_bd = eval('dict('+_up_bound+')')
+                else:
+                    self.param_up_bd    = eval('dict('+input("Please enter upper bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=100.,c2=100.,c3=100.,c4=100.)
+                if len(self.param_up_bd) == 0:
+                    print("Warning: Upper bound not set for parameters")
+                success = True
+            except:
+                print("Invalid format. Please try again.")
+        
+        # Get the user's strain energy density function (SEDF)
+        if _W!='':
+            self.energy_form = _W
+        else:
+            self.energy_form = input("Please enter form of the SEDF: ")#"c1*(I1-3)+c2*(I1-3)**2+c3*(I1-3)**3+c4*(I1-3)**4"
+        # Since there are an arbitrary number of arbitrarily-named parameters,
+        # we get these from the definition of the initial guess.
+        self.param_names = [i for i in self.param_default]
+        
+        # Need sympy for symbolic differentiation
+        # Derivatives calculated here to avoid runtime being called in loop
+        import sympy as sp
+        
+        # Define invariants as symbols
+        I1,I2,I3,I4 = sp.symbols('I1 I2 I3 I4')
+        
+        # Construct a string of the symbols to define as such without needing
+        # numerical values
+        param_names_string = ""
+        for name in self.param_names:
+            param_names_string += name + " "
+        
+        other_symbols = sp.symbols(param_names_string)
+        
+        SEDF = sp.expand(self.energy_form)
+        
+        # Take symbolic derivatives
+        dSEDFdI =   sp.diff(SEDF,I1), \
+                    sp.diff(SEDF,I2), \
+                    sp.diff(SEDF,I3), \
+                    sp.diff(SEDF,I4)
+        
+        # Store derivatives as strings
+        dSEDFdI = [str(sp.powdenest(sp.simplify(sp.powsimp(i)))) for i in dSEDFdI] # 62.78572702407837 s
+        
+        # Format derivatives for consistent syntax
+        dSEDFdI = [i.replace("I1","self.I1") for i in dSEDFdI]
+        dSEDFdI = [i.replace("I2","self.I2") for i in dSEDFdI]
+        dSEDFdI = [i.replace("I3","self.I3") for i in dSEDFdI]
+        dSEDFdI = [i.replace("I4","self.I4") for i in dSEDFdI]
+        dSEDFdI = [i.replace("exp","np.exp") for i in dSEDFdI]
+        dSEDFdI = [i.replace("sqrt","np.sqrt") for i in dSEDFdI]
+        
+        # Update attribute of class.
+        self.denergy_formdI = dSEDFdI
+
+    def _energy(self,**extra_args):
+        # WARNING: UNTESTED
+        print("Warning: Arbitrary MatModel has not been tested. Proceed with caution!")
+        for name in self.param_names:
+            exec(name + "=" + "%s" %(extra_args[name]))
+        
+        SEDF = self.energy_form.replace("sp","np")
+        return eval(SEDF)
+
+    def partial_deriv(self,**extra_args):
+        # Evaluate the numerical values of the partial derivatives from the
+        # strings in self. Need some funky syntax to allow eval() to have
+        # access to the variable names in extra_args. It unpacks these values
+        # into a new dictionary, along with self and np.
+        dSEDFdI = [eval(i, {"self": self, "np": np,**extra_args}) for i in self.denergy_formdI]
+        # Not been able to cast this using list comprehension. It sets unused
+        # entries to be None.
+        for i in range(len(dSEDFdI)):
+            if "I%s"%(i+1) not in self.energy_form:
+                dSEDFdI[i] = None
+        
+        return dSEDFdI
