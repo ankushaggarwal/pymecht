@@ -59,10 +59,10 @@ git clone <repo-address>
 ```
 where `<repo-address>` can be replaced by either the https or ssh addresses of the forked repo.
 
-### *Step 2.3 Install pyMechT as editable*
-To install an editable version of pyMechT, navigate to the locally cloned repo and execute:
+### *Step 2.3 Install developer version of pyMechT*
+To install a developer version of pyMechT, navigate to the locally cloned repo and execute:
 ```sh
-pip install -e .
+python setup.py develop
 ```
 An editable version of pyMechT is now installed. All local changes to the cloned source code files will be reflected when pyMechT is imported.
 
