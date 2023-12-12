@@ -1,5 +1,5 @@
 =========================================================
-UniformAxisymmetricTubeInflationExtension and LayeredTube
+TubeInflation and LayeredTube
 =========================================================
 
 
@@ -62,10 +62,10 @@ where :math:`\bar{\sigma}_{rr}(R)` is the Cauchy normal stress in the
 (first) radial direction without the Lagrange multiplier term. Once
 :math:`{p}(R)` is known, all components of stresse tensors at any radius 
 can be calculated using the usual definition of Cauchy stress via 
-:py:meth:`SampleExperiment.UniformAxisymmetricTubeInflationExtension.cauchy_stress` 
+:py:meth:`SampleExperiment.TubeInflation.cauchy_stress` 
 function.
 
-:py:class:`UniformAxisymmetricTubeInflationExtension` samples can be “layered” via
+:py:class:`TubeInflation` samples can be “layered” via
 :py:class:`LayeredTube`. Such a setup can be used for representing, for example,
 tissues that have multiple layers with different material models and
 possibly even incompatible reference radius. The result would be that

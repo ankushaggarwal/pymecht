@@ -42,7 +42,7 @@ def cal_output(params):
 material = MatModel('yeoh')
 mm = material.models
 
-sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
+sample = TubeInflation(material,force_measure='pressure')
 #params = sample.parameters
 Theta = RandomParameters(*sample.parameters_wbounds())
 #Theta.add('phi',0.1,0,pi/2.,'uniform')
