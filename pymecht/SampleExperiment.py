@@ -5,6 +5,7 @@ import scipy.optimize as opt
 import warnings
 from scipy.integrate import quad
 from .ParamDict import *
+from .MatModel import MatModel
 
 class SampleExperiment:
     '''
@@ -47,7 +48,7 @@ class SampleExperiment:
         return_scalar, return_list = False, False
         if type(inp) is list:
             return_list = True
-        elif type(inp) is float or type(inp) is int:
+        elif isinstance(inp,(int,float)):
             inp = [inp]
             return_scalar = True    
         elif type(inp) is not np.ndarray:
@@ -88,16 +89,16 @@ class SampleExperiment:
         self._update(**params)
         return_scalar, return_list = False, False
         if type(forces) is float or type(forces) is int:
-            forces = np.array([forces])
+            forces = np.array([forces],dtype=float)
             return_scalar = True
         elif type(forces) is list:
-            forces = np.array(forces)
+            forces = np.array(forces,dtype=float)
             return_list = True
         elif type(forces) is not np.ndarray:
             raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
         
         def compare(displ,ybar,params):
-            return self.disp_controlled([displ],params)[0]-ybar
+            return self.disp_controlled(np.array([displ]),params)[0]-ybar
 
         #solve for the inp by solving the disp_controlled minus desired output
         forces_temp = forces.reshape(-1,self._ndim)
@@ -136,7 +137,7 @@ class SampleExperiment:
             x0 = sol.x.copy()
             y.append(sol.x)
         if return_scalar:
-            return y[0]
+            return y[0][0]
         if return_list:
             return y
         return np.array(y).reshape(np.shape(forces))
@@ -198,7 +199,7 @@ class LinearSpring(SampleExperiment):
     Parameters
     ----------
     mat_model: MatModel
-        A material model object of type MatModel (not used, provide MatModel() for simplicity)
+        A material model object of type MatModel (not used), default MatModel()
 
     disp_measure: str
         The measure of displacement with the following options:
@@ -215,21 +216,21 @@ class LinearSpring(SampleExperiment):
         * 'pressure' : The pressure
 
     '''
-    def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
-        self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
-        self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
-        self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.,thick=0.)
+    def __init__(self,mat_model=MatModel,disp_measure='stretch',force_measure='force'):
+        self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.)
+        self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.)
+        self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.)
         super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         if self._inp == 'stretch':
             self._x0 = 1.
-            self._compute1 = lambda x: self._k0*(x-1)*self._L0-self._f0
+            self._compute1 = lambda x: self._k0*(x-1)*self._L0+self._f0
         elif self._inp == 'deltal':
             self._x0 = 0.
-            self._compute1 = lambda x: self._k0*x-self._f0
+            self._compute1 = lambda x: self._k0*x+self._f0
         elif self._inp == 'length' or self._inp == 'radius':
             self._x0 = self._L0
-            self._compute1 = lambda x: self._k0*(x-self._L0)-self._f0
+            self._compute1 = lambda x: self._k0*(x-self._L0)+self._f0
         else:
             raise ValueError(self.__class__.__name__,": Unknown disp_measure", disp_measure,". It should be one of stretch, deltal, length, or radius")
         if not self._output in ['force','stress','pressure']:
@@ -566,7 +567,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         output_scalar, output_list = False, False
-        if type(inp) is float or type(inp) is int:
+        if isinstance(inp,(int,float)):
             inp = [inp]
             output_scalar = True
         elif type(inp) is list:
@@ -613,9 +614,21 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
+        output_scalar, output_list = False, False
+        if isinstance(inp,(int,float)):
+            inp = [inp]
+            output_scalar = True
+        elif type(inp) is list:
+            output_list = True
+        elif type(inp) is not np.ndarray:
+            raise ValueError("Input to outer_radius should be a scalar, a list, or a numpy array")
 
         Ro = self._Ri+self._thick
         ro = np.array([sqrt((Ro**2-self._Ri**2)/self._k/self._lambdaZ+ri**2) for ri in self._stretch(inp)])
+        if output_scalar:
+            return ro[0]
+        if output_list:
+            return ro
         return ro.reshape(np.shape(inp))
 
     def _stretch(self,l): #this returns internal radius instead
@@ -663,7 +676,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
-        if type(inp) is float or type(inp) is int:
+        if isinstance(inp,(int,float)):
             inp = [inp]
         elif type(inp) is not np.ndarray and type(inp) is not list:
             raise ValueError("Input to cauchy_stress should be a scalar, a list, or a numpy array")
@@ -753,22 +766,30 @@ class LayeredSamples:
         '''
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         #if len(params) != self._nsamples:
         #    raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
-        total_force = 0.
-        if type(params) is ParamDict:
-            createParamDict = True
-        else:
-            createParamDict = False
+        return_list = False
+        if type(inp) is float or type(inp) is int or type(inp) is np.ndarray:
+            total_force = 0.
+        elif type(inp) is list:
+            total_force = np.zeros(len(inp))
+            inp = np.array(inp)
+            return_list = True
         for i,s in enumerate(self._samples):
-            parami = ParamDict() if createParamDict else {}
+            parami = {}
             for k in self._param_names[i]:
                 parami[self._param_names[i][k]] = params[k]
             total_force += s.disp_controlled(inp,parami) #TODO this would not be correct for stresses
 
+        if return_list:
+            return total_force.to_list()
         return total_force
 
-    def force_controlled(self,forces,params,x0=None): #TODO update this based on SampleExperiment.force_controlled
+    def force_controlled(self,forces,params=None,x0=None): #TODO update this based on SampleExperiment.force_controlled
         '''
         Simulates the experiment with the force measure as the input (solves via Newton iteration)
 
@@ -789,9 +810,24 @@ class LayeredSamples:
             The resulting deformation measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
         '''
         if params is None:
-            params = self.parameters 
+            params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
+
+        return_scalar, return_list = False, False
+        if type(forces) is float or type(forces) is int:
+            forces = np.array([forces],dtype=float)
+            return_scalar = True
+        elif type(forces) is list:
+            forces = np.array(forces,dtype=float)
+            return_list = True
+        elif type(forces) is not np.ndarray:
+            raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
+        
         def compare(displ,ybar,params):
-            return self.disp_controlled(displ,params)[0]-ybar
+            return self.disp_controlled(displ,params)-ybar
 
         #solve for the inp by solving the disp_controlled minus desired output
         forces_temp = forces.reshape(-1,self._ndim)
@@ -801,10 +837,38 @@ class LayeredSamples:
             x0=self._samples[0]._x0 + 1e-5
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params))
+            if not sol.success or any(np.abs(sol.r)>1e5):
+                if ndata==1 or i==0:
+                    niter=10
+                    for j in range(1,niter+1):
+                        df = forces_temp[i]*j/niter
+                        #print(df,x0)
+                        sol = opt.root(compare,x0,args=(df,params))
+                        if not sol.success or any(np.abs(sol.r)>1e5):
+                            break
+                        x0 = sol.x.copy()
+                    #raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
+                else:
+                    NIter=[5,10,20]
+                    for niter in NIter:
+                        df = (forces_temp[i]-forces_temp[i-1])/niter
+                        x0j = x0.copy()
+                        for j in range(niter):
+                            sol = opt.root(compare,x0j,args=(forces_temp[i-1]+(j+1)*df,params))
+                            #print('subiter',j,'/',niter,forces_temp[i-1]+(j+1)*df,params,x0,sol)
+                            if not sol.success or any(np.abs(sol.r)>1e5):
+                                break
+                            x0j = sol.x.copy()
+                        if sol.success:
+                            break
             if not sol.success:
                 raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
             x0 = sol.x.copy()
             y.append(sol.x)
+        if return_scalar:
+            return y[0][0]
+        if return_list:
+            return y
         return np.array(y).reshape(np.shape(forces))
 
     def __str__(self):
@@ -897,22 +961,22 @@ class LayeredTube(LayeredSamples):
         if params is None:
             params = self.parameters
         if type(params) is ParamDict:
-            createParamDict = True
-        else:
-            createParamDict = False
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         return_scalar, return_list = False, False
         if type(inp) is list:
             return_list = True
-        elif type(inp) is float or type(inp) is int:
+        elif isinstance(inp,(int,float)):
             return_scalar = True
             inp = [inp]
         elif type(inp) is not np.ndarray:
             raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
-        inp = np.array(inp)
+        inp = np.array(inp,dtype=float)
         total_force = np.zeros_like(inp)
         i_input = inp
         for i,s in enumerate(self._samples):
-            parami = ParamDict() if createParamDict else {}
+            parami = {}
             for k in self._param_names[i]:
                 parami[self._param_names[i][k]] = params[k]
             total_force += s.disp_controlled(i_input,parami)
@@ -936,24 +1000,30 @@ class LayeredTube(LayeredSamples):
             The parameters of the material model
 
         n: int
-            The number of points along the thickness to report stresses at, default is 10
+            The number of points along the thickness (of each layer) to report stresses at, default is 10
 
         Returns
         -------
         tuple (xi,Stresses)
             xi : Normalized thickness values at which the stresses are reported (n points)
 
-            Stresses : The Cauchy stress tensors at the thickness locations (nX3X3 array)
+            Stresses : The Cauchy stress tensors at the thickness locations ((nXnlayers)X3X3 array)
 
         '''
         if params is None:
             params = self.parameters
-        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculatioself._outputfor s in self._samples:
+        if type(params) is ParamDict:
+            params = params._val()
+        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculation
+        for s in self._samples:
             s._output = 'pressure'
-        pressure = self.disp_controlled(inp,params)[0]
+        pressure = self.disp_controlled(inp,params)
 
-        total_thick = 0.
-        for s in params: total_thick+=s['thick']
+        thick = []
+        for i in range(len(self._samples)): 
+            thick.append(params['thick_layer'+str(i)])
+        thick = np.array(thick)
+        total_thick = np.sum(thick)
 
         XI, Stress = [],[]
         i_input = inp
@@ -961,15 +1031,17 @@ class LayeredTube(LayeredSamples):
         for i,s in enumerate(self._samples):
             if isinstance(s,LinearSpring):
                 continue
-            xi,stress = s.cauchy_stress(i_input,params[i],n,pressure=pressure)
-            pressure -= s.disp_controlled(i_input,params[i])[0]
+            parami = {}
+            for k in self._param_names[i]:
+                parami[self._param_names[i][k]] = params[k]
+            xi,stress = s.cauchy_stress(i_input,parami,n,pressure=pressure)
+            pressure -= s.disp_controlled(i_input,parami)
             if not first_layer:
-                xi = [max(XI)+x*s.thick/total_thick for x in xi]
-                first_layer=False
+                xi = [max(XI)+x*thick[i]/total_thick for x in xi]
             else:
-                xi = [x*s.thick/total_thick for x in xi]
-            i_input = s.outer_radius(i_input,params[i])
-            print(i_input)
+                xi = [x*thick[i]/total_thick for x in xi]
+                first_layer=False
+            i_input = s.outer_radius(i_input,parami)
             XI.extend(xi)
             Stress.extend(stress)
         for s in self._samples:
