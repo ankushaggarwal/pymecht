@@ -33,7 +33,7 @@ as:
 
 .. math::
 
-   \Delta p = -\int\limits_{R_i}^{R_i+H}\frac{R}{\lambda_Z r^2} \left( \bar{\sigma}_{rr} - \bar{\sigma}_{\theta\theta} \right){\textrm{d}R}.
+   \Delta p = -\int\limits_{R_i}^{R_i+H}\frac{1}{\lambda_{\theta} \lambda_Z r} \left( \lambda_r \frac{\partial \Psi}{\partial {\lambda_r}} - \lambda_{\theta}\frac{\partial \Psi}{\partial {\lambda_{\theta}}} \right){\textrm{d}R}  = -\int\limits_{R_i}^{R_i+H}\frac{R}{\kappa\lambda_Z r^2} \left( \bar{\sigma}_{rr} - \bar{\sigma}_{\theta\theta} \right){\textrm{d}R}.
    \label{main-eq}
 
 This integral is evaluated numerically. If the fiber directions are not
