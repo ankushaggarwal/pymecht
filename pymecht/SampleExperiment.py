@@ -583,7 +583,7 @@ class TubeInflation(SampleExperiment):
             r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
             sigma = self._compute(F,params) 
-            return R/self._lambdaZ/r**2*self._thick*(sigma[1,1]-sigma[0,0])
+            return R/(self._k*self._lambdaZ*r**2)*self._thick*(sigma[1,1]-sigma[0,0])
         
         if self._output=='pressure':
             output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(inp)]
@@ -696,7 +696,7 @@ class TubeInflation(SampleExperiment):
             r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
             sigma = self._compute(F,params) 
-            return R/self._lambdaZ/r**2*self._thick*(sigma[1,1]-sigma[0,0])
+            return R/(self._k*self._lambdaZ*r**2)*self._thick*(sigma[1,1]-sigma[0,0])
 
         Stresses = []
         if pressure is None:
