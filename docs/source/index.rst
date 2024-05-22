@@ -23,6 +23,13 @@ pyMechT's documentation
 .. toctree::
    :glob:
    :maxdepth: 1
+   :caption: Examples:
+
+   Examples/examples_CR.ipynb
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
    :caption: Theory:
 
    theory_matmodel
