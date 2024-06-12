@@ -868,6 +868,63 @@ class Gent(InvariantHyperelastic):
     def partial_deriv(self,mu,Jm,**extra_args):
         return 0.5*mu/(1 - (self.I1 - 3)/Jm), None, None, None
 
+class splineI1(InvariantHyperelastic):
+    '''
+    Spline-based model in I1 for data driven models (without an analytical expression)
+    
+    Psi is loaded from a scipy spline object
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(alpha=1)
+        self.param_low_bd   = dict(alpha=-10)
+        self.param_up_bd    = dict(alpha=10)
+        self._warn = False
+        self.normalize()
+
+    def set(self,W,alpha=1):
+        '''
+        Set the spline function and the weight
+        
+        Parameters
+        ----------
+
+        W : scipy.interpolate._bsplines.BSpline
+            The spline function
+        
+        alpha : float
+            The weight of W in the energy function (i.e., :math:`\\Psi = \\alpha W(I1)`)
+        
+        Returns
+        -------
+        None
+
+        '''
+        if not isinstance(W,scipy.interpolate._bsplines.BSpline):
+            raise ValueError("W must be a RectBivariateSpline")
+        x = W.t
+        self.minx,self.maxx = np.min(x), np.max(x)
+        self._W = W
+        self._dWdI1 = W.derivative()
+        self._alpha = alpha
+
+    def _energy(self,alpha=None,**extra_args):
+        if alpha is None:
+            alpha=self._alpha
+        if self._warn and (self.I1<self.minx or self.I1>self.maxx):
+            w = "Outside the training range; be careful interpreting the results "+str(self.I1)+"\n"+str(self.minx)+" "+str(self.maxx)
+            warnings.warn(w)
+        return alpha*np.sum(self._W(self.I1))
+
+    def partial_deriv(self,alpha=None,**extra_args):
+        if alpha is None:
+            alpha=self._alpha
+        if self._warn and (self.I1<self.minx or self.I1>self.maxx):
+            w = "Outside the training range; be careful interpreting the results "+str(self.I1)+"\n"+str(self.minx)+" "+str(self.maxx)
+            warnings.warn(w)
+        a = self._dWdI1(self.I1)
+        return alpha*np.sum(a),None,None,None
+
 class splineI1I4(InvariantHyperelastic):
     '''
     Spline-based model in I1 and I4 for data driven models (without an analytical expression)
