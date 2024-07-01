@@ -14,6 +14,8 @@ pyMechT's documentation
    :special-members: __init__
    :show-inheritance:
 
+.. mdinclude:: ../../README.md
+
 .. toctree::
    :maxdepth: 2
    :caption: Tutorials:
