@@ -1,6 +1,4 @@
 '''
-pyMechT 
-=======
 pyMechT is a Python package for simulating the mechanical response of soft biological tissues.
 
 It is a collection of modules for:
