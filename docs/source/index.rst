@@ -9,7 +9,7 @@
 pyMechT's documentation
 =======================
 
-.. automethod:: pymecht
+.. automodule:: pymecht
    :members:
    :show-inheritance:
 
