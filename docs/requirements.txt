@@ -11,7 +11,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
 nbsphinx==0.9.3
-numpy==1.24.1
+numpy==1.22.2
 pandas==1.2.4
 scipy==1.8.0
 torch==1.10.1
@@ -20,3 +20,6 @@ tqdm>=4.61.0
 sympy>=1.10.1
 matplotlib>=3.4.1
 setuptools>=65.6.3
+setuptools_scm>=8
+tqdm>= 4.61.0
+pandas >= 1.2.4
