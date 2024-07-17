@@ -19,3 +19,4 @@ pyDOE==0.3.8
 tqdm>=4.61.0
 sympy>=1.10.1
 matplotlib>=3.4.1
+setuptools>=65.6.3
