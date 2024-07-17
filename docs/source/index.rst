@@ -9,9 +9,8 @@
 pyMechT's documentation
 =======================
 
-.. autoclass:: pymecht
+.. automethod:: pymecht
    :members:
-   :special-members: __init__
    :show-inheritance:
 
 .. mdinclude:: ../../README.md
