@@ -9,7 +9,7 @@ Tutorial provided in this documentation is a good place to start, followed by se
 
 pyMechT is a collection of modules for:
 
-    * :class:`MatModels`: defining material models
+    * :class:`MatModel`: defining material models
     * :class:`SampleExperiment`: simulating experiments, such as uniaxial extension, biaxial extension, and inflation-extension. Simulations can be either :meth:`disp_controlled` or :meth:`force_controlled`
     * :class:`ParamFitter`: fitting parameters to experimental data
     * :class:`RandomParameters` and :class:`MCMC`: Bayesian inference by running Monte Carlo (MC) and Markov chain Monte Carlo (MCMC) simulations
