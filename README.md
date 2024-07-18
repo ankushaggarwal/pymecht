@@ -2,12 +2,35 @@
 
 # pyMechT
 
-pyMechT is a <u>Py</u>thon package for simulating the <u>mech</u>anical response of soft biological <u>t</u>issues. The focus is on flexibility of defining models (referred to as *MatModels*). The ethos of pyMechT is to create simplified virtual experimental setups. That is, a *sample* is created of which there are the following options:
-* Uniaxial extension;
-* Biaxial extension; and
-* Inflation-extension.
+pyMechT is a <u>Py</u>thon package for simulating the <u>mech</u>anical response of soft biological <u>t</u>issues. 
+The ethos of pyMechT is to create simplified virtual experimental
+setups, rather than finite element analysis. Thus, varying parameters
+and running simulations is much faster, making it feasible to perform
+Bayesian inference and Markov Chain Monte Carlo analysis.
 
-The MatModel is applied to the sample, such that the parameters encompass both the material parameters and those which define the corresponding sample setup (an example being the dimensions of the specimen). Finally, the samples can be simulated in either *displacement-controlled* or *force-controlled* loading to allow the use of Bayesian inference methods.
+pyMechT is a collection of modules for:
+
+> -   `MatModels`{.interpreted-text role="class"}: defining material
+>     models
+> -   `SampleExperiment`{.interpreted-text role="class"}: simulating
+>     experiments, such as uniaxial extension, biaxial extension, and
+>     inflation-extension. Simulations can be either
+>     `disp_controlled`{.interpreted-text role="meth"} or
+>     `force_controlled`{.interpreted-text role="meth"}
+> -   `ParamFitter`{.interpreted-text role="class"}: fitting parameters
+>     to experimental data
+> -   `RandomParameters`{.interpreted-text role="class"} and
+>     `MCMC`{.interpreted-text role="class"}: Bayesian inference by
+>     running Monte Carlo (MC) and Markov chain Monte Carlo (MCMC)
+>     simulations
+
+![Structure of pyMechT](drawing-1.svg){.align-center width="300px"}
+
+This package is developed and maintained by the [Computational
+Biomechanics Research
+Group](https://userweb.eng.gla.ac.uk/ankush.aggarwal/) at the University
+of Glasgow and is hosted at
+[github](https://github.com/ankushaggarwal/pymecht/).
 
 Required dependencies are:
 * matplotlib
