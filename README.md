@@ -2,29 +2,24 @@
 
 # pyMechT
 
-pyMechT is a <u>Py</u>thon package for simulating the <u>mech</u>anical response of soft biological <u>t</u>issues. 
-The ethos of pyMechT is to create simplified virtual experimental
-setups, rather than finite element analysis. Thus, varying parameters
-and running simulations is much faster, making it feasible to perform
-Bayesian inference and Markov Chain Monte Carlo analysis.
+pyMechT is a <u>Py</u>thon package for simulating the <u>mech</u>anical response of soft biological <u>t</u>issues. The ethos of pyMechT is to create simplified virtual experimental setups, rather than finite element analysis. Thus, varying parameters and running simulations is much faster, making it feasible to perform Bayesian inference and Markov Chain Monte Carlo analysis.
+
+# Documentation
+
+Find the full documentation at https://pymecht.readthedocs.io/en/latest/.
+
+# Structure
 
 pyMechT is a collection of modules for:
 
-*   `MatModels`: defining material
-    models
-*   `SampleExperiment`: simulating experiments, such as uniaxial extension, biaxial extension, and inflation-extension. Simulations can be either
-    `disp_controlled` or `force_controlled`
+*   `MatModel`: defining material models
+*   `SampleExperiment`: simulating experiments, such as uniaxial extension, biaxial extension, and inflation-extension. Simulations can be either `disp_controlled` or `force_controlled`
 *   `ParamFitter`: fitting parameters to experimental data
-*   `RandomParameters` and `MCMC`: Bayesian inference by
-    running Monte Carlo (MC) and Markov chain Monte Carlo (MCMC)
-    simulations
+*   `RandomParameters` and `MCMC`: Bayesian inference by running Monte Carlo (MC) and Markov chain Monte Carlo (MCMC) simulations
 
-![Structure of pyMechT](docs/source/drawing-1.svg){.align-center width="300px"}
+![Structure of pyMechT{{caption=Structure of pyMechT}](docs/source/drawing-1.svg)
 
-This package is developed and maintained by the [Computational
-Biomechanics Research
-Group](https://userweb.eng.gla.ac.uk/ankush.aggarwal/) at the University
-of Glasgow.
+This package is developed and maintained by the [Computational Biomechanics Research Group](https://userweb.eng.gla.ac.uk/ankush.aggarwal/) at the University of Glasgow.
 
 Required dependencies are:
 * matplotlib
@@ -92,10 +87,6 @@ Ensure that pyMechT has been installed by executing:
 pip list
 ```
 The package and version should be visible in the resulting list.
-
-# Documentation
-
-Find the full documentation at https://pymecht.readthedocs.io/en/latest/.
 
 # Contributing to pyMechT
 
