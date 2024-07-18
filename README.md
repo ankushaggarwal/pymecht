@@ -14,6 +14,7 @@ pyMechT is a collection of modules for:
 
 *   `MatModel`: defining material models
 *   `SampleExperiment`: simulating experiments, such as uniaxial extension, biaxial extension, and inflation-extension. Simulations can be either `disp_controlled` or `force_controlled`
+*   `ParamDict`: a custom dictionary class of a datastructure called `Param`, which facilitates storing/varying/fitting parameters 
 *   `ParamFitter`: fitting parameters to experimental data
 *   `RandomParameters` and `MCMC`: Bayesian inference by running Monte Carlo (MC) and Markov chain Monte Carlo (MCMC) simulations
 
