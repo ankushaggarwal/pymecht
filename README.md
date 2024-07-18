@@ -10,27 +10,21 @@ Bayesian inference and Markov Chain Monte Carlo analysis.
 
 pyMechT is a collection of modules for:
 
-> -   `MatModels`{.interpreted-text role="class"}: defining material
->     models
-> -   `SampleExperiment`{.interpreted-text role="class"}: simulating
->     experiments, such as uniaxial extension, biaxial extension, and
->     inflation-extension. Simulations can be either
->     `disp_controlled`{.interpreted-text role="meth"} or
->     `force_controlled`{.interpreted-text role="meth"}
-> -   `ParamFitter`{.interpreted-text role="class"}: fitting parameters
->     to experimental data
-> -   `RandomParameters`{.interpreted-text role="class"} and
->     `MCMC`{.interpreted-text role="class"}: Bayesian inference by
->     running Monte Carlo (MC) and Markov chain Monte Carlo (MCMC)
->     simulations
+*   `MatModels`: defining material
+    models
+*   `SampleExperiment`: simulating experiments, such as uniaxial extension, biaxial extension, and inflation-extension. Simulations can be either
+    `disp_controlled` or `force_controlled`
+*   `ParamFitter`: fitting parameters to experimental data
+*   `RandomParameters` and `MCMC`: Bayesian inference by
+    running Monte Carlo (MC) and Markov chain Monte Carlo (MCMC)
+    simulations
 
-![Structure of pyMechT](drawing-1.svg){.align-center width="300px"}
+![Structure of pyMechT](docs/source/drawing-1.svg){.align-center width="300px"}
 
 This package is developed and maintained by the [Computational
 Biomechanics Research
 Group](https://userweb.eng.gla.ac.uk/ankush.aggarwal/) at the University
-of Glasgow and is hosted at
-[github](https://github.com/ankushaggarwal/pymecht/).
+of Glasgow.
 
 Required dependencies are:
 * matplotlib
