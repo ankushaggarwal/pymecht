@@ -25,7 +25,10 @@ pyMechT's documentation
    :maxdepth: 1
    :caption: Examples:
 
+   Examples/matmodel-example.ipynb
+   Examples/param-example.ipynb
    Examples/examples_CR.ipynb
+   Examples/paramfitter-example.ipynb
    Examples/layered-tube.ipynb
    Examples/layered-tube2.ipynb
 
