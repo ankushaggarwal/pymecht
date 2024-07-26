@@ -1061,7 +1061,7 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
     sample: SampleExperiment
         The sample to which fiber directions need to be assigned
 
-    angle: float
+    angle: float or Param
         The angle of the fiber direction, default 0 
 
         for UniaxialExtension or PlanarBiaxialExtension
@@ -1077,6 +1077,8 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
         If True, the function prints the angle after assigning, default True
 
     '''
+    if type(angle) is Param:
+        angle = angle.value
     if degrees:
         angle_rad = np.deg2rad(angle)
     models = sample._mat_model.models
@@ -1101,7 +1103,7 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
     sample: SampleExperiment
         The sample to which fiber directions need to be assigned
 
-    angle: float
+    angle: float or Param
         The angle of the fiber directions (assigned as :math:`\pm` angle) 
 
         for UniaxialExtension or PlanarBiaxialExtension
@@ -1117,6 +1119,8 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
         If True, the function prints the angle after assigning, default True
 
     '''
+    if type(angle) is Param:
+        angle = angle.value
     if degrees:
         angle_rad = np.deg2rad(angle)
     models = sample._mat_model.models
