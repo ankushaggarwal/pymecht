@@ -26,6 +26,8 @@ pyMechT's documentation
    :caption: Examples:
 
    Examples/examples_CR.ipynb
+   Examples/layered-tube.ipynb
+   Examples/layered-tube2.ipynb
 
 .. toctree::
    :glob:
