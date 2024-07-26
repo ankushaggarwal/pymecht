@@ -13,7 +13,7 @@ nbsphinx==0.9.3
 numpy==1.24.1
 pandas==1.2.4
 scipy==1.8.0
-torch==1.10.1
+torch==1.13.1
 pyDOE==0.3.8
 tqdm>=4.61.0
 sympy>=1.10.1

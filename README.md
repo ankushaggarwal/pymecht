@@ -2,12 +2,27 @@
 
 # pyMechT
 
-pyMechT is a <u>Py</u>thon package for simulating the <u>mech</u>anical response of soft biological <u>t</u>issues. The focus is on flexibility of defining models (referred to as *MatModels*). The ethos of pyMechT is to create simplified virtual experimental setups. That is, a *sample* is created of which there are the following options:
-* Uniaxial extension;
-* Biaxial extension; and
-* Inflation-extension.
+pyMechT is a <u>Py</u>thon package for simulating the <u>mech</u>anical response of soft biological <u>t</u>issues. The ethos of pyMechT is to create simplified virtual experimental setups, rather than finite element analyses. Thus, varying parameters and running simulations is much faster, making it feasible to perform Bayesian inference and Markov Chain Monte Carlo analyses. A short overview is provided in the video below.
 
-The MatModel is applied to the sample, such that the parameters encompass both the material parameters and those which define the corresponding sample setup (an example being the dimensions of the specimen). Finally, the samples can be simulated in either *displacement-controlled* or *force-controlled* loading to allow the use of Bayesian inference methods.
+[![pyMechT overview](https://markdown-videos-api.jorgenkh.no/url?url=https%3A%2F%2Fyoutu.be%2F-o-RiiRIEgo%3Fsi%3DowEADuw6tZ8YoHXO)](https://youtu.be/-o-RiiRIEgo?si=owEADuw6tZ8YoHXO)
+
+# Documentation
+
+Find the full documentation at https://pymecht.readthedocs.io/en/latest/.
+
+# Structure
+
+pyMechT is a collection of modules for:
+
+*   `MatModel`: defining material models
+*   `SampleExperiment`: simulating experiments, such as uniaxial extension, biaxial extension, and inflation-extension. Simulations can be either `disp_controlled` or `force_controlled`
+*   `ParamDict`: a custom dictionary class of a datastructure called `Param`, which facilitates storing/varying/fitting parameters 
+*   `ParamFitter`: fitting parameters to experimental data
+*   `RandomParameters` and `MCMC`: Bayesian inference by running Monte Carlo (MC) and Markov chain Monte Carlo (MCMC) simulations
+
+![Structure of pyMechT{{caption=Structure of pyMechT}](docs/source/drawing-1.svg)
+
+This package is developed and maintained by the [Computational Biomechanics Research Group](https://userweb.eng.gla.ac.uk/ankush.aggarwal/) at the University of Glasgow.
 
 Required dependencies are:
 * matplotlib
@@ -75,10 +90,6 @@ Ensure that pyMechT has been installed by executing:
 pip list
 ```
 The package and version should be visible in the resulting list.
-
-# Documentation
-
-Find the full documentation at https://pymecht.readthedocs.io/en/latest/.
 
 # Contributing to pyMechT
 
