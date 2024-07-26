@@ -5,6 +5,12 @@ pyMechT is a Python package for simulating the mechanical response of soft biolo
 
    $ pip install pymecht
 
+.. raw:: html
+
+    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+        <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/-o-RiiRIEgo?si=qO2AYwOWeEkak6Hp" title="pyMechT overview" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    </div>
+
 Tutorial provided in this documentation is a good place to start, followed by several detailed examples. 
 
 pyMechT is a collection of modules for:
