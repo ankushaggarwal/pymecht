@@ -22,7 +22,7 @@ pyMechT is a collection of modules for:
 
 This package is developed and maintained by the `Computational Biomechanics Research Group <https://userweb.eng.gla.ac.uk/ankush.aggarwal/>`_ at the University of Glasgow and is hosted at `github <https://github.com/ankushaggarwal/pymecht/>`_.
 
-The ethos of pyMechT is to create simplified virtual experimental setups, rather than finite element analysis. Thus, varying parameters and running simulations is much faster, making it feasible to perform Bayesian inference and Markov Chain Monte Carlo analysis.
+The ethos of pyMechT is to create simplified virtual experimental setups, rather than finite element analyses. Thus, varying parameters and running simulations is much faster, making it feasible to perform Bayesian inference and Markov Chain Monte Carlo analyses.
 
 '''
 
