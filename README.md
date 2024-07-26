@@ -4,7 +4,7 @@
 
 pyMechT is a <u>Py</u>thon package for simulating the <u>mech</u>anical response of soft biological <u>t</u>issues. The ethos of pyMechT is to create simplified virtual experimental setups, rather than finite element analyses. Thus, varying parameters and running simulations is much faster, making it feasible to perform Bayesian inference and Markov Chain Monte Carlo analyses.
 
-[![](https://markdown-videos-api.jorgenkh.no/youtube/{video_id})](https://youtu.be/-o-RiiRIEgo?si=Y6DaB-Xdhx4UCIM7)
+[![pyMechT overview](https://markdown-videos-api.jorgenkh.no/url?url=https%3A%2F%2Fyoutu.be%2F-o-RiiRIEgo%3Fsi%3DowEADuw6tZ8YoHXO)](https://youtu.be/-o-RiiRIEgo?si=owEADuw6tZ8YoHXO)
 
 # Documentation
 
