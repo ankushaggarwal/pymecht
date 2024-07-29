@@ -27,6 +27,7 @@ pyMechT's documentation
 
    Examples/matmodel-example.ipynb
    Examples/param-example.ipynb
+   Examples/biax-example.ipynb
    Examples/examples_CR.ipynb
    Examples/paramfitter-example.ipynb
    Examples/layered-tube.ipynb
