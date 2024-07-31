@@ -30,10 +30,9 @@ pyMechT's documentation
    Examples/biax-example.ipynb
    Examples/examples_CR.ipynb
    Examples/paramfitter-example.ipynb
-   Examples/randomparam.example.ipynb
+   Examples/randomparam-example.ipynb
    Examples/mcmc-example.ipynb
-   Examples/layered-tube.ipynb
-   Examples/layered-tube2.ipynb
+   LayeredTube
 
 .. toctree::
    :glob:
