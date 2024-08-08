@@ -505,7 +505,7 @@ class TubeInflation(SampleExperiment):
         The measure of displacement with the following options:    
         
         * 'stretch' : Ratio of deformed to reference internal radius
-        * 'deltalr' : Change in internal radius
+        * 'deltar' : Change in internal radius
         * 'radius' : Deformed internal radius (default)
         * 'area' : Deformed internal area
         
@@ -539,7 +539,7 @@ class TubeInflation(SampleExperiment):
         self._compute = partial(self._mat_model.stress,stresstype='cauchy',incomp=False,Fdiag=True)
         if self._inp == 'stretch':
             self._x0 = 1.
-        elif self._inp == 'deltalr':
+        elif self._inp == 'deltar':
             self._x0 = 0.
         elif self._inp == 'radius':
             self._x0 = self._Ri
