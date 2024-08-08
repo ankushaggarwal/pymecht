@@ -586,9 +586,9 @@ class TubeInflation(SampleExperiment):
             return R/(self._k*self._lambdaZ*r**2)*self._thick*(sigma[1,1]-sigma[0,0])
         
         if self._output=='pressure':
-            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(inp)]
+            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(np.array(inp).flatten())]
         elif self._output =='force':
-            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri*2 for ri in self._stretch(inp)]
+            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri*2 for ri in self._stretch(np.array(inp).flatten())]
         if output_scalar:
             return output[0]
         if output_list:
