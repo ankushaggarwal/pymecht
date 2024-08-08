@@ -292,13 +292,13 @@ class UniaxialExtension(SampleExperiment):
     force_measure: str
         The measure of force with the following options:
 
-        * 'force' : The force per unit area (default)
-        * 'cauchy' : The Cauchy stress
+        * 'force' : The force per unit area
+        * 'cauchy' : The Cauchy stress (default)
         * '1pk' or '1stpk' or 'firstpk' : The first Piola-Kirchhoff stress
         * '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
         
     '''
-    def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
+    def __init__(self,mat_model,disp_measure='stretch',force_measure='cauchy'):
         self._param_default  = dict(L0=1.,A0=1.)
         self._param_low_bd   = dict(L0=0.0001,A0=0.0001)
         self._param_up_bd    = dict(L0=1000.,A0=1000.)
@@ -512,11 +512,11 @@ class TubeInflation(SampleExperiment):
     force_measure: str
         The measure of force with the following options:
         
-        * 'force' : Total force acting on the tube length (default) 
-        * 'pressure' : Internal pressure acting on the tube 
+        * 'force' : Total force acting on the tube length
+        * 'pressure' : Internal pressure acting on the tube (default)
         
     '''
-    def __init__(self,mat_model,disp_measure='radius',force_measure='force'):
+    def __init__(self,mat_model,disp_measure='radius',force_measure='pressure'):
         self._param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
         self._param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
         self._param_up_bd    = dict(Ri=1.5, thick=1., omega=0., L0=1.,lambdaZ=1.)
