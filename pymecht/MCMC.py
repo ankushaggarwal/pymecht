@@ -1,5 +1,6 @@
 import numpy as np
 from tqdm import tqdm
+import pandas as pd
 
 class MCMC:
     '''
@@ -80,7 +81,7 @@ class MCMC:
 
         print("MCMC sampling completed. Acceptance rate:",len(self._samples)/n)
         print("Number of samples:",len(self._samples))
-        print("To access the samples, use get_samples()")
+        print("To access the samples, use get_samples_pandas()")
 
     def get_samples(self):
         '''
@@ -90,6 +91,17 @@ class MCMC:
             raise ValueError("MCMC has not been run yet")
         return self._samples.copy()
     
+    def get_samples_pandas(self):
+        '''
+        Return the samples as a pandas dataframe
+        '''
+        if self._samples is None:
+            raise ValueError("MCMC has not been run yet")
+        values = []
+        for s in self._samples:
+            values.append(self.params._dict(s))
+        return pd.DataFrame.from_dict(values)
+
     def get_probs(self):
         '''
         Return the probabilities

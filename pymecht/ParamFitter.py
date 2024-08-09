@@ -33,7 +33,7 @@ class ParamFitter:
     def _residual(self,cval):
         assert(len(cval)==self.params._n())
         p = self.params._dict(cval)
-        return self._sim_func(p) - self._output
+        return (self._sim_func(p) - self._output).flatten()
 
     def fit(self):
         '''

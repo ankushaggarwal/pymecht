@@ -18,7 +18,7 @@ def unixex():
     mm = material.models
     mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
     print("Uniaxial")
-    sample = UniaxialExtension(material)
+    sample = UniaxialExtension(material,force_measure='force')
     params = sample.parameters
     print("Displacement controlled test")
     l_disp=np.linspace(1,2,10)
