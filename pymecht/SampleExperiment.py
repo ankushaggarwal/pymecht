@@ -418,9 +418,11 @@ class PlanarBiaxialExtension(SampleExperiment):
             F = mm.fiber_dirs
             if F is None:
                 continue
-            for f in F:
-                if f[2]!= 0:
-                    warnings.warn("The PlanarBiaxialExtension assumes that fibers are in the plane. This is not satisfied and the results may be spurious.")
+            MdiadM = 0
+            for fi in F:
+                MdiadM += np.outer(fi,fi)
+            if not np.array_equal(MdiadM,np.diag(np.diag(MdiadM))):
+                warnings.warn("The PlanarBiaxialExtension assumes that fibers are symmetric w.r.t. axes. This is not satisfied and the results may be spurious.")
 
         if not self._output in ['force','tension']+[item for sublist in mat_model._stressnames for item in sublist]:
             raise ValueError(self.__class__.__name__,": Unknown force_measure", force_measure,". It should be either force, tension, or one of the stress measures in the material model")
@@ -527,15 +529,12 @@ class TubeInflation(SampleExperiment):
             F = mm.fiber_dirs
             if F is None:
                 continue
-            if len(F)%2 !=0:
-                warnings.warn("Even number of fiber families are expected. The results may be spurious")
-            for f in F:
-                if f[0]!=0:
-                    warnings.warn("The TubeInflation assumes that fibers are aligned in a helical direction. This is not satisfied and the results may be spurious.")
-            for f1, f2 in zip(*[iter(F)]*2):
-                if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
-                    warnings.warn("The TubeInflation assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
-                    print(f1,f2)
+            MdiadM = 0
+            for fi in F:
+                MdiadM += np.outer(fi,fi)
+            if not np.array_equal(MdiadM,np.diag(np.diag(MdiadM))):
+                warnings.warn("The TubeInflation assumes that fibers are symmetric w.r.t. axes. This is not satisfied and the results may be spurious.")
+
         self._compute = partial(self._mat_model.stress,stresstype='cauchy',incomp=False,Fdiag=True)
         if self._inp == 'stretch':
             self._x0 = 1.
