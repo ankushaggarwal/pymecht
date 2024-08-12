@@ -292,13 +292,13 @@ class UniaxialExtension(SampleExperiment):
     force_measure: str
         The measure of force with the following options:
 
-        * 'force' : The force per unit area (default)
-        * 'cauchy' : The Cauchy stress
+        * 'force' : The force per unit area
+        * 'cauchy' : The Cauchy stress (default)
         * '1pk' or '1stpk' or 'firstpk' : The first Piola-Kirchhoff stress
         * '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
         
     '''
-    def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
+    def __init__(self,mat_model,disp_measure='stretch',force_measure='cauchy'):
         self._param_default  = dict(L0=1.,A0=1.)
         self._param_low_bd   = dict(L0=0.0001,A0=0.0001)
         self._param_up_bd    = dict(L0=1000.,A0=1000.)
@@ -418,9 +418,11 @@ class PlanarBiaxialExtension(SampleExperiment):
             F = mm.fiber_dirs
             if F is None:
                 continue
-            for f in F:
-                if f[2]!= 0:
-                    warnings.warn("The PlanarBiaxialExtension assumes that fibers are in the plane. This is not satisfied and the results may be spurious.")
+            MdiadM = 0
+            for fi in F:
+                MdiadM += np.outer(fi,fi)
+            if not np.array_equal(MdiadM,np.diag(np.diag(MdiadM))):
+                warnings.warn("The PlanarBiaxialExtension assumes that fibers are symmetric w.r.t. axes. This is not satisfied and the results may be spurious.")
 
         if not self._output in ['force','tension']+[item for sublist in mat_model._stressnames for item in sublist]:
             raise ValueError(self.__class__.__name__,": Unknown force_measure", force_measure,". It should be either force, tension, or one of the stress measures in the material model")
@@ -505,18 +507,18 @@ class TubeInflation(SampleExperiment):
         The measure of displacement with the following options:    
         
         * 'stretch' : Ratio of deformed to reference internal radius
-        * 'deltalr' : Change in internal radius
+        * 'deltar' : Change in internal radius
         * 'radius' : Deformed internal radius (default)
         * 'area' : Deformed internal area
         
     force_measure: str
         The measure of force with the following options:
         
-        * 'force' : Total force acting on the tube length (default) 
-        * 'pressure' : Internal pressure acting on the tube 
+        * 'force' : Total force acting on the tube length
+        * 'pressure' : Internal pressure acting on the tube (default)
         
     '''
-    def __init__(self,mat_model,disp_measure='radius',force_measure='force'):
+    def __init__(self,mat_model,disp_measure='radius',force_measure='pressure'):
         self._param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
         self._param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
         self._param_up_bd    = dict(Ri=1.5, thick=1., omega=0., L0=1.,lambdaZ=1.)
@@ -527,19 +529,16 @@ class TubeInflation(SampleExperiment):
             F = mm.fiber_dirs
             if F is None:
                 continue
-            if len(F)%2 !=0:
-                warnings.warn("Even number of fiber families are expected. The results may be spurious")
-            for f in F:
-                if f[0]!=0:
-                    warnings.warn("The TubeInflation assumes that fibers are aligned in a helical direction. This is not satisfied and the results may be spurious.")
-            for f1, f2 in zip(*[iter(F)]*2):
-                if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
-                    warnings.warn("The TubeInflation assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
-                    print(f1,f2)
+            MdiadM = 0
+            for fi in F:
+                MdiadM += np.outer(fi,fi)
+            if not np.array_equal(MdiadM,np.diag(np.diag(MdiadM))):
+                warnings.warn("The TubeInflation assumes that fibers are symmetric w.r.t. axes. This is not satisfied and the results may be spurious.")
+
         self._compute = partial(self._mat_model.stress,stresstype='cauchy',incomp=False,Fdiag=True)
         if self._inp == 'stretch':
             self._x0 = 1.
-        elif self._inp == 'deltalr':
+        elif self._inp == 'deltar':
             self._x0 = 0.
         elif self._inp == 'radius':
             self._x0 = self._Ri
@@ -586,9 +585,9 @@ class TubeInflation(SampleExperiment):
             return R/(self._k*self._lambdaZ*r**2)*self._thick*(sigma[1,1]-sigma[0,0])
         
         if self._output=='pressure':
-            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(inp)]
+            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(np.array(inp).flatten())]
         elif self._output =='force':
-            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri*2 for ri in self._stretch(inp)]
+            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri*2 for ri in self._stretch(np.array(inp).flatten())]
         if output_scalar:
             return output[0]
         if output_list:
@@ -1061,7 +1060,7 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
     sample: SampleExperiment
         The sample to which fiber directions need to be assigned
 
-    angle: float
+    angle: float or Param
         The angle of the fiber direction, default 0 
 
         for UniaxialExtension or PlanarBiaxialExtension
@@ -1077,6 +1076,8 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
         If True, the function prints the angle after assigning, default True
 
     '''
+    if type(angle) is Param:
+        angle = angle.value
     if degrees:
         angle_rad = np.deg2rad(angle)
     models = sample._mat_model.models
@@ -1101,7 +1102,7 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
     sample: SampleExperiment
         The sample to which fiber directions need to be assigned
 
-    angle: float
+    angle: float or Param
         The angle of the fiber directions (assigned as :math:`\pm` angle) 
 
         for UniaxialExtension or PlanarBiaxialExtension
@@ -1117,6 +1118,8 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
         If True, the function prints the angle after assigning, default True
 
     '''
+    if type(angle) is Param:
+        angle = angle.value
     if degrees:
         angle_rad = np.deg2rad(angle)
     models = sample._mat_model.models
