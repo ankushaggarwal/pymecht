@@ -5,6 +5,7 @@ import scipy.optimize as opt
 import warnings
 from scipy.integrate import quad
 from .ParamDict import *
+from .MatModel import MatModel
 
 class SampleExperiment:
     '''
@@ -47,7 +48,7 @@ class SampleExperiment:
         return_scalar, return_list = False, False
         if type(inp) is list:
             return_list = True
-        elif type(inp) is float or type(inp) is int:
+        elif isinstance(inp,(int,float)):
             inp = [inp]
             return_scalar = True    
         elif type(inp) is not np.ndarray:
@@ -88,16 +89,16 @@ class SampleExperiment:
         self._update(**params)
         return_scalar, return_list = False, False
         if type(forces) is float or type(forces) is int:
-            forces = np.array([forces])
+            forces = np.array([forces],dtype=float)
             return_scalar = True
         elif type(forces) is list:
-            forces = np.array(forces)
+            forces = np.array(forces,dtype=float)
             return_list = True
         elif type(forces) is not np.ndarray:
             raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
         
         def compare(displ,ybar,params):
-            return self.disp_controlled([displ],params)[0]-ybar
+            return self.disp_controlled(np.array([displ]),params)[0]-ybar
 
         #solve for the inp by solving the disp_controlled minus desired output
         forces_temp = forces.reshape(-1,self._ndim)
@@ -136,7 +137,7 @@ class SampleExperiment:
             x0 = sol.x.copy()
             y.append(sol.x)
         if return_scalar:
-            return y[0]
+            return y[0][0]
         if return_list:
             return y
         return np.array(y).reshape(np.shape(forces))
@@ -198,7 +199,7 @@ class LinearSpring(SampleExperiment):
     Parameters
     ----------
     mat_model: MatModel
-        A material model object of type MatModel (not used, provide MatModel() for simplicity)
+        A material model object of type MatModel (not used), default MatModel()
 
     disp_measure: str
         The measure of displacement with the following options:
@@ -215,21 +216,21 @@ class LinearSpring(SampleExperiment):
         * 'pressure' : The pressure
 
     '''
-    def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
-        self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.,thick=0.)
-        self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.,thick=0.)
-        self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.,thick=0.)
+    def __init__(self,mat_model=MatModel,disp_measure='stretch',force_measure='force'):
+        self._param_default = dict(L0=1.,f0=0.,k0=1.,A0=1.)
+        self._param_low_bd  = dict(L0=0.0001,f0=-100., k0=0.0001,A0=1.)
+        self._param_up_bd   = dict(L0=1000., f0= 100., k0=1000.,A0=1.)
         super().__init__(mat_model,disp_measure,force_measure)
         self._update(**self._param_default)
         if self._inp == 'stretch':
             self._x0 = 1.
-            self._compute1 = lambda x: self._k0*(x-1)*self._L0-self._f0
+            self._compute1 = lambda x: self._k0*(x-1)*self._L0+self._f0
         elif self._inp == 'deltal':
             self._x0 = 0.
-            self._compute1 = lambda x: self._k0*x-self._f0
+            self._compute1 = lambda x: self._k0*x+self._f0
         elif self._inp == 'length' or self._inp == 'radius':
             self._x0 = self._L0
-            self._compute1 = lambda x: self._k0*(x-self._L0)-self._f0
+            self._compute1 = lambda x: self._k0*(x-self._L0)+self._f0
         else:
             raise ValueError(self.__class__.__name__,": Unknown disp_measure", disp_measure,". It should be one of stretch, deltal, length, or radius")
         if not self._output in ['force','stress','pressure']:
@@ -291,13 +292,13 @@ class UniaxialExtension(SampleExperiment):
     force_measure: str
         The measure of force with the following options:
 
-        * 'force' : The force per unit area (default)
-        * 'cauchy' : The Cauchy stress
+        * 'force' : The force per unit area
+        * 'cauchy' : The Cauchy stress (default)
         * '1pk' or '1stpk' or 'firstpk' : The first Piola-Kirchhoff stress
         * '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress
         
     '''
-    def __init__(self,mat_model,disp_measure='stretch',force_measure='force'):
+    def __init__(self,mat_model,disp_measure='stretch',force_measure='cauchy'):
         self._param_default  = dict(L0=1.,A0=1.)
         self._param_low_bd   = dict(L0=0.0001,A0=0.0001)
         self._param_up_bd    = dict(L0=1000.,A0=1000.)
@@ -417,9 +418,11 @@ class PlanarBiaxialExtension(SampleExperiment):
             F = mm.fiber_dirs
             if F is None:
                 continue
-            for f in F:
-                if f[2]!= 0:
-                    warnings.warn("The PlanarBiaxialExtension assumes that fibers are in the plane. This is not satisfied and the results may be spurious.")
+            MdiadM = 0
+            for fi in F:
+                MdiadM += np.outer(fi,fi)
+            if not np.array_equal(MdiadM,np.diag(np.diag(MdiadM))):
+                warnings.warn("The PlanarBiaxialExtension assumes that fibers are symmetric w.r.t. axes. This is not satisfied and the results may be spurious.")
 
         if not self._output in ['force','tension']+[item for sublist in mat_model._stressnames for item in sublist]:
             raise ValueError(self.__class__.__name__,": Unknown force_measure", force_measure,". It should be either force, tension, or one of the stress measures in the material model")
@@ -475,7 +478,10 @@ class PlanarBiaxialExtension(SampleExperiment):
             return np.array([s1,s2])*self._thick
         return np.array([s1,s2])
 
-class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
+def UniformAxisymmetricTubeInflationExtension(*margs, **args):
+    raise ValueError("The name has changed from UniformAxisymmetricTubeInflationExtension to TubeInflation. Please use TubeInflation instead")
+
+class TubeInflation(SampleExperiment):
     '''
     For simulating uniform axisymmetric inflation of a tube
 
@@ -501,18 +507,18 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         The measure of displacement with the following options:    
         
         * 'stretch' : Ratio of deformed to reference internal radius
-        * 'deltalr' : Change in internal radius
+        * 'deltar' : Change in internal radius
         * 'radius' : Deformed internal radius (default)
         * 'area' : Deformed internal area
         
     force_measure: str
         The measure of force with the following options:
         
-        * 'force' : Total force acting on the tube length (default) 
-        * 'pressure' : Internal pressure acting on the tube 
+        * 'force' : Total force acting on the tube length
+        * 'pressure' : Internal pressure acting on the tube (default)
         
     '''
-    def __init__(self,mat_model,disp_measure='radius',force_measure='force'):
+    def __init__(self,mat_model,disp_measure='radius',force_measure='pressure'):
         self._param_default  = dict(Ri=1., thick=0.1, omega=0., L0=1.,lambdaZ=1.)
         self._param_low_bd   = dict(Ri=0.5, thick=0., omega=0., L0=1.,lambdaZ=1.)
         self._param_up_bd    = dict(Ri=1.5, thick=1., omega=0., L0=1.,lambdaZ=1.)
@@ -523,19 +529,16 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             F = mm.fiber_dirs
             if F is None:
                 continue
-            if len(F)%2 !=0:
-                warnings.warn("Even number of fiber families are expected. The results may be spurious")
-            for f in F:
-                if f[0]!=0:
-                    warnings.warn("The UniformAxisymmetricTubeInflationExtension assumes that fibers are aligned in a helical direction. This is not satisfied and the results may be spurious.")
-            for f1, f2 in zip(*[iter(F)]*2):
-                if (f1+f2)[1] != 0. and (f1+f2)[2] != 0.:
-                    warnings.warn("The UniformAxisymmetricTubeInflationExtension assumes that fibers are symmetric. This is not satisfied and the results may be spurious.")
-                    print(f1,f2)
+            MdiadM = 0
+            for fi in F:
+                MdiadM += np.outer(fi,fi)
+            if not np.array_equal(MdiadM,np.diag(np.diag(MdiadM))):
+                warnings.warn("The TubeInflation assumes that fibers are symmetric w.r.t. axes. This is not satisfied and the results may be spurious.")
+
         self._compute = partial(self._mat_model.stress,stresstype='cauchy',incomp=False,Fdiag=True)
         if self._inp == 'stretch':
             self._x0 = 1.
-        elif self._inp == 'deltalr':
+        elif self._inp == 'deltar':
             self._x0 = 0.
         elif self._inp == 'radius':
             self._x0 = self._Ri
@@ -566,7 +569,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
         output_scalar, output_list = False, False
-        if type(inp) is float or type(inp) is int:
+        if isinstance(inp,(int,float)):
             inp = [inp]
             output_scalar = True
         elif type(inp) is list:
@@ -579,12 +582,12 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
             sigma = self._compute(F,params) 
-            return R/self._lambdaZ/r**2*self._thick*(sigma[1,1]-sigma[0,0])
+            return R/(self._k*self._lambdaZ*r**2)*self._thick*(sigma[1,1]-sigma[0,0])
         
         if self._output=='pressure':
-            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(inp)]
+            output = [quad(integrand,0,1,args=(ri,params))[0] for ri in self._stretch(np.array(inp).flatten())]
         elif self._output =='force':
-            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri*2 for ri in self._stretch(inp)]
+            output = [quad(integrand,0,1,args=(ri,params))[0]*self._L0*self._lambdaZ*pi*ri*2 for ri in self._stretch(np.array(inp).flatten())]
         if output_scalar:
             return output[0]
         if output_list:
@@ -613,9 +616,21 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
+        output_scalar, output_list = False, False
+        if isinstance(inp,(int,float)):
+            inp = [inp]
+            output_scalar = True
+        elif type(inp) is list:
+            output_list = True
+        elif type(inp) is not np.ndarray:
+            raise ValueError("Input to outer_radius should be a scalar, a list, or a numpy array")
 
         Ro = self._Ri+self._thick
         ro = np.array([sqrt((Ro**2-self._Ri**2)/self._k/self._lambdaZ+ri**2) for ri in self._stretch(inp)])
+        if output_scalar:
+            return ro[0]
+        if output_list:
+            return ro
         return ro.reshape(np.shape(inp))
 
     def _stretch(self,l): #this returns internal radius instead
@@ -663,7 +678,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
         elif params is not None and type(params[list(params.keys())[0]]) is Param:
             raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         self._update(**params)
-        if type(inp) is float or type(inp) is int:
+        if isinstance(inp,(int,float)):
             inp = [inp]
         elif type(inp) is not np.ndarray and type(inp) is not list:
             raise ValueError("Input to cauchy_stress should be a scalar, a list, or a numpy array")
@@ -680,7 +695,7 @@ class UniformAxisymmetricTubeInflationExtension(SampleExperiment):
             r = sqrt((R**2-self._Ri**2)/self._k/self._lambdaZ+ri**2)
             F = self._defGrad(r,R)
             sigma = self._compute(F,params) 
-            return R/self._lambdaZ/r**2*self._thick*(sigma[1,1]-sigma[0,0])
+            return R/(self._k*self._lambdaZ*r**2)*self._thick*(sigma[1,1]-sigma[0,0])
 
         Stresses = []
         if pressure is None:
@@ -753,22 +768,30 @@ class LayeredSamples:
         '''
         if params is None:
             params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         #if len(params) != self._nsamples:
         #    raise ValueError("The params argument is of different length than the number of layers. This is not allowed")
-        total_force = 0.
-        if type(params) is ParamDict:
-            createParamDict = True
-        else:
-            createParamDict = False
+        return_list = False
+        if type(inp) is float or type(inp) is int or type(inp) is np.ndarray:
+            total_force = 0.
+        elif type(inp) is list:
+            total_force = np.zeros(len(inp))
+            inp = np.array(inp)
+            return_list = True
         for i,s in enumerate(self._samples):
-            parami = ParamDict() if createParamDict else {}
+            parami = {}
             for k in self._param_names[i]:
                 parami[self._param_names[i][k]] = params[k]
             total_force += s.disp_controlled(inp,parami) #TODO this would not be correct for stresses
 
+        if return_list:
+            return total_force.to_list()
         return total_force
 
-    def force_controlled(self,forces,params,x0=None): #TODO update this based on SampleExperiment.force_controlled
+    def force_controlled(self,forces,params=None,x0=None): #TODO update this based on SampleExperiment.force_controlled
         '''
         Simulates the experiment with the force measure as the input (solves via Newton iteration)
 
@@ -789,9 +812,24 @@ class LayeredSamples:
             The resulting deformation measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
         '''
         if params is None:
-            params = self.parameters 
+            params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
+
+        return_scalar, return_list = False, False
+        if type(forces) is float or type(forces) is int:
+            forces = np.array([forces],dtype=float)
+            return_scalar = True
+        elif type(forces) is list:
+            forces = np.array(forces,dtype=float)
+            return_list = True
+        elif type(forces) is not np.ndarray:
+            raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
+        
         def compare(displ,ybar,params):
-            return self.disp_controlled(displ,params)[0]-ybar
+            return self.disp_controlled(displ,params)-ybar
 
         #solve for the inp by solving the disp_controlled minus desired output
         forces_temp = forces.reshape(-1,self._ndim)
@@ -801,10 +839,38 @@ class LayeredSamples:
             x0=self._samples[0]._x0 + 1e-5
         for i in range(ndata):
             sol = opt.root(compare,x0,args=(forces_temp[i],params))
+            if not sol.success or any(np.abs(sol.r)>1e5):
+                if ndata==1 or i==0:
+                    niter=10
+                    for j in range(1,niter+1):
+                        df = forces_temp[i]*j/niter
+                        #print(df,x0)
+                        sol = opt.root(compare,x0,args=(df,params))
+                        if not sol.success or any(np.abs(sol.r)>1e5):
+                            break
+                        x0 = sol.x.copy()
+                    #raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
+                else:
+                    NIter=[5,10,20]
+                    for niter in NIter:
+                        df = (forces_temp[i]-forces_temp[i-1])/niter
+                        x0j = x0.copy()
+                        for j in range(niter):
+                            sol = opt.root(compare,x0j,args=(forces_temp[i-1]+(j+1)*df,params))
+                            #print('subiter',j,'/',niter,forces_temp[i-1]+(j+1)*df,params,x0,sol)
+                            if not sol.success or any(np.abs(sol.r)>1e5):
+                                break
+                            x0j = sol.x.copy()
+                        if sol.success:
+                            break
             if not sol.success:
                 raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
             x0 = sol.x.copy()
             y.append(sol.x)
+        if return_scalar:
+            return y[0][0]
+        if return_list:
+            return y
         return np.array(y).reshape(np.shape(forces))
 
     def __str__(self):
@@ -872,21 +938,21 @@ class LayeredTube(LayeredSamples):
 
     Parameters
     ----------
-    *samplesList: list of UniformAxisymmetricTubeInflationExtension
-        Any number of UniformAxisymmetricTubeInflationExtension objects constituting the layers
+    *samplesList: list of TubeInflation
+        Any number of TubeInflation objects constituting the layers
 
     Examples
     --------
         >>> import pymecht as pmt
         >>> mat_model = pmt.MatModel('nh')
-        >>> s1 = pmt.UniformAxisymmetricTubeInflationExtension(mat_model)
-        >>> s2 = pmt.UniformAxisymmetricTubeInflationExtension(mat_model)
-        >>> s3 = pmt.UniformAxisymmetricTubeInflationExtension(mat_model)
+        >>> s1 = pmt.TubeInflation(mat_model)
+        >>> s2 = pmt.TubeInflation(mat_model)
+        >>> s3 = pmt.TubeInflation(mat_model)
         >>> layered_sample = pmt.LayeredPlanarBiaxial(s1,s2,s3)
     '''
     def __init__(self,*samplesList):
         super().__init__(*samplesList)
-        if not all([isinstance(s,UniformAxisymmetricTubeInflationExtension) or isinstance(s,LinearSpring) for s in self._samples]):
+        if not all([isinstance(s,TubeInflation) or isinstance(s,LinearSpring) for s in self._samples]):
             raise ValueError("The class only accepts objects of type SampleExperiment")
         for i,s in enumerate(samplesList):
             if i==0:
@@ -897,22 +963,22 @@ class LayeredTube(LayeredSamples):
         if params is None:
             params = self.parameters
         if type(params) is ParamDict:
-            createParamDict = True
-        else:
-            createParamDict = False
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
         return_scalar, return_list = False, False
         if type(inp) is list:
             return_list = True
-        elif type(inp) is float or type(inp) is int:
+        elif isinstance(inp,(int,float)):
             return_scalar = True
             inp = [inp]
         elif type(inp) is not np.ndarray:
             raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
-        inp = np.array(inp)
+        inp = np.array(inp,dtype=float)
         total_force = np.zeros_like(inp)
         i_input = inp
         for i,s in enumerate(self._samples):
-            parami = ParamDict() if createParamDict else {}
+            parami = {}
             for k in self._param_names[i]:
                 parami[self._param_names[i][k]] = params[k]
             total_force += s.disp_controlled(i_input,parami)
@@ -936,24 +1002,30 @@ class LayeredTube(LayeredSamples):
             The parameters of the material model
 
         n: int
-            The number of points along the thickness to report stresses at, default is 10
+            The number of points along the thickness (of each layer) to report stresses at, default is 10
 
         Returns
         -------
         tuple (xi,Stresses)
             xi : Normalized thickness values at which the stresses are reported (n points)
 
-            Stresses : The Cauchy stress tensors at the thickness locations (nX3X3 array)
+            Stresses : The Cauchy stress tensors at the thickness locations ((nXnlayers)X3X3 array)
 
         '''
         if params is None:
             params = self.parameters
-        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculatioself._outputfor s in self._samples:
+        if type(params) is ParamDict:
+            params = params._val()
+        #temporarily change the output to pressure and calculate the pressure related to the input, which will be used for stress calculation
+        for s in self._samples:
             s._output = 'pressure'
-        pressure = self.disp_controlled(inp,params)[0]
+        pressure = self.disp_controlled(inp,params)
 
-        total_thick = 0.
-        for s in params: total_thick+=s['thick']
+        thick = []
+        for i in range(len(self._samples)): 
+            thick.append(params['thick_layer'+str(i)])
+        thick = np.array(thick)
+        total_thick = np.sum(thick)
 
         XI, Stress = [],[]
         i_input = inp
@@ -961,15 +1033,17 @@ class LayeredTube(LayeredSamples):
         for i,s in enumerate(self._samples):
             if isinstance(s,LinearSpring):
                 continue
-            xi,stress = s.cauchy_stress(i_input,params[i],n,pressure=pressure)
-            pressure -= s.disp_controlled(i_input,params[i])[0]
+            parami = {}
+            for k in self._param_names[i]:
+                parami[self._param_names[i][k]] = params[k]
+            xi,stress = s.cauchy_stress(i_input,parami,n,pressure=pressure)
+            pressure -= s.disp_controlled(i_input,parami)
             if not first_layer:
-                xi = [max(XI)+x*s.thick/total_thick for x in xi]
-                first_layer=False
+                xi = [max(XI)+x*thick[i]/total_thick for x in xi]
             else:
-                xi = [x*s.thick/total_thick for x in xi]
-            i_input = s.outer_radius(i_input,params[i])
-            print(i_input)
+                xi = [x*thick[i]/total_thick for x in xi]
+                first_layer=False
+            i_input = s.outer_radius(i_input,parami)
             XI.extend(xi)
             Stress.extend(stress)
         for s in self._samples:
@@ -986,13 +1060,13 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
     sample: SampleExperiment
         The sample to which fiber directions need to be assigned
 
-    angle: float
+    angle: float or Param
         The angle of the fiber direction, default 0 
 
         for UniaxialExtension or PlanarBiaxialExtension
             with respect to the x-axis and in the xy plane
 
-        for UniformAxisymmetricTubeInflationExtension
+        for TubeInflation
             with respect to the theta-axis and in the theta-z plane
 
     degrees: bool
@@ -1002,15 +1076,17 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
         If True, the function prints the angle after assigning, default True
 
     '''
+    if type(angle) is Param:
+        angle = angle.value
     if degrees:
         angle_rad = np.deg2rad(angle)
     models = sample._mat_model.models
-    if isinstance(sample,UniformAxisymmetricTubeInflationExtension):
+    if isinstance(sample,TubeInflation):
         vec = np.array([0,np.cos(angle_rad), np.sin(angle_rad)])
     elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension):
         vec = np.array([np.cos(angle_rad), np.sin(angle_rad),0])
     else:
-        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and UniformAxisymmetricTubeInflationExtension")
+        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and TubeInflation")
     for m in models:
         m.fiber_dirs = vec
     if verbose:
@@ -1026,13 +1102,13 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
     sample: SampleExperiment
         The sample to which fiber directions need to be assigned
 
-    angle: float
+    angle: float or Param
         The angle of the fiber directions (assigned as :math:`\pm` angle) 
 
         for UniaxialExtension or PlanarBiaxialExtension
             with respect to the x-axis and in the xy plane
         
-        for UniformAxisymmetricTubeInflationExtension
+        for TubeInflation
             with respect to the theta-axis and in the theta-z plane
 
     degrees: bool
@@ -1042,15 +1118,17 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
         If True, the function prints the angle after assigning, default True
 
     '''
+    if type(angle) is Param:
+        angle = angle.value
     if degrees:
         angle_rad = np.deg2rad(angle)
     models = sample._mat_model.models
-    if isinstance(sample,UniformAxisymmetricTubeInflationExtension):
+    if isinstance(sample,TubeInflation):
         vec = [np.array([0,np.cos(angle_rad), np.sin(angle_rad)]), np.array([0,np.cos(-angle_rad), np.sin(-angle_rad)])]
     elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension):
         vec = [np.array([np.cos(angle_rad), np.sin(angle_rad),0]), np.array([np.cos(-angle_rad), np.sin(-angle_rad),0])]
     else:
-        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and UniformAxisymmetricTubeInflationExtension")
+        raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and TubeInflation")
     for m in models:
         m.fiber_dirs = vec
     if verbose:

@@ -38,7 +38,7 @@ print(forces,sample.force_controlled(forces,params))
 
 
 mm[0].fiber_dirs = [np.array([0,cos(0.1),sin(0.1)]),np.array([0,cos(-0.1),sin(-0.1)])]
-sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
+sample = TubeInflation(material,force_measure='pressure')
 print(sample.disp_controlled([1.1],sample.parameters))
 print(sample.force_controlled(np.array([-0.29167718]),sample.parameters))
 
@@ -61,5 +61,5 @@ print((erfi(l12(l))-erfi(l1(l)))*4*parameters['k1_0']*sqrt(pi)*cos(0.1)**2/4./sq
 print((result(l2)-result(l))*parameters['mu_1'])
 
 #material = MatModel('nh')
-sample = UniformAxisymmetricTubeInflationExtension(material,force_measure='pressure')
+sample = TubeInflation(material,force_measure='pressure')
 print(sample.disp_controlled([1.1],parameters))

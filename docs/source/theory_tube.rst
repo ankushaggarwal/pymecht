@@ -1,5 +1,5 @@
 =========================================================
-UniformAxisymmetricTubeInflationExtension and LayeredTube
+TubeInflation and LayeredTube
 =========================================================
 
 
@@ -33,7 +33,7 @@ as:
 
 .. math::
 
-   \Delta p = -\int\limits_{R_i}^{R_i+H}\frac{R}{\lambda_Z r^2} \left( \bar{\sigma}_{rr} - \bar{\sigma}_{\theta\theta} \right){\textrm{d}R}.
+   \Delta p = -\int\limits_{R_i}^{R_i+H}\frac{1}{\lambda_{\theta} \lambda_Z r} \left( \lambda_r \frac{\partial \Psi}{\partial {\lambda_r}} - \lambda_{\theta}\frac{\partial \Psi}{\partial {\lambda_{\theta}}} \right){\textrm{d}R}  = -\int\limits_{R_i}^{R_i+H}\frac{R}{\kappa\lambda_Z r^2} \left( \bar{\sigma}_{rr} - \bar{\sigma}_{\theta\theta} \right){\textrm{d}R}.
    \label{main-eq}
 
 This integral is evaluated numerically. If the fiber directions are not
@@ -62,10 +62,10 @@ where :math:`\bar{\sigma}_{rr}(R)` is the Cauchy normal stress in the
 (first) radial direction without the Lagrange multiplier term. Once
 :math:`{p}(R)` is known, all components of stresse tensors at any radius 
 can be calculated using the usual definition of Cauchy stress via 
-:py:meth:`SampleExperiment.UniformAxisymmetricTubeInflationExtension.cauchy_stress` 
+:py:meth:`SampleExperiment.TubeInflation.cauchy_stress` 
 function.
 
-:py:class:`UniformAxisymmetricTubeInflationExtension` samples can be “layered” via
+:py:class:`TubeInflation` samples can be “layered” via
 :py:class:`LayeredTube`. Such a setup can be used for representing, for example,
 tissues that have multiple layers with different material models and
 possibly even incompatible reference radius. The result would be that
