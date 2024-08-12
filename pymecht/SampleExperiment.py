@@ -727,10 +727,10 @@ class LayeredSamples:
         self._ndim = samplesList[0]._ndim
         #check if all outputs and inputs are the same
         if len(set(outputs)) > 1:
-            raise ValueError("The outputs for all the layers must be the same")
+            raise ValueError("The force_measure for all the layers must be the same")
         self._inp = inputs[0]
         if len(set(inputs)) > 1:
-            raise ValueError("The inputs for all the layers must be the same")
+            raise ValueError("The disp_measure for all the layers must be the same")
         self._output = outputs[0]
         self._param_names, self._params = [], ParamDict()
         for i,s in enumerate(self._samples):
@@ -904,8 +904,10 @@ class LayeredUniaxial(LayeredSamples):
         super().__init__(*samplesList)
         if not all([isinstance(s,UniaxialExtension) for s in self._samples]):
             raise ValueError("The class only accepts objects of type UniaxialExtension")
+        if self._inp != 'length':
+            warnings.warn("The disp_measure of the LayeredUniaxial should be length to avoid ambiguity. The results may be spurious")
         if self._output != 'force':
-            warnings.warn("The output of the LayeredUniaxial should be force, as stresses are not additive. The results may be spurious")
+            warnings.warn("The force_measure of the LayeredUniaxial should be force, as stresses are not additive. The results may be spurious")
 
 class LayeredPlanarBiaxial(LayeredSamples):
     '''
@@ -929,8 +931,10 @@ class LayeredPlanarBiaxial(LayeredSamples):
         super().__init__(*samplesList)
         if not all([isinstance(s,PlanarBiaxialExtension) for s in self._samples]):
             raise ValueError("The class only accepts objects of type PlanarBiaxialExtension")
+        if self._inp != 'length':
+            warnings.warn("The disp_measure of the LayeredPlanarBiaxial should be length to avoid ambiguity. The results may be spurious")
         if self._output != 'force':
-            warnings.warn("The output of the LayeredPlanarBiaxial should be force, as stresses are not additive. The results may be spurious")
+            warnings.warn("The force_measure of the LayeredPlanarBiaxial should be force, as stresses are not additive. The results may be spurious")
 
 class LayeredTube(LayeredSamples):
     '''
