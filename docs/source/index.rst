@@ -33,6 +33,8 @@ pyMechT's documentation
    Examples/paramfitter-example.ipynb
    Examples/randomparam-example.ipynb
    Examples/mcmc-example.ipynb
+   Examples/layered-uniax.ipynb
+   Examples/layered-biax.ipynb
    LayeredTube
 
 .. toctree::
