@@ -472,6 +472,25 @@ class NH(InvariantHyperelastic):
     def partial_deriv(self,mu,**extra_args):
         return mu/2., None, None, None
 
+class MR(InvariantHyperelastic):
+    '''
+    Mooney-Rivlin model
+    
+    .. math::
+        \\Psi = c_1(I_1-3) + c_2(I_2-3)
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(c1=1.,c2=1.)
+        self.param_low_bd   = dict(c1=0.0001,c2=0.)
+        self.param_up_bd    = dict(c1=100.,c2=100.)
+
+    def _energy(self,c1, c2, **extra_args):
+        return c1*(self.I1-3) + c2*(self.I2-3) 
+
+    def partial_deriv(self,c1, c2, **extra_args):
+        return c1, c2, None, None
+
 class YEOH(InvariantHyperelastic):
     '''
     Yeoh model
