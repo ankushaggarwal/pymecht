@@ -1,7 +1,7 @@
 from Examples import *
 import pytest
 
-mat_model_list = ['nh', 'mn', 'yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','volPenalty','polyI4','ArrudaBoyce','Gent','splineI1','splineI1I4','StructModel']
+mat_model_list = ['nh', 'mr', 'yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','volPenalty','polyI4','ArrudaBoyce','Gent','splineI1','splineI1I4','StructModel']
 samples_list = [UniaxialExtension,PlanarBiaxialExtension,TubeInflation, LinearSpring]
 
 def test_mat_creation():
