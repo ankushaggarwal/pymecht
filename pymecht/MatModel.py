@@ -1048,9 +1048,49 @@ class StructModel:
 
 class ARB(InvariantHyperelastic):
     '''
-    Model of ARBitrary complexity for development purposes.
-    Will be developed based on symbolic differentiation.
-    Psi = <USER-INPUT FUNCTION AS STRING>
+    A material model class that allows the arbitrary definition of any strain energy density function (SEDF).
+    Sympy's symbolic differentiation is used to calculate the partial derivatives of the SEDF with respect to the invariants I1, I2, J, and I4.
+    The SEDF is provided as a string as a function of the invariants I1, I2, J, and I4, alongside initial guesses and upper/lower bounds for the parameters.
+    The SEDF an initial guess for the parameters must be provided to identify parameters of the material model.
+    If the strings are not provided, the user will be prompted to provide them.
+
+    The parsed strings have the following functions replaced by their respective numpy equivalents:
+            * exp -> np.exp
+            * sqrt -> np.sqrt
+            * log -> np.log
+            * log10 -> np.log10
+            * log2 -> np.log2
+            * sin -> np.sin
+            * cos -> np.cos
+            * tan -> np.tan
+            * arcsin -> np.arcsin
+            * asin -> np.asin
+            * arccos -> np.arccos
+            * acos -> np.acos
+            * arctan -> np.arctan
+            * atan -> np.atan
+            * hypot -> np.hypot
+            * arctan2 -> np.arctan2
+            * sinh -> np.sinh
+            * cosh -> np.cosh
+            * tanh -> np.tanh
+            * arcsinh -> np.arcsinh
+            * asinh -> np.asinh
+            * arccosh -> np.arccosh
+            * acosh -> np.acosh
+            * arctanh -> np.arctanh
+            * atanh -> np.atanh
+
+    Example
+    -------
+        >>> from MatModel import *
+        >>> mat = NH() #A neo-Hookean model
+        >>> model = pmt.ARB('mu/2*(I1-3)','mu=1','mu=0.01','mu=10')
+        >>> mat = pmt.MatModel(model)
+        >>> mat2 = pmt.MatModel('NH')
+        >>> model = pmt.ARB('mu/2*(I1-3) + (I4-1)**2 + (I4-1)**3','mu=1','mu=0.01','mu=10')
+        >>> mat = pmt.MatModel(model)
+        >>> model.fiber_dirs = np.array([0.5,0.5,0])
     '''
     def __init__(self, _W='', _init_guess='', _low_bound='', _up_bound='', dparams=False):
         super().__init__()
@@ -1176,6 +1216,15 @@ class ARB(InvariantHyperelastic):
         return eval(SEDF)
 
     def partial_deriv(self,**extra_args):
+        '''
+        Returns the partial derivatives of the SEDF.
+        In the case of dPsidIi(I4), for i < 4, the partial derivative is summed over all fibre directions
+
+        Returns
+        -------
+        list of floats
+            the partial derivative of the SEDF with respect to I1, I2, J, and I4.
+        '''
         # Evaluate the numerical values of the partial derivatives from the
         # strings in self. Need some funky syntax to allow eval() to have
         # access to the variable names in extra_args. It unpacks these values
