@@ -1075,7 +1075,7 @@ class ARB(InvariantHyperelastic):
                 else:
                     self.param_low_bd   = eval('dict('+input("Please enter lower bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
                 if len(self.param_low_bd) == 0:
-                    print("Warning: Lower bound not set for parameters")
+                    warnings.warn("Warning: Lower bound not set for parameters")
                 success = True
             except:
                 print("Invalid format. Please try again.")
@@ -1087,7 +1087,7 @@ class ARB(InvariantHyperelastic):
                 else:
                     self.param_up_bd    = eval('dict('+input("Please enter upper bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=100.,c2=100.,c3=100.,c4=100.)
                 if len(self.param_up_bd) == 0:
-                    print("Warning: Upper bound not set for parameters")
+                    warnings.warn("Warning: Upper bound not set for parameters")
                 success = True
             except:
                 print("Invalid format. Please try again.")
