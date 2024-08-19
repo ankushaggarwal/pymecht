@@ -1132,6 +1132,7 @@ class ARB(InvariantHyperelastic):
         
         # Update attribute of class.
         self.denergy_formdI = dSEDFdI
+        self.I4term = ('I4' in self.energy_form)
 
         # Calculate the partial derivatives wrt the linear and nonlinear params
         if dparams == True:
