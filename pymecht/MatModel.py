@@ -16,6 +16,7 @@ class MatModel:
     The passed strings can have lower/upper case. The following models are available:
         
             * 'NH': Neo-Hookean model
+            * 'MR': Mooney-Rivlin model
             * 'YEOH': Yeoh model
             * 'LS': Lee-Sacks model
             * 'MN': May-Newman model
@@ -28,6 +29,7 @@ class MatModel:
             * 'volPenalty': A penalty model for volumetric change
             * 'ArrudaBoyce': Arruda-Boyce model
             * 'Gent': Gent model
+            * 'splineI1': A spline model of I1
             * 'splineI1I4': A spline model of I1 and I4
             * 'StructModel': A structural model with fiber distribution
 
