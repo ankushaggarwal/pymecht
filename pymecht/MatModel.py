@@ -1151,6 +1151,7 @@ class ARB(InvariantHyperelastic):
         function = [i.replace("I1","self.I1") for i in function]
         function = [i.replace("I2","self.I2") for i in function]
         function = [i.replace("I3","self.I3") for i in function]
+        function = [i.replace("J","self.J") for i in function]
         function = [i.replace("I4","self.I4") for i in function]
         function = [i.replace("exp","np.exp") for i in function]
         function = [i.replace("sqrt","np.sqrt") for i in function]
