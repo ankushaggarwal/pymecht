@@ -1183,8 +1183,11 @@ class ARB(InvariantHyperelastic):
         dSEDFdI = [eval(i, {"self": self, "np": np,**extra_args}) for i in self.denergy_formdI]
         # Not been able to cast this using list comprehension. It sets unused
         # entries to be None.
+        # Partial derivatives are always summed over all fibre directions.
         for i in range(len(dSEDFdI)):
             if "I%s"%(i+1) not in self.energy_form:
                 dSEDFdI[i] = None
+            else:
+                dSEDFdI[i] = np.sum(dSEDFdI[i])
         
         return dSEDFdI
