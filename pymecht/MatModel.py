@@ -1148,13 +1148,22 @@ class ARB(InvariantHyperelastic):
         return
 
     def replaceSympySyntax(self, function):
+        functions = ["exp", "sqrt", "log", "log10", "log2", \
+                     "sin", "cos", "tan", \
+                     "arcsin", "asin", "arccos", "acos", "arctan", "atan", \
+                     "hypot", \
+                     "arctan2","sinh","cosh","tanh" \
+                     "arcsinh", "sinh", "arccosh", "acosh", "arctanh", "atanh"]
+
         function = [i.replace("I1","self.I1") for i in function]
         function = [i.replace("I2","self.I2") for i in function]
         function = [i.replace("I3","self.I3") for i in function]
         function = [i.replace("J","self.J") for i in function]
         function = [i.replace("I4","self.I4") for i in function]
-        function = [i.replace("exp","np.exp") for i in function]
-        function = [i.replace("sqrt","np.sqrt") for i in function]
+
+        for func_string in functions:
+            function = [i.replace(func_string,"np."+func_string) for i in function]
+
         return function
 
     def _energy(self,**extra_args):
