@@ -1168,7 +1168,7 @@ class ARB(InvariantHyperelastic):
 
     def _energy(self,**extra_args):
         # WARNING: UNTESTED
-        print("Warning: Arbitrary MatModel has not been tested. Proceed with caution!")
+        warnings.warn("Warning: Arbitrary MatModel has not been tested. Proceed with caution!")
         for name in self.param_names:
             exec(name + "=" + "%s" %(extra_args[name]))
         
