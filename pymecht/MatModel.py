@@ -1162,13 +1162,10 @@ class ARB(InvariantHyperelastic):
     Example
     -------
         >>> from MatModel import *
-        >>> mat = NH() #A neo-Hookean model
-        >>> model = pmt.ARB('mu/2*(I1-3)','mu=1','mu=0.01','mu=10')
+        >>> model = pmt.ARB('mu/2.*(I1-3)','mu=1.','mu=0.01','mu=10.')
         >>> mat = pmt.MatModel(model)
-        >>> mat2 = pmt.MatModel('NH')
-        >>> model = pmt.ARB('mu/2*(I1-3) + (I4-1)**2 + (I4-1)**3','mu=1','mu=0.01','mu=10')
-        >>> mat = pmt.MatModel(model)
-        >>> model.fiber_dirs = np.array([0.5,0.5,0])
+        >>> F = np.random.rand
+        >>> mat.stress(F)
     '''
     def __init__(self, _W='', _init_guess='', _low_bound='', _up_bound='', dparams=False):
         super().__init__()
