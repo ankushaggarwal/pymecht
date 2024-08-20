@@ -32,6 +32,7 @@ class MatModel:
             * 'splineI1': A spline model of I1
             * 'splineI1I4': A spline model of I1 and I4
             * 'StructModel': A structural model with fiber distribution
+            * 'ARB': Arbitrary model with user-defined strain energy density function
 
     Multiple models can be added together to create a composite model, 
     with each model having its own fiber(s) and parameters.
