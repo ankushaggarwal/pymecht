@@ -16,6 +16,7 @@ class MatModel:
     The passed strings can have lower/upper case. The following models are available:
         
             * 'NH': Neo-Hookean model
+            * 'MR': Mooney-Rivlin model
             * 'YEOH': Yeoh model
             * 'LS': Lee-Sacks model
             * 'MN': May-Newman model
@@ -28,6 +29,7 @@ class MatModel:
             * 'volPenalty': A penalty model for volumetric change
             * 'ArrudaBoyce': Arruda-Boyce model
             * 'Gent': Gent model
+            * 'splineI1': A spline model of I1
             * 'splineI1I4': A spline model of I1 and I4
             * 'StructModel': A structural model with fiber distribution
 
@@ -472,6 +474,25 @@ class NH(InvariantHyperelastic):
     def partial_deriv(self,mu,**extra_args):
         return mu/2., None, None, None
 
+class MR(InvariantHyperelastic):
+    '''
+    Mooney-Rivlin model
+    
+    .. math::
+        \\Psi = c_1(I_1-3) + c_2(I_2-3)
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(c1=1.,c2=1.)
+        self.param_low_bd   = dict(c1=0.0001,c2=0.)
+        self.param_up_bd    = dict(c1=100.,c2=100.)
+
+    def _energy(self,c1, c2, **extra_args):
+        return c1*(self.I1-3) + c2*(self.I2-3) 
+
+    def partial_deriv(self,c1, c2, **extra_args):
+        return c1, c2, None, None
+
 class YEOH(InvariantHyperelastic):
     '''
     Yeoh model
@@ -867,6 +888,63 @@ class Gent(InvariantHyperelastic):
 
     def partial_deriv(self,mu,Jm,**extra_args):
         return 0.5*mu/(1 - (self.I1 - 3)/Jm), None, None, None
+
+class splineI1(InvariantHyperelastic):
+    '''
+    Spline-based model in I1 for data driven models (without an analytical expression)
+    
+    Psi is loaded from a scipy spline object
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(alpha=1)
+        self.param_low_bd   = dict(alpha=-10)
+        self.param_up_bd    = dict(alpha=10)
+        self._warn = False
+        self.normalize()
+
+    def set(self,W,alpha=1):
+        '''
+        Set the spline function and the weight
+        
+        Parameters
+        ----------
+
+        W : scipy.interpolate._bsplines.BSpline
+            The spline function
+        
+        alpha : float
+            The weight of W in the energy function (i.e., :math:`\\Psi = \\alpha W(I1)`)
+        
+        Returns
+        -------
+        None
+
+        '''
+        if not isinstance(W,scipy.interpolate._bsplines.BSpline):
+            raise ValueError("W must be a RectBivariateSpline")
+        x = W.t
+        self.minx,self.maxx = np.min(x), np.max(x)
+        self._W = W
+        self._dWdI1 = W.derivative()
+        self._alpha = alpha
+
+    def _energy(self,alpha=None,**extra_args):
+        if alpha is None:
+            alpha=self._alpha
+        if self._warn and (self.I1<self.minx or self.I1>self.maxx):
+            w = "Outside the training range; be careful interpreting the results "+str(self.I1)+"\n"+str(self.minx)+" "+str(self.maxx)
+            warnings.warn(w)
+        return alpha*np.sum(self._W(self.I1))
+
+    def partial_deriv(self,alpha=None,**extra_args):
+        if alpha is None:
+            alpha=self._alpha
+        if self._warn and (self.I1<self.minx or self.I1>self.maxx):
+            w = "Outside the training range; be careful interpreting the results "+str(self.I1)+"\n"+str(self.minx)+" "+str(self.maxx)
+            warnings.warn(w)
+        a = self._dWdI1(self.I1)
+        return alpha*np.sum(a),None,None,None
 
 class splineI1I4(InvariantHyperelastic):
     '''
