@@ -1312,7 +1312,11 @@ class ARB(InvariantHyperelastic):
         # entries to be None.
         # Partial derivatives are always summed over all fibre directions.
         for i in range(len(dSEDFdI)):
-            if "I%s"%(i+1) not in self.energy_form:
+            if i == 2:
+                invariant_string = "J"
+            else:
+                invariant_string = "I%s"%(i+1)
+            if invariant_string not in self.energy_form:
                 dSEDFdI[i] = None
             elif i < 3:
                 dSEDFdI[i] = np.sum(dSEDFdI[i])
