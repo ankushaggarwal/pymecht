@@ -1224,7 +1224,7 @@ class ARB(InvariantHyperelastic):
         import sympy as sp
         
         # Define invariants as symbols
-        I1,I2,I3,J,I4 = sp.symbols('I1 I2 I3 J I4')
+        I1,I2,J,I4 = sp.symbols('I1 I2 J I4')
         
         # Construct a string of the symbols to define as such without needing
         # numerical values
@@ -1239,7 +1239,7 @@ class ARB(InvariantHyperelastic):
         # Take symbolic derivatives
         dSEDFdI =   sp.diff(SEDF,I1), \
                     sp.diff(SEDF,I2), \
-                    sp.diff(SEDF,I3) + sp.diff(SEDF,J), \
+                    sp.diff(SEDF,J), \
                     sp.diff(SEDF,I4)
         
         # Store derivatives as strings
@@ -1275,8 +1275,8 @@ class ARB(InvariantHyperelastic):
 
         function = [i.replace("I1","self.I1") for i in function]
         function = [i.replace("I2","self.I2") for i in function]
-        function = [i.replace("I3","self.I3") for i in function]
         function = [i.replace("J","self.J") for i in function]
+        function = [i.replace("I3","self.J**2") for i in function]
         function = [i.replace("I4","self.I4") for i in function]
 
         for func_string in functions:
