@@ -40,7 +40,7 @@ def test_combined_arbitrary_MatModel():
     assert (mat.stress(random_F)-mat2.stress(random_F)) == pytest.approx(np.zeros((3,3)))
 
 # Define a random deformation gradient
-random_F = np.random.rand(3, 3)
+random_F = np.array([[0.85862107, 0.91032637, 0.80119846], [0.16268142, 0.8596134, 0.17696991], [0.93450122, 0.30132757, 0.55042838]])
 
 test_arbitrary_MatModel_I1()
 test_arbitrary_MatModel_I2()
