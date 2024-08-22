@@ -73,7 +73,7 @@ def test_layered_samples():
     material = MatModel('goh','nh')
     mm = material.models
     mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
-    sample = LayeredUniaxial(UniaxialExtension(material),UniaxialExtension(material))
+    sample = LayeredUniaxial(UniaxialExtension(material, disp_measure='length', force_measure='force'),UniaxialExtension(material,disp_measure='length', force_measure='force'))
     assert isinstance(sample, LayeredSamples)
     assert len(sample._samples) == 2
     assert sample._samples[0]._mat_model == material
@@ -81,7 +81,7 @@ def test_layered_samples():
     assert sample.disp_controlled(sample._samples[0]._x0, sample.parameters) == pytest.approx(0.0)
     assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) == pytest.approx(sample._samples[0]._x0)
 
-    sample = LayeredPlanarBiaxial(PlanarBiaxialExtension(material,force_measure='force'),PlanarBiaxialExtension(material,force_measure='force'))
+    sample = LayeredPlanarBiaxial(PlanarBiaxialExtension(material,disp_measure='length',force_measure='force'),PlanarBiaxialExtension(material,disp_measure='length',force_measure='force'))
     assert isinstance(sample, LayeredSamples)
     assert len(sample._samples) == 2
     assert sample._samples[0]._mat_model == material
