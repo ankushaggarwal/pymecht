@@ -15,7 +15,7 @@ authors:
     equal-contrib: false
     affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
   - name: Ross Williams
-    orcid: 
+    orcid: 0000-0002-5433-4933
     equal-contrib: false
     affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
   - name: Claire Rosnel
@@ -35,7 +35,7 @@ authors:
     equal-contrib: false
     affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
   - name: Shiting Huang
-    orcid: 
+    orcid: 0009-0007-5020-9020
     equal-contrib: false
     affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
   - name: Sean McGinty
