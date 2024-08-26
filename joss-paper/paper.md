@@ -70,7 +70,7 @@ While several finite element analysis packages are available for performing biom
 
 The package is implemented in Python using an object-oriented structure. The package builds up on widely-used Python libraries: NumPy, SciPy, Pandas, Matplotlib, and PyTorch. `pyMechT` consists of four main modules (see Figure \ref{fig:overview}): 1) `MatModel` for easily defining (new) material models, 2) `SampleExperiment` for simulating ex-vivo uniaxial/biaxial/inflation-extension experim-ents, 3) `ParamFitter` for performing parameter estimation based on experimental data, and 4) `MCMC`/`RandomParameters` for performing Bayesian inference using Monte Carlo (MC) or Markov Chain Monte Carlo (MCMC) simulations. Currently, there are eighteen material models implemented in `MatModel`, including fourteen analytical hyperelastic models, two data-based hyperelastic models, one structural model, and one arbitrary hyperelastic model (equivalent to `UMAT` in Abaqus). 
 
-![Structure of `pyMechT` \label{fig:overview}](../docs/source/drawing-1.svg){height="3 inch"}
+![Structure of `pyMechT` \label{fig:overview}](../docs/source/drawing-1.svg){height="1 inch"}
 
 A particular focus is on parameters, for which a custom dictionary has been implemented named ParamDict. This dictionary facilitates handling large number of parameters via string-based identifiers, and stores lower/upper bounds, fixed/variable flags, in addition to the current parameter values. The dictionary can also be saved/read as csv files. An example set of parameters is shown below.
 
