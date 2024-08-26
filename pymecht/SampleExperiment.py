@@ -478,6 +478,273 @@ class PlanarBiaxialExtension(SampleExperiment):
             return np.array([s1,s2])*self._thick
         return np.array([s1,s2])
 
+class UniaxialExtensionGeneral(SampleExperiment):
+    '''
+    For simulating uniaxial extension of a sample when fibers are not aligned with the axes
+
+    +-----------+---------------------------+
+    | Parameter | Description (default)     |
+    +===========+===========================+
+    | L0        | Length of sample (1)      |
+    +-----------+---------------------------+
+    | A0        | Cross-section area (1)    |
+    +-----------+---------------------------+
+
+    Parameters
+    ----------
+    mat_model: MatModel
+        A material model object of type MatModel
+
+    disp_measure: str
+        The measure of displacement with the following options:
+        
+        * 'stretch' : The stretch ratio (default)
+        * 'strain' : The Green-Lagrange strain
+        * 'deltal' : The change in length
+        * 'length' : The length
+
+    force_measure: str
+        The measure of force with the following options:
+        
+        * 'force' : The force per unit area
+        * 'cauchy' : The Cauchy stress (default)
+        * '1pk' or '1stpk' or 'firstpk' : The first Piola-Kirchhoff stress
+        * '2pk' or '2ndpk' or 'secondpk' : The second Piola-Kirchhoff stress  
+
+    '''
+
+    def __init__(self,mat_model,disp_measure='stretch',force_measure='cauchy'):
+        self._param_default  = dict(L0=1.,A0=1.)
+        self._param_low_bd   = dict(L0=0.0001,A0=0.0001)
+        self._param_up_bd    = dict(L0=1000.,A0=1000.)
+        super().__init__(mat_model,disp_measure,force_measure)
+        self._update(**self._param_default)
+        #check the fibers in mat_model 
+        for mm in mat_model.models:
+            F = mm.fiber_dirs
+            if F is None:
+                continue
+            MdiadM = 0
+            for fi in F:
+                MdiadM += np.outer(fi,fi)
+            if not np.array_equal(MdiadM,np.diag(np.diag(MdiadM))):
+                warnings.warn("The PlanarBiaxialExtension assumes that fibers are symmetric w.r.t. axes. This is not satisfied and the results may be spurious.")
+
+        if not self._output in ['force']+[item for sublist in mat_model._stressnames for item in sublist]:
+            raise ValueError(self.__class__.__name__,": Unknown force_measure", force_measure,". It should be either force, or one of the stress measures in the material model")
+
+        if self._output == 'force':
+            self._compute = partial(self._mat_model.stress,stresstype='1pk',incomp=True,Fdiag=True)
+        else:
+            self._compute = partial(self._mat_model.stress,stresstype=force_measure,incomp=True,Fdiag=True)
+        if self._inp == 'stretch':
+            self._x0 = np.array([1.,1.])
+        elif self._inp == 'strain':
+            self._x0 = np.zeros(2)
+        elif self._inp == 'deltal':
+            self._x0 = np.zeros(2)
+        elif self._inp == 'length':
+            self._x0 = self._L0.copy()
+        else:
+            raise ValueError(self.__class__.__name__,": Unknown disp_measure", disp_measure,". It should be one of stretch, strain, length, or deltal")
+        self._ndim=2 
+
+    def _update(self,L0,A0,**extra_args):
+        self._L0 = np.array([L0, A0])
+        self._thick = 1.
+        if self._inp == 'length':
+            self._x0 = self._L0.copy()
+    
+    def _defGrad(self,input_):
+        if type(input_) is np.ndarray:
+            input_ = input_.reshape(-1,2)
+        F = []
+        for i in input_:
+            i = self._stretch(i)
+            F.append(np.diag([i[0],i[1],1./i[0]/i[1]]))
+        return F
+
+    def _stretch(self,l):
+        if len(l) != 2:
+            raise ValueError("Something went wrong. The value of stretch should be a 2D vector")
+        if self._inp == 'stretch':
+            return l
+        if self._inp == 'strain':
+            return np.sqrt(l)+1
+        if self._inp == 'deltal':
+            return l/self._L0+1
+        if self._inp == 'length':
+            return l/self._L0
+        
+    def _guess(self, l): 
+        #first guess for the deformation in the second direction, given the deformation in the first direction
+        #this is simply the value for a transversely isotropic material 
+        #(i.e., that in the UniaxailExtension)
+        if self._inp == 'stretch':
+            return 1./np.sqrt(l)
+        if self._inp == 'strain':
+            return 1./np.sqrt(1+l)-1
+        if self._inp == 'deltal':
+            s = l/self._L0[0]+1
+            return (1./np.sqrt(s)-1)*self._L0[1]
+        if self._inp == 'length':
+            s = l/self._L0[0]
+            return (1./np.sqrt(s))*self._L0[1]
+        
+    def _observe(self,stress):
+        s1,s2 = stress[0,0],stress[1,1]
+        if self._output=='force':
+            return np.array([s1*self._L0[1],s2*self._L0[0]])*self._thick
+        if self._output=='tension':
+            return np.array([s1,s2])*self._thick
+        return np.array([s1,s2])
+
+    def disp_controlled(self,inp,params=None):
+        '''
+        Simulates the experiment with the deformation measure as the input
+
+        Parameters
+        ----------
+        inp : scalar, list, or numpy array 
+            The input to the experiment. It can be a scalar, a list, or a numpy array
+        
+        params : ParamDict or dict
+            A dictionary of parameters. If None, the default parameters are used. The default is None.
+        
+        Returns
+        -------
+        scalar, list, or numpy array
+            The resulting force measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
+
+        '''
+        if params is None:
+            params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
+        self._update(**params)
+        return_scalar, return_list = False, False
+        if type(inp) is list:
+            return_list = True
+        elif isinstance(inp,(int,float)):
+            inp = [inp]
+            return_scalar = True    
+        elif type(inp) is not np.ndarray:
+            raise ValueError("Input to disp_controlled should be a scalar, a list, or a numpy array")
+        
+        def compare(displ2, displ1, params):
+            #find the force in the second direction
+            #print(displ1,displ2[0])
+            res = self._disp_controlled(np.array([displ1, displ2[0]]),params)
+            #print(res)
+            return res[0][1] #the second component is the force/stress in the second direction
+
+        #solve for the stretch in the second direction such that force is zero 
+        ndata = len(inp)
+        y=[]
+        
+        for i in range(ndata):
+            x0 = self._guess(inp[i])
+            #print(x0)
+            sol = opt.root(compare,x0,args=(inp[i],params))
+            if not sol.success or any(np.abs(sol.r)>1e5):
+                raise RuntimeError('disp_controlled: Solution not converged',inp[i],params)
+            #print("Iterations taken: ",sol.nfev)
+            y.append(self._disp_controlled(np.array([inp[i],sol.x[0]]),params)[0][0])
+        if return_scalar:
+            return y[0]
+        if return_list:
+            return y
+        return np.array(y)
+
+    def _disp_controlled(self,inp_2d,params):
+        return np.array([self._observe(self._compute(F,params)) for F in self._defGrad(inp_2d)]) 
+    
+    def force_controlled(self,forces,params=None,x0=None):
+        '''
+        Simulates the experiment with the force measure as the input (solves via Newton iteration)
+
+        Parameters
+        ----------
+        forces: scalar, list, or numpy array
+            The input to the experiment. It can be a scalar, a list, or a numpy array
+        
+        params: ParamDict or dict
+            A dictionary of parameters. If None, the default parameters are used. The default is None.
+        
+        x0: scalar or numpy array
+            The initial guess for the displacement. If None, the default is used. The default is None.
+
+        Returns
+        -------
+        scalar, list, or numpy array
+            The resulting deformation measure. It is a scalar if the input is a scalar, a list if the input is a list, and a numpy array if the input is a numpy array.
+        '''
+        if params is None:
+            params = self.parameters
+        if type(params) is ParamDict:
+            params = params._val()
+        elif params is not None and type(params[list(params.keys())[0]]) is Param:
+            raise ValueError("Something changed the parameter dictionary that converted it from custom type to regular one")
+        self._update(**params)
+        return_scalar, return_list = False, False
+        if type(forces) is float or type(forces) is int:
+            forces = np.array([forces],dtype=float)
+            return_scalar = True
+        elif type(forces) is list:
+            forces = np.array(forces,dtype=float)
+            return_list = True
+        elif type(forces) is not np.ndarray:
+            raise ValueError("Input to force_controlled should be a scalar, a list, or a numpy array")
+        
+        def compare(displ,ybar,params):
+            return self._disp_controlled(np.array([displ]),params)[0]-ybar
+
+        #solve for the inp by solving the disp_controlled minus desired output
+        forces_temp = np.vstack((forces,np.zeros_like(forces))).T
+        ndata = len(forces_temp)
+        y=[]
+        if x0 is None:
+            x0=self._x0 + 1e-5
+        for i in range(ndata):
+            sol = opt.root(compare,x0,args=(forces_temp[i],params))
+            if not sol.success or any(np.abs(sol.r)>1e5):
+                if ndata==1 or i==0:
+                    niter=10
+                    for j in range(1,niter+1):
+                        df = forces_temp[i]*j/niter
+                        #print(df,x0)
+                        sol = opt.root(compare,x0,args=(df,params))
+                        if not sol.success or any(np.abs(sol.r)>1e5):
+                            break
+                        x0 = sol.x.copy()
+                    #raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
+                else:
+                    NIter=[5,10,20]
+                    for niter in NIter:
+                        df = (forces_temp[i]-forces_temp[i-1])/niter
+                        x0j = x0.copy()
+                        for j in range(niter):
+                            sol = opt.root(compare,x0j,args=(forces_temp[i-1]+(j+1)*df,params))
+                            #print('subiter',j,'/',niter,forces_temp[i-1]+(j+1)*df,params,x0,sol)
+                            if not sol.success or any(np.abs(sol.r)>1e5):
+                                break
+                            x0j = sol.x.copy()
+                        if sol.success:
+                            break
+            if not sol.success:
+                raise RuntimeError('force_controlled: Solution not converged',forces_temp[i],params)
+            x0 = sol.x.copy()
+            y.append(sol.x[0]) #only need the first component
+        if return_scalar:
+            return y[0]
+        if return_list:
+            return y
+        return np.array(y).reshape(np.shape(forces))
+    
+
+
 def UniformAxisymmetricTubeInflationExtension(*margs, **args):
     raise ValueError("The name has changed from UniformAxisymmetricTubeInflationExtension to TubeInflation. Please use TubeInflation instead")
 
@@ -1087,7 +1354,7 @@ def specify_single_fiber(sample,angle=0, degrees=True, verbose=True):
     models = sample._mat_model.models
     if isinstance(sample,TubeInflation):
         vec = np.array([0,np.cos(angle_rad), np.sin(angle_rad)])
-    elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension):
+    elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension) or isinstance(sample,UniaxialExtensionGeneral):
         vec = np.array([np.cos(angle_rad), np.sin(angle_rad),0])
     else:
         raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and TubeInflation")
@@ -1129,7 +1396,7 @@ def specify_two_fibers(sample,angle, degrees = True, verbose=True):
     models = sample._mat_model.models
     if isinstance(sample,TubeInflation):
         vec = [np.array([0,np.cos(angle_rad), np.sin(angle_rad)]), np.array([0,np.cos(-angle_rad), np.sin(-angle_rad)])]
-    elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension):
+    elif isinstance(sample,PlanarBiaxialExtension) or isinstance(sample,UniaxialExtension) or isinstance(sample,UniaxialExtensionGeneral):
         vec = [np.array([np.cos(angle_rad), np.sin(angle_rad),0]), np.array([np.cos(-angle_rad), np.sin(-angle_rad),0])]
     else:
         raise ValueError("The helper function is only implemented for UniaxialExtension, PlanarBiaxialExtension, and TubeInflation")
