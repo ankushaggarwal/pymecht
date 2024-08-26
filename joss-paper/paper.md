@@ -56,11 +56,13 @@ bibliography: paper.bib
 
 # Summary
  
-`pyMechT` aims to fill an important gap for simulating simplified models in soft tissue mechanics, such as for ex-vivo testing protocols. It is straightforward to perform parameter estimation and Bayesian inference. Unique capabilities include incorporating layered structure of tissues and residual stresses.
+`pyMechT` aims to fill an important gap for simulating simplified models in soft tissue mechanics, such as for ex-vivo testing protocols. Instead of setting up a detailed finite element simulation, which can be time-consuming and an overkill for certain scenarios, `pyMechT` allows one to setup and run simulations extremely quickly. Moreover, the Python package makes it straightforward to perform parameter estimation and Bayesian inference. Its unique capabilities include incorporating layered structure of tissues and residual stresses.
 
 # Statement of need
 
-Mechanics of soft tissues plays an important role in several physiological problems, including cardio-vascular and musculoskeletal systems. Common ex-vivo biomechanical testing protocols used to characterize tissues include uniaxial extension for one-dimensional structures, such as tendons and ligaments, biaxial extension for planar tissues, such as heart valves and skin, and inflation-extension for tubular tissue structures, such as blood vessels. These experiments aim to induce a uniform deformation that can be easily related to the generated stresses. 
+Mechanics of soft tissues plays an important role in several physiological problems, including cardio-vascular and musculoskeletal systems. Common ex-vivo biomechanical testing protocols used to characterize tissues include uniaxial extension for one-dimensional structures, such as tendons and ligaments, biaxial extension for planar tissues, such as heart valves and skin, and inflation-extension for tubular tissue structures, such as blood vessels (Figure \ref{ex-vivo-protocols}). These experiments aim to induce a uniform deformation that can be easily related to the generated stresses. 
+
+![Three common ex-vivo experimental protocols and corresponding load-deformation plots: a) uniaxial extension, b) planar biaxial extension, and c) extension-inflation\label{ex-vivo-protocols}](./ex-vivo-protocols.svg)
 
 While several finite element analysis packages are available for performing biomechanical simulation, these are generally intended for more complex scenarios with non-uniform/non-affine deformations. For simulating the ex-vivo experiments, which induce close-to-uniform deformations, in-house codes are commonly developed. However, absence of a common framework can lead to lack of consistency and reproducibility. Moreover, advanced analyses require statistical approaches, such as Monte Carlo simulations and Bayesian inference. To fill this gap, we have developed the open-source Python package `pyMechT`.
 
@@ -68,8 +70,15 @@ While several finite element analysis packages are available for performing biom
 
 The package is implemented in Python using an object-oriented structure. The package builds up on widely-used Python libraries: NumPy, SciPy, Pandas, Matplotlib, and PyTorch. `pyMechT` consists of four main modules (see Figure \ref{fig:overview}): 1) MatModel for easily defining (new) material models, 2) SampleExperiment for simulating ex-vivo uniaxial/biaxial/inflation-extension experim-ents, 3) ParamFitter for performing parameter estimation based on experimental data, and 4) MCMC/RandomParameters for performing Bayesian inference using Monte Carlo (MC) or Markov Chain Monte Carlo (MCMC) simulations. 
 
-![Structure of `pyMechT`{caption=Structure of `pyMechT`} \label{fig:overview}](../docs/source/drawing-1.svg)
+![Structure of `pyMechT` \label{fig:overview}](../docs/source/drawing-1.svg)
 
 A particular focus is on parameters, for which a custom dictionary has been implemented named ParamDict. This dictionary facilitates handling large number of parameters via string-based identifiers, and stores lower/upper bounds, fixed/variable flags, in addition to the current parameter values. The dictionary can also be saved/read as csv files. 
+
+
+# Documentation and examples
+Detailed documentation has been created and is hosted on [`readthedocs`](https://pymecht.readthedocs.io/en/latest/index.html). The documentation starts with an overview of the package, and leads to a basic tutorial that quickly demonstrates all of the basic features. Moreover, eleven examples have been provided to illustrate all the features and options available in `pyMechT`. These include the unique features of modeling layered structures with different reference dimensions, which is commonly encountered in biological soft tissues. Simulating such a model with any finite element software would be non-trivial. Then, theoretical background of the implemented models is provided, before ending with a package reference automatically generated using `Sphinx`. 
+
+# Uses in literature
+`pyMechT` has been used for Bayesian model selection based on extensive planar biaxial extension data [@AGGARWAL2023105657]. This work required rapid simulation of varied constitutive models, which was facilitated by `pyMechT`. Moreover, data-driven model developed in [@AGGARWAL2023115812] has also been subsequently used in `pyMechT` via the `splineI1` and `splineI1I4` material models. 
 
 # References
