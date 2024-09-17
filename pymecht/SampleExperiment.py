@@ -905,9 +905,9 @@ class LayeredUniaxial(LayeredSamples):
         if not all([isinstance(s,UniaxialExtension) for s in self._samples]):
             raise ValueError("The class only accepts objects of type UniaxialExtension")
         if self._inp != 'length':
-            warnings.warn("The disp_measure of the LayeredUniaxial should be length to avoid ambiguity. The results may be spurious")
+            raise ValueError("The disp_measure of all layers in LayeredUniaxial should be length to remove ambiguity about the reference length.")
         if self._output != 'force':
-            warnings.warn("The force_measure of the LayeredUniaxial should be force, as stresses are not additive. The results may be spurious")
+            raise ValueError("The force_measure of the LayeredUniaxial should be force, as stresses are not additive.")
 
 class LayeredPlanarBiaxial(LayeredSamples):
     '''
@@ -932,9 +932,9 @@ class LayeredPlanarBiaxial(LayeredSamples):
         if not all([isinstance(s,PlanarBiaxialExtension) for s in self._samples]):
             raise ValueError("The class only accepts objects of type PlanarBiaxialExtension")
         if self._inp != 'length':
-            warnings.warn("The disp_measure of the LayeredPlanarBiaxial should be length to avoid ambiguity. The results may be spurious")
+            raise ValueError("The disp_measure of all layers in LayeredPlanarBiaxial should be length to remove ambiguity about the reference length.")
         if self._output != 'force':
-            warnings.warn("The force_measure of the LayeredPlanarBiaxial should be force, as stresses are not additive. The results may be spurious")
+            raise ValueError("The force_measure of the LayeredPlanarBiaxial should be force, as stresses are not additive.")
 
 class LayeredTube(LayeredSamples):
     '''

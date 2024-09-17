@@ -1,7 +1,7 @@
 from Examples import *
 import pytest
 
-mat_model_list = ['nh','yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','volPenalty','polyI4','ArrudaBoyce','Gent','splineI1I4','StructModel']
+mat_model_list = ['nh', 'mr', 'yeoh','ls','mn','expI1','goh','Holzapfel','hgo','hy','volPenalty','polyI4','ArrudaBoyce','Gent','splineI1','splineI1I4','StructModel']
 samples_list = [UniaxialExtension,PlanarBiaxialExtension,TubeInflation, LinearSpring]
 
 def test_mat_creation():
@@ -30,7 +30,7 @@ def test_mat_addition():
 def test_mat_reference():
     #Test that reference stress and energy are correctly calculated
     for mname in mat_model_list:
-        if mname in ['splineI1I4']: #TODO: splineI1I4 needs a spline setting
+        if mname in ['splineI1','splineI1I4']: #TODO: splineI1 and splineI1I4 need a spline setting
             continue
         model = MatModel(mname)
         model.models[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
@@ -41,7 +41,7 @@ def test_mat_reference():
 def test_mat_partial_derivs():
     #Tests that the partial derivatives are correctly implemented
     for mname in mat_model_list:
-        if mname in ['splineI1I4']:
+        if mname in ['splineI1','splineI1I4']: #TODO: splineI1 and splineI1I4 need a spline setting
             continue
         model = MatModel(mname)
         model.models[0].fiber_dirs = [np.array([1,0,0]),np.array([0.5,0.5,0])]
@@ -73,7 +73,7 @@ def test_layered_samples():
     material = MatModel('goh','nh')
     mm = material.models
     mm[0].fiber_dirs = [np.array([cos(0.),sin(0.),0])]
-    sample = LayeredUniaxial(UniaxialExtension(material),UniaxialExtension(material))
+    sample = LayeredUniaxial(UniaxialExtension(material, disp_measure='length', force_measure='force'),UniaxialExtension(material,disp_measure='length', force_measure='force'))
     assert isinstance(sample, LayeredSamples)
     assert len(sample._samples) == 2
     assert sample._samples[0]._mat_model == material
@@ -81,7 +81,7 @@ def test_layered_samples():
     assert sample.disp_controlled(sample._samples[0]._x0, sample.parameters) == pytest.approx(0.0)
     assert sample.force_controlled(np.zeros_like(sample._samples[0]._x0), sample.parameters) == pytest.approx(sample._samples[0]._x0)
 
-    sample = LayeredPlanarBiaxial(PlanarBiaxialExtension(material,force_measure='force'),PlanarBiaxialExtension(material,force_measure='force'))
+    sample = LayeredPlanarBiaxial(PlanarBiaxialExtension(material,disp_measure='length',force_measure='force'),PlanarBiaxialExtension(material,disp_measure='length',force_measure='force'))
     assert isinstance(sample, LayeredSamples)
     assert len(sample._samples) == 2
     assert sample._samples[0]._mat_model == material

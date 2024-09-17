@@ -16,6 +16,7 @@ class MatModel:
     The passed strings can have lower/upper case. The following models are available:
         
             * 'NH': Neo-Hookean model
+            * 'MR': Mooney-Rivlin model
             * 'YEOH': Yeoh model
             * 'LS': Lee-Sacks model
             * 'MN': May-Newman model
@@ -28,8 +29,10 @@ class MatModel:
             * 'volPenalty': A penalty model for volumetric change
             * 'ArrudaBoyce': Arruda-Boyce model
             * 'Gent': Gent model
+            * 'splineI1': A spline model of I1
             * 'splineI1I4': A spline model of I1 and I4
             * 'StructModel': A structural model with fiber distribution
+            * 'ARB': Arbitrary model with user-defined strain energy density function
 
     Multiple models can be added together to create a composite model, 
     with each model having its own fiber(s) and parameters.
@@ -472,6 +475,25 @@ class NH(InvariantHyperelastic):
     def partial_deriv(self,mu,**extra_args):
         return mu/2., None, None, None
 
+class MR(InvariantHyperelastic):
+    '''
+    Mooney-Rivlin model
+    
+    .. math::
+        \\Psi = c_1(I_1-3) + c_2(I_2-3)
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(c1=1.,c2=1.)
+        self.param_low_bd   = dict(c1=0.0001,c2=0.)
+        self.param_up_bd    = dict(c1=100.,c2=100.)
+
+    def _energy(self,c1, c2, **extra_args):
+        return c1*(self.I1-3) + c2*(self.I2-3) 
+
+    def partial_deriv(self,c1, c2, **extra_args):
+        return c1, c2, None, None
+
 class YEOH(InvariantHyperelastic):
     '''
     Yeoh model
@@ -868,6 +890,63 @@ class Gent(InvariantHyperelastic):
     def partial_deriv(self,mu,Jm,**extra_args):
         return 0.5*mu/(1 - (self.I1 - 3)/Jm), None, None, None
 
+class splineI1(InvariantHyperelastic):
+    '''
+    Spline-based model in I1 for data driven models (without an analytical expression)
+    
+    Psi is loaded from a scipy spline object
+    '''
+    def __init__(self):
+        super().__init__()
+        self.param_default  = dict(alpha=1)
+        self.param_low_bd   = dict(alpha=-10)
+        self.param_up_bd    = dict(alpha=10)
+        self._warn = False
+        self.normalize()
+
+    def set(self,W,alpha=1):
+        '''
+        Set the spline function and the weight
+        
+        Parameters
+        ----------
+
+        W : scipy.interpolate._bsplines.BSpline
+            The spline function
+        
+        alpha : float
+            The weight of W in the energy function (i.e., :math:`\\Psi = \\alpha W(I1)`)
+        
+        Returns
+        -------
+        None
+
+        '''
+        if not isinstance(W,scipy.interpolate._bsplines.BSpline):
+            raise ValueError("W must be a RectBivariateSpline")
+        x = W.t
+        self.minx,self.maxx = np.min(x), np.max(x)
+        self._W = W
+        self._dWdI1 = W.derivative()
+        self._alpha = alpha
+
+    def _energy(self,alpha=None,**extra_args):
+        if alpha is None:
+            alpha=self._alpha
+        if self._warn and (self.I1<self.minx or self.I1>self.maxx):
+            w = "Outside the training range; be careful interpreting the results "+str(self.I1)+"\n"+str(self.minx)+" "+str(self.maxx)
+            warnings.warn(w)
+        return alpha*np.sum(self._W(self.I1))
+
+    def partial_deriv(self,alpha=None,**extra_args):
+        if alpha is None:
+            alpha=self._alpha
+        if self._warn and (self.I1<self.minx or self.I1>self.maxx):
+            w = "Outside the training range; be careful interpreting the results "+str(self.I1)+"\n"+str(self.minx)+" "+str(self.maxx)
+            warnings.warn(w)
+        a = self._dWdI1(self.I1)
+        return alpha*np.sum(a),None,None,None
+
 class splineI1I4(InvariantHyperelastic):
     '''
     Spline-based model in I1 and I4 for data driven models (without an analytical expression)
@@ -1045,3 +1124,199 @@ class StructModel:
         energy = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)/B-1./B-stretches)*self._theta_weight_i)
         stress = A*np.sum(self.Gamma_iterate*(np.exp(B*stretches)-1)*self._theta_weight_i*tensors.T,axis=-1)
         return energy,stress
+
+class ARB(InvariantHyperelastic):
+    '''
+    A material model class that allows the arbitrary definition of any strain energy density function (SEDF).
+    Sympy's symbolic differentiation is used to calculate the partial derivatives of the SEDF with respect to the invariants I1, I2, J, and I4.
+    The SEDF is provided as a string as a function of the invariants I1, I2, J, and I4, alongside initial guesses and upper/lower bounds for the parameters.
+    The SEDF an initial guess for the parameters must be provided to identify parameters of the material model.
+    If the strings are not provided, the user will be prompted to provide them.
+
+    The parsed strings have the following functions replaced by their respective numpy equivalents:
+            * exp -> np.exp
+            * sqrt -> np.sqrt
+            * log -> np.log
+            * log10 -> np.log10
+            * log2 -> np.log2
+            * sin -> np.sin
+            * cos -> np.cos
+            * tan -> np.tan
+            * arcsin -> np.arcsin
+            * asin -> np.asin
+            * arccos -> np.arccos
+            * acos -> np.acos
+            * arctan -> np.arctan
+            * atan -> np.atan
+            * hypot -> np.hypot
+            * arctan2 -> np.arctan2
+            * sinh -> np.sinh
+            * cosh -> np.cosh
+            * tanh -> np.tanh
+            * arcsinh -> np.arcsinh
+            * asinh -> np.asinh
+            * arccosh -> np.arccosh
+            * acosh -> np.acosh
+            * arctanh -> np.arctanh
+            * atanh -> np.atanh
+
+    Example
+    -------
+        >>> from MatModel import *
+        >>> model = pmt.ARB('mu/2.*(I1-3)','mu=1.','mu=0.01','mu=10.')
+        >>> mat = pmt.MatModel(model)
+        >>> F = np.random.rand
+        >>> mat.stress(F)
+    '''
+    def __init__(self, _W='', _init_guess='', _low_bound='', _up_bound='', dparams=False):
+        super().__init__()
+        # Added success flag to handle if wrong format is given.
+        success = False
+        while success == False:
+            try:
+                # Get initial guess. Needed since we don't know formor number
+                # of parameters.
+                if _init_guess!='':
+                    self.param_default = eval('dict('+_init_guess+')')
+                else:
+                    self.param_default  = eval('dict('+input("Please enter inital guess for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=1.,c2=1.,c3=1.,c4=0.)
+                success = True
+            except:
+                print("Invalid format. Please try again.")
+        success = False
+        while success == False:
+            try:
+                if _low_bound!='':
+                    self.param_low_bd = eval('dict('+_low_bound+')')
+                else:
+                    self.param_low_bd   = eval('dict('+input("Please enter lower bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=0.0001,c2=0.,c3=0.,c4=0.)
+                if len(self.param_low_bd) == 0:
+                    warnings.warn("Warning: Lower bound not set for parameters")
+                success = True
+            except:
+                print("Invalid format. Please try again.")
+        success = False
+        while success == False:
+            try:
+                if _up_bound!='':
+                    self.param_up_bd = eval('dict('+_up_bound+')')
+                else:
+                    self.param_up_bd    = eval('dict('+input("Please enter upper bound for parameters in the form PARAM1=VAL1, PARAM2=VAL2, ..., PARAMN=VALN: ")+')')#dict(c1=100.,c2=100.,c3=100.,c4=100.)
+                if len(self.param_up_bd) == 0:
+                    warnings.warn("Warning: Upper bound not set for parameters")
+                success = True
+            except:
+                print("Invalid format. Please try again.")
+        
+        # Get the user's strain energy density function (SEDF)
+        if _W!='':
+            self.energy_form = _W
+        else:
+            self.energy_form = input("Please enter form of the SEDF: ")#"c1*(I1-3)+c2*(I1-3)**2+c3*(I1-3)**3+c4*(I1-3)**4"
+        # Since there are an arbitrary number of arbitrarily-named parameters,
+        # we get these from the definition of the initial guess.
+        self.param_names = [i for i in self.param_default]
+        
+        # Need sympy for symbolic differentiation
+        # Derivatives calculated here to avoid runtime being called in loop
+        import sympy as sp
+        
+        # Define invariants as symbols
+        I1,I2,J,I4 = sp.symbols('I1 I2 J I4')
+        
+        # Construct a string of the symbols to define as such without needing
+        # numerical values
+        param_names_string = ""
+        for name in self.param_names:
+            param_names_string += name + " "
+        
+        other_symbols = sp.symbols(param_names_string)
+        
+        SEDF = sp.expand(self.energy_form)
+        
+        # Take symbolic derivatives
+        dSEDFdI =   sp.diff(SEDF,I1), \
+                    sp.diff(SEDF,I2), \
+                    sp.diff(SEDF,J), \
+                    sp.diff(SEDF,I4)
+        
+        # Store derivatives as strings
+        dSEDFdI = [str(sp.powdenest(sp.factor_terms(sp.powsimp(i)))) for i in dSEDFdI]
+        
+        # Format derivatives for consistent syntax
+        dSEDFdI = self.replaceSympySyntax(dSEDFdI)
+        
+        # Update attribute of class.
+        self.denergy_formdI = dSEDFdI
+        self.I4term = ('I4' in self.energy_form)
+
+        # Calculate the partial derivatives wrt the linear and nonlinear params
+        if dparams == True:
+            dSEDFdparams = []
+            for param in self.param_names:
+                # if param[:6] == "ltheta"
+                #     dSEDFdparams +=
+                exec(param + " = sp.symbols(param)")
+                dSEDFdparams += [sp.diff(SEDF,eval(param))]
+            dSEDFdparams = [str(sp.powsimp(i)) for i in dSEDFdparams]
+            dSEDFdparams = self.replaceSympySyntax(dSEDFdparams)
+            self.denergy_formdparams = dSEDFdparams
+        return
+
+    def replaceSympySyntax(self, function):
+        functions = ["exp", "sqrt", "log", "log10", "log2", \
+                     "sin", "cos", "tan", \
+                     "arcsin", "asin", "arccos", "acos", "arctan", "atan", \
+                     "hypot", \
+                     "arctan2","sinh","cosh","tanh" \
+                     "arcsinh", "sinh", "arccosh", "acosh", "arctanh", "atanh"]
+
+        function = [i.replace("I1","self.I1") for i in function]
+        function = [i.replace("I2","self.I2") for i in function]
+        function = [i.replace("J","self.J") for i in function]
+        function = [i.replace("I3","self.J**2") for i in function]
+        function = [i.replace("I4","self.I4") for i in function]
+
+        for func_string in functions:
+            function = [i.replace(func_string,"np."+func_string) for i in function]
+
+        return function
+
+    def _energy(self,**extra_args):
+        # WARNING: UNTESTED
+        warnings.warn("Warning: Arbitrary MatModel has not been tested. Proceed with caution!")
+        for name in self.param_names:
+            exec(name + "=" + "%s" %(extra_args[name]))
+        
+        SEDF = self.energy_form.replace("sp","np")
+        return eval(SEDF)
+
+    def partial_deriv(self,**extra_args):
+        '''
+        Returns the partial derivatives of the SEDF.
+        In the case of dPsidIi(I4), for i < 4, the partial derivative is summed over all fibre directions
+
+        Returns
+        -------
+        list of floats
+            the partial derivative of the SEDF with respect to I1, I2, J, and I4.
+        '''
+        # Evaluate the numerical values of the partial derivatives from the
+        # strings in self. Need some funky syntax to allow eval() to have
+        # access to the variable names in extra_args. It unpacks these values
+        # into a new dictionary, along with self and np.
+        dSEDFdI = [eval(i, {"self": self, "np": np,**extra_args}) for i in self.denergy_formdI]
+        # Not been able to cast this using list comprehension. It sets unused
+        # entries to be None.
+        # Partial derivatives are always summed over all fibre directions.
+        for i in range(len(dSEDFdI)):
+            if i == 2:
+                invariant_string = "J"
+            else:
+                invariant_string = "I%s"%(i+1)
+            if invariant_string not in self.energy_form:
+                dSEDFdI[i] = None
+            elif i < 3:
+                dSEDFdI[i] = np.sum(dSEDFdI[i])
+        
+        return dSEDFdI
