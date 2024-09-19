@@ -25,7 +25,17 @@ pyMechT's documentation
    :maxdepth: 1
    :caption: Examples:
 
+   Examples/matmodel-example.ipynb
+   Examples/param-example.ipynb
+   Examples/Uniaxial_extension.ipynb
+   Examples/biax-example.ipynb
    Examples/examples_CR.ipynb
+   Examples/paramfitter-example.ipynb
+   Examples/randomparam-example.ipynb
+   Examples/mcmc-example.ipynb
+   Examples/layered-uniax.ipynb
+   Examples/layered-biax.ipynb
+   LayeredTube
 
 .. toctree::
    :glob:
