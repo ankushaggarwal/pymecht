@@ -68,11 +68,11 @@ While several finite element analysis packages are available for performing biom
 
 # Structure
 
-The package is implemented in Python using an object-oriented structure. The package builds up on widely-used Python libraries: NumPy, SciPy, Pandas, Matplotlib, and PyTorch. `pyMechT` consists of four main modules (see Figure \ref{fig:overview}): 1) `MatModel` for easily defining (new) material models, 2) `SampleExperiment` for simulating ex-vivo uniaxial/biaxial/inflation-extension experim-ents, 3) `ParamFitter` for performing parameter estimation based on experimental data, and 4) `MCMC`/`RandomParameters` for performing Bayesian inference using Monte Carlo (MC) or Markov Chain Monte Carlo (MCMC) simulations. Currently, there are eighteen material models implemented in `MatModel`, including fourteen analytical hyperelastic models, two data-based hyperelastic models, one structural model, and one arbitrary hyperelastic model (equivalent to `UMAT` in Abaqus). 
+The package is implemented in Python using an object-oriented structure. The package builds up on widely-used Python libraries: NumPy, SciPy, Pandas, Matplotlib, and PyTorch. `pyMechT` consists of four main modules (see Figure \ref{fig:overview}): 1) `MatModel` for defining constitutive models for materials, 2) `SampleExperiment` for simulating ex-vivo uniaxial/biaxial/inflation-extension experiments, 3) `ParamFitter` for performing parameter estimation based on experimental data, and 4) `MCMC`/`RandomParameters` for performing Bayesian inference using Monte Carlo (MC) or Markov Chain Monte Carlo (MCMC) simulations. Currently, there are eighteen material models implemented in `MatModel`, including fourteen analytical hyperelastic models, two data-based hyperelastic models, one structural model. In addition, an arbitrary hyperelastic model is also implemented, where a user-defined form of the free energy functional is automatically implemented based on symbolic differentiation. 
 
 ![Structure of `pyMechT` \label{fig:overview}](../docs/source/drawing-1.svg){height="1 inch"}
 
-A particular focus is on parameters, for which a custom dictionary has been implemented named ParamDict. This dictionary facilitates handling large number of parameters via string-based identifiers, and stores lower/upper bounds, fixed/variable flags, in addition to the current parameter values. The dictionary can also be saved/read as csv files. An example set of parameters is shown below.
+A particular focus is on parameters, for which a custom dictionary has been implemented named `ParamDict`. This dictionary facilitates handling large number of parameters via string-based identifiers, and stores lower/upper bounds, fixed/variable flags, in addition to the current parameter values. The dictionary can also be saved/read as csv files. An example set of parameters is shown in Table \ref{table:params} below.
 
 
 | Keys              | Value      | Fixed?     | Lower bound  | Upper bound    |
@@ -83,6 +83,7 @@ A particular focus is on parameters, for which a custom dictionary has been impl
 | thick             | 0.05       | Yes        | -            | -              |
 | phi               | 50         | No         | 0            | 90             |
 
+: Example set of parameters saved as `ParamDict` object \label{table:params}
 
 
 # Documentation and examples
@@ -91,9 +92,9 @@ Detailed documentation has been created and is hosted on [`readthedocs`](https:/
 # Advantages over finite element simulation
 In principle, the problems that can be solved using `pyMechT` can also be solved using any finite element simulation software. However, `pyMechT` offers the following advantages:
 
-- A geometry and mesh creation would be required for a finite element simulation, which usually takes some time. However, the pre-defined geometrical features in `pyMechT` means that one only needs to choose the right class and parameters. And no meshing is required. This means that setting up the problem is much faster.
+- Geometry and mesh creation would be required for a finite element simulation, which usually takes some time. However, the pre-defined geometrical features in `pyMechT` means that one only needs to choose the right class and parameters. And no meshing is required. This means that setting up the problem is much faster.
 
-- Enforcing incompressibility in a finite element simulation can be numerically challenging, thus requiring one to use approaches such as Lagrange multiplier and three-field formulation in finite element simulation. Instead, in `pyMechT`, the incompressibility is analytically enforced *exactly*. This makes the results more robust.
+- Enforcing incompressibility in a finite element simulation can be numerically challenging, thus requiring one to use approaches such as Lagrange multiplier with a three-field formulation. Instead, in `pyMechT`, the incompressibility is analytically enforced *exactly*, thus making the results more robust.
 
 - The fast nature of simulations in `pyMechT` makes it feasible to run of the order to 10^5^ simulations in several minutes, thus facilitating Monte Carlo and Bayesian inference.
 
