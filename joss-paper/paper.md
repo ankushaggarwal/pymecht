@@ -13,42 +13,44 @@ authors:
   - name: Ankush Aggarwal
     orcid: 0000-0002-1755-8807
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Ross Williams
     orcid: 0000-0002-5433-4933
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Claire Rosnel
     orcid: 0009-0000-0038-4321
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Silvia Renon
     orcid: 
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Jude M. Hussain
     orcid: 
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: André F. Schmidt
     orcid: 
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Shiting Huang
     orcid: 0009-0007-5020-9020
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Sean McGinty
     orcid: 0000-0002-2428-2669
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Andrew McBride
     orcid: 0000-0001-7153-3777
     equal-contrib: false
-    affiliation: 1 # (Multiple affiliations must be quoted: "1, 2")
+    affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
 affiliations:
- - name: Glasgow Computational Engineering Centre (GCEC), James Watt School of Engineering, University of Glasgow, UK
+ - name: Glasgow Computational Engineering Centre (GCEC), University of Glasgow, G12 8LT, UK 
    index: 1
+ - name: James Watt School of Engineering, University of Glasgow, G12 8LT, UK
+   index: 2
 date: 17 August 2024
 bibliography: paper.bib
 
