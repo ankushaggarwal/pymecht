@@ -23,7 +23,7 @@ authors:
     equal-contrib: false
     affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Silvia Renon
-    orcid: 
+    orcid: 0000-0002-2325-8771
     equal-contrib: false
     affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
   - name: Jude M. Hussain
