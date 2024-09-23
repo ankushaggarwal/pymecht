@@ -70,11 +70,30 @@ While several finite element analysis packages are available for performing biom
 
 # Structure
 
-The package is implemented in Python using an object-oriented structure. The package builds upon widely-used Python libraries: NumPy, SciPy, Pandas, Matplotlib, and PyTorch. `pyMechT` consists of four main modules (see Figure \ref{fig:overview}): 1) `MatModel` for defining constitutive models for materials, 2) `SampleExperiment` for simulating ex-vivo uniaxial/biaxial/inflation-extension experiments, 3) `ParamFitter` for performing parameter estimation based on experimental data, and 4) `MCMC`/`RandomParameters` for performing Bayesian inference using Monte Carlo (MC) or Markov Chain Monte Carlo (MCMC) simulations. Currently, there are eighteen material models implemented in `MatModel`, including fourteen analytical hyperelastic models, two data-based hyperelastic models, one structural model. In addition, an arbitrary hyperelastic model is also implemented, where a user-defined form of the free energy functional is automatically implemented based on symbolic differentiation. 
+The package is implemented in Python using an object-oriented structure. The package builds upon widely-used Python libraries: NumPy, SciPy, Pandas, Matplotlib, and PyTorch. `pyMechT` consists of four main modules (see Figure \ref{fig:overview}): 1) `MatModel` for defining constitutive models for materials, 2) `SampleExperiment` for simulating ex-vivo uniaxial/biaxial/inflation-extension experiments, 3) `ParamFitter` for performing parameter estimation based on experimental data, and 4) `MCMC`/`RandomParameters` for performing Bayesian inference using Monte Carlo (MC) or Markov Chain Monte Carlo (MCMC) simulations. Currently, there are eighteen material models implemented in `MatModel`, including fourteen analytical hyperelastic models, two data-based hyperelastic models, and one structural model. In addition, an arbitrary hyperelastic model is also implemented, where a user-defined form of the free energy functional is automatically implemented based on symbolic differentiation. Below is the list of the material models available to-date:
 
-![Structure of `pyMechT` \label{fig:overview}](../docs/source/drawing-1.svg){height="1 inch"}
+- ‘NH’: Neo-Hookean model
+- ‘MR’: Mooney-Rivlin model
+- ‘YEOH’: Yeoh model
+- ‘LS’: Lee-Sacks model
+- ‘MN’: May-Newman model
+- ‘GOH’: Gasser-Ogden-Holzapfel model
+- ‘HGO’: Holzapfel-Gasser-Ogden model
+- ‘expI1’: A model with an exponential of I1
+- ‘polyI4’: A model with a polynomial of I4
+- ‘HY’: Humphrey-Yin model
+- ‘Holzapfel’: Holzapfel model
+- ‘volPenalty’: A penalty model for volumetric change
+- ‘ArrudaBoyce’: Arruda-Boyce model
+- ‘Gent’: Gent model
+- ‘splineI1’: A spline model of I1
+- ‘splineI1I4’: A spline model of I1 and I4
+- ‘StructModel’: A structural model with fiber distribution
+- ‘ARB’: Arbitrary model with user-defined strain energy density function
 
-A particular focus is on parameters, for which a custom dictionary has been implemented named `ParamDict`. This dictionary facilitates handling large number of parameters via string-based identifiers, and stores lower/upper bounds, fixed/variable flags, in addition to the current parameter values. The dictionary can also be saved/read as csv files. An example set of parameters is shown in Table \ref{table:params} below.
+![Structure of `pyMechT` \label{fig:overview}](drawing-1.svg){height="1 inch"}
+
+A particular focus is on parameters, for which a custom dictionary has been implemented named `ParamDict`. This dictionary facilitates handling large numbers of parameters via string-based identifiers ("Keys"), and stores lower/upper bounds, fixed/variable flags, in addition to the current parameter values. The dictionary can also be saved/read as csv files. An example set of parameters is shown in Table \ref{table:params} below.
 
 
 | Keys              | Value      | Fixed?     | Lower bound  | Upper bound    |
@@ -85,7 +104,7 @@ A particular focus is on parameters, for which a custom dictionary has been impl
 | thick             | 0.05       | Yes        | -            | -              |
 | phi               | 50         | No         | 0            | 90             |
 
-: Example set of parameters saved as `ParamDict` object \label{table:params}
+: Example set of parameters saved as `ParamDict` object where "Key" acts as string-based identifier \label{table:params}
 
 
 # Documentation and examples
