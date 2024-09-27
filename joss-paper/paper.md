@@ -47,9 +47,9 @@ authors:
     equal-contrib: false
     affiliation: "1, 2" # (Multiple affiliations must be quoted: "1, 2")
 affiliations:
- - name: Glasgow Computational Engineering Centre (GCEC), University of Glasgow, G12 8LT, UK 
+ - name: Glasgow Computational Engineering Centre (GCEC), University of Glasgow, G12 8LT, United Kingdom 
    index: 1
- - name: James Watt School of Engineering, University of Glasgow, G12 8LT, UK
+ - name: James Watt School of Engineering, University of Glasgow, G12 8LT, United Kingdom
    index: 2
 date: 17 August 2024
 bibliography: paper.bib
