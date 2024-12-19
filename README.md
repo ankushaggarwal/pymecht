@@ -93,5 +93,5 @@ The package and version should be visible in the resulting list.
 
 # Contributing to pyMechT
 
-See the contributing guidelines [CONTRIBUTING.md](https://github.com/ankushaggarwal/pymecht/blob/main/CONTRIBUTING.md)
+See the contributing guidelines [CONTRIBUTING.md](https://github.com/ankushaggarwal/pymecht/blob/master/CONTRIBUTING.md)
 for information on submitting issues and pull requests.
