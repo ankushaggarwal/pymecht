@@ -93,4 +93,5 @@ The package and version should be visible in the resulting list.
 
 # Contributing to pyMechT
 
-To contribute to the pyMechT framework, install pyMechT using the developer options. All changes should be made to your forked repo. If there is a new feature or bug fix, raise a pull request. In the case that an additional feature is added, a corresponding example and test should be written in the respective python scripts.
+See the contributing guidelines [CONTRIBUTING.md](https://github.com/ankushaggarwal/pymecht/blob/main/CONTRIBUTING.md)
+for information on submitting issues and pull requests.
