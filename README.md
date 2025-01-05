@@ -41,8 +41,9 @@ Required dependencies are:
 
 To create an environment in Anaconda, execute:
 ```sh
-conda create -n pymecht
+conda create -n pymecht python=3.X
 ```
+where X is any of the currently-supported versions of Python from 3.8 until 3.12.
 
 To activate this virtual environment, execute:
 ```sh
