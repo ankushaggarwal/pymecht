@@ -127,4 +127,7 @@ In principle, the problems that can be solved using `pyMechT` can also be solved
 # Conclusion and future plans
 `pyMechT` fills an important gap and allows soft tissue biomechanics researchers to model ex-vivo testing setups in a fast, robust, and flexible manner. The package is numerically efficient and extensively documented. It has facilitated several publications, and we believe that it can benefit the wider community. In the future, we plan to extend the capabilities of the package to include more material models, such as inelastic (viscoelastic, plastic, damage, growth & remodeling) pre-defined formulations, and other ex-vivo setups (such as microindentation using Hertz contact model). Lastly, the package could be coupled with others to allow multi-physics simulations, such as for hemodynamics [@coccarelli2021framework; @alberto_coccarelli_2021_4522152] and biochemical regulation [@coccarelli2024new].
 
+# Author contributions
+**Ankush Aggarwal**: Conceptualization, Methodology, Software, Writing - Original Draft, Supervision. **Ross Williams**: Methodology, Software, Writing - Review and Editing. **Claire Rosnel**: Software, Testing. **Silvia Renon**: Testing. **Jude M. Hussain**: Testing. **André F. Schmidt**: Testing. **Shiting Huang**: Software. **Sean McGinty**: Supervision, Writing - Review and Editing. **Andrew McBride**: Supervision, Writing - Review and Editing.
+
 # References
