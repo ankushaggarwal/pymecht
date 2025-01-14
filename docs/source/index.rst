@@ -18,23 +18,23 @@ pyMechT's documentation
    :maxdepth: 2
    :caption: Tutorials:
 
-   Examples/tutorial.ipynb
+   Examples/01-tutorial.ipynb
 
 .. toctree::
    :glob:
    :maxdepth: 1
    :caption: Examples:
 
-   Examples/matmodel-example.ipynb
-   Examples/param-example.ipynb
-   Examples/Uniaxial_extension.ipynb
-   Examples/biax-example.ipynb
-   Examples/examples_CR.ipynb
-   Examples/paramfitter-example.ipynb
-   Examples/randomparam-example.ipynb
-   Examples/mcmc-example.ipynb
-   Examples/layered-uniax.ipynb
-   Examples/layered-biax.ipynb
+   Examples/02-matmodel-example.ipynb
+   Examples/03-param-example.ipynb
+   Examples/04-uniaxial-example.ipynb
+   Examples/05-biax-example.ipynb
+   Examples/06-tubeinflation-example.ipynb
+   Examples/07-paramfitter-example.ipynb
+   Examples/08-randomparam-example.ipynb
+   Examples/09-mcmc-example.ipynb
+   Examples/10-layered-uniax.ipynb
+   Examples/11-layered-biax.ipynb
    LayeredTube
 
 .. toctree::
