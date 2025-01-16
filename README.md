@@ -41,15 +41,15 @@ Required dependencies are:
 
 To create an environment in Anaconda, execute:
 ```sh
-conda create -n pymecht python=3.X
+conda create -n pymecht python=3.9 ipykernel
 ```
-where X is any of the currently-supported versions of Python from 3.8 until 3.12.
+Python3.9 is suggested, although any of the currently-supported versions of Python will also work.
 
 To activate this virtual environment, execute:
 ```sh
 conda activate pymecht
 ```
-This is an option, but recommended step. There are other options for create and managing environments (such as venv or virtualenv)
+This is an optional, but recommended, step. There are other options for creating and managing environments (such as venv or virtualenv)
 
 ### *Step 2: Install via pip*
 
@@ -79,7 +79,7 @@ where `<repo-address>` can be replaced by either the https or ssh addresses of t
 ### *Step 2.3 Install developer version of pyMechT*
 To install a developer version of pyMechT, navigate to the locally cloned repo and execute:
 ```sh
-python setup.py develop
+pip install -e .
 ```
 An editable version of pyMechT is now installed. All local changes to the cloned source code files will be reflected when pyMechT is imported.
 
