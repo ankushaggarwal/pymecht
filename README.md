@@ -1,4 +1,5 @@
-![PyPI - Version](https://img.shields.io/pypi/v/pymecht) ![Build Status](https://github.com/ankushaggarwal/pymecht/actions/workflows/ci-tests.yml/badge.svg) [![Documentation Status](https://readthedocs.org/projects/pymecht/badge/?version=latest)](https://pymecht.readthedocs.io/en/latest/?badge=latest) ![Python versions](https://img.shields.io/badge/python-3.8%2B-blue.svg) ![GitHub](https://img.shields.io/github/license/ankushaggarwal/pymecht)
+![PyPI - Version](https://img.shields.io/pypi/v/pymecht) ![Build Status](https://github.com/ankushaggarwal/pymecht/actions/workflows/ci-tests.yml/badge.svg) [![Documentation Status](https://readthedocs.org/projects/pymecht/badge/?version=latest)](https://pymecht.readthedocs.io/en/latest/?badge=latest) ![Python versions](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fankushaggarwal%2Fpymecht%2Fmaster%2Fpyproject.toml
+) ![GitHub](https://img.shields.io/github/license/ankushaggarwal/pymecht)
 
 # pyMechT
 
@@ -40,14 +41,15 @@ Required dependencies are:
 
 To create an environment in Anaconda, execute:
 ```sh
-conda create -n pymecht
+conda create -n pymecht python=3.9 ipykernel
 ```
+Python3.9 is suggested, although any of the currently-supported versions of Python will also work.
 
 To activate this virtual environment, execute:
 ```sh
 conda activate pymecht
 ```
-This is an option, but recommended step. There are other options for create and managing environments (such as venv or virtualenv)
+This is an optional, but recommended, step. There are other options for creating and managing environments (such as venv or virtualenv)
 
 ### *Step 2: Install via pip*
 
@@ -77,7 +79,7 @@ where `<repo-address>` can be replaced by either the https or ssh addresses of t
 ### *Step 2.3 Install developer version of pyMechT*
 To install a developer version of pyMechT, navigate to the locally cloned repo and execute:
 ```sh
-python setup.py develop
+pip install -e .
 ```
 An editable version of pyMechT is now installed. All local changes to the cloned source code files will be reflected when pyMechT is imported.
 
