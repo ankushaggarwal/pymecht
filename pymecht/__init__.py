@@ -3,6 +3,8 @@ pyMechT is a Python package for simulating the mechanical response of soft biolo
 
 .. code-block:: sh
 
+   $ conda create -n pymecht python=3.9 ipykernel
+   $ conda activate pymecht
    $ pip install pymecht
 
 .. raw:: html
