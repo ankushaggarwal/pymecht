@@ -117,9 +117,11 @@ In principle, the problems that can be solved using `pyMechT` can also be solved
 
 - Enforcing incompressibility in a finite element simulation can be numerically challenging, necessitating approaches such as Lagrange multiplier with a three-field formulation. Instead, in `pyMechT`, the incompressibility is analytically enforced *exactly*, thus making the results more robust.
 
-- The fast nature of simulations in `pyMechT` makes it feasible to run $\mathcal{O}(10^5)$ simulations in several minutes, thus facilitating Monte Carlo and Bayesian inference.
+- The fast nature of simulations in `pyMechT` makes it feasible to run $\mathcal{O}(10^5)$ simulations in several minutes, thus facilitating Monte Carlo and Bayesian inference. This adds the capability of calculating, not only the mean response, but also the confidence intervals of model fits and predictions.
 
 - The reference zero-stress state of biological tissues can be unknown or ambiguous. Moreover, the biological tissues are heterogeneous, with multiple layers each of varying properties. These aspects are non-trivial to incorporate in a finite element simulation, due to the need for recreating the geometry and/or incompatability of the initial state. However, it is straightforward to simulate these in `pyMechT`.
+
+Additionally, there are alternative tools that can perform constitutive model fits. However, many of these are developed in-house and not aimed at general wider community development and usage. [Hyperfit](https://www.hyperfit.cz/home.php) is a commercial software for constitutive model fitting, with the advantage of having a graphical user interface, but is not free/open-source. Lastly, most of the existing tools do not incorporate Bayesian inference and layered structures, and these capabilities set `pyMechT` apart. 
 
 # Uses in literature
 `pyMechT` has been used for Bayesian model selection based on extensive planar biaxial extension data [@AGGARWAL2023105657]. This work required rapid simulation of varied constitutive models, which was facilitated by `pyMechT`. Similarly, the Bayesian inference via Markov Chain Monte Carlo in `pyMechT` was used to infer the distribution of aortic biomechanical and geometrical properties based on in-vivo measurements (as likelihood) and ex-vivo biaxial extension data (as prior distribution) [@Aggarwal2025]. Moreover, data-driven model developed in @AGGARWAL2023115812 has been used in `pyMechT` via the `splineI1` and `splineI1I4` material models. 
