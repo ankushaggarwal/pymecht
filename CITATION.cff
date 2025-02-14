@@ -1,0 +1,70 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Aggarwal
+  given-names: Ankush
+  orcid: "https://orcid.org/0000-0002-1755-8807"
+- family-names: Williams
+  given-names: Ross
+  orcid: "https://orcid.org/0000-0002-5433-4933"
+- family-names: Rosnel
+  given-names: Claire
+  orcid: "https://orcid.org/0009-0000-0038-4321"
+- family-names: Renon
+  given-names: Silvia
+  orcid: "https://orcid.org/0000-0002-2325-8771"
+- family-names: Hussain
+  given-names: Jude M.
+- family-names: Schmidt
+  given-names: André F.
+- family-names: Huang
+  given-names: Shiting
+  orcid: "https://orcid.org/0009-0007-5020-9020"
+- family-names: McGinty
+  given-names: Sean
+  orcid: "https://orcid.org/0000-0002-2428-2669"
+- family-names: McBride
+  given-names: Andrew
+  orcid: "https://orcid.org/0000-0001-7153-3777"
+doi: 10.5281/zenodo.14823425
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Aggarwal
+    given-names: Ankush
+    orcid: "https://orcid.org/0000-0002-1755-8807"
+  - family-names: Williams
+    given-names: Ross
+    orcid: "https://orcid.org/0000-0002-5433-4933"
+  - family-names: Rosnel
+    given-names: Claire
+    orcid: "https://orcid.org/0009-0000-0038-4321"
+  - family-names: Renon
+    given-names: Silvia
+    orcid: "https://orcid.org/0000-0002-2325-8771"
+  - family-names: Hussain
+    given-names: Jude M.
+  - family-names: Schmidt
+    given-names: André F.
+  - family-names: Huang
+    given-names: Shiting
+    orcid: "https://orcid.org/0009-0007-5020-9020"
+  - family-names: McGinty
+    given-names: Sean
+    orcid: "https://orcid.org/0000-0002-2428-2669"
+  - family-names: McBride
+    given-names: Andrew
+    orcid: "https://orcid.org/0000-0001-7153-3777"
+  date-published: 2025-02-12
+  doi: 10.21105/joss.07490
+  issn: 2475-9066
+  issue: 106
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 7490
+  title: "pyMechT: A Python package for mechanics of soft tissues"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.07490"
+  volume: 10
+title: "pyMechT: A Python package for mechanics of soft tissues"
