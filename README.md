@@ -1,5 +1,5 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/pymecht) ![Build Status](https://github.com/ankushaggarwal/pymecht/actions/workflows/ci-tests.yml/badge.svg) [![Documentation Status](https://readthedocs.org/projects/pymecht/badge/?version=latest)](https://pymecht.readthedocs.io/en/latest/?badge=latest) ![Python versions](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fankushaggarwal%2Fpymecht%2Fmaster%2Fpyproject.toml
-) ![GitHub](https://img.shields.io/github/license/ankushaggarwal/pymecht)
+) ![GitHub](https://img.shields.io/github/license/ankushaggarwal/pymecht) [![status](https://joss.theoj.org/papers/9e6d337614f479fa681d57bff102ff71/status.svg)](https://joss.theoj.org/papers/9e6d337614f479fa681d57bff102ff71)
 
 # pyMechT
 
